@@ -50,12 +50,12 @@ export function extractTokenFromUrl(url: URL): string | null {
   // Find 'public' in path and get the next segment as token
   const publicIndex = pathParts.indexOf('public');
   if (publicIndex !== -1 && publicIndex + 1 < pathParts.length) {
-    return pathParts[publicIndex + 1];
+    return pathParts[publicIndex + 1] ?? null;
   }
 
   // Also check for token in /api/public/:token/...
   if (pathParts[0] === 'api' && pathParts[1] === 'public' && pathParts[2]) {
-    return pathParts[2];
+    return pathParts[2] ?? null;
   }
 
   return null;
