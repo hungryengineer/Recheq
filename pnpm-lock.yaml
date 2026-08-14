@@ -166,6 +166,9 @@ importers:
       fast-json-stable-stringify:
         specifier: ^2.1.0
         version: 2.1.0
+      pdf-parse:
+        specifier: ^1.1.1
+        version: 1.1.4
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -4123,6 +4126,12 @@ packages:
       sass:
         optional: true
 
+  node-ensure@0.0.0:
+    resolution:
+      {
+        integrity: sha512-DRI60hzo2oKN1ma0ckc6nQWlHU69RH6xN0sjQTjMpChPfTYvKZdcQFfdYK2RWbJcKyUizSIy/l8OTGxMAM1QDw==,
+      }
+
   node-exports-info@1.6.2:
     resolution:
       {
@@ -4285,6 +4294,13 @@ packages:
         integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==,
       }
     engines: { node: '>= 14.16' }
+
+  pdf-parse@1.1.4:
+    resolution:
+      {
+        integrity: sha512-XRIRcLgk6ZnUbsHsYXExMw+krrPE81hJ6FQPLdBNhhBefqIQKXu/WeTgNBGSwPrfU0v+UCEwn7AoAUOsVKHFvQ==,
+      }
+    engines: { node: '>=6.8.1' }
 
   picocolors@1.1.1:
     resolution:
@@ -7565,6 +7581,8 @@ snapshots:
       - '@types/node'
       - babel-plugin-macros
 
+  node-ensure@0.0.0: {}
+
   node-exports-info@1.6.2:
     dependencies:
       array.prototype.flatmap: 1.3.3
@@ -7666,6 +7684,10 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
+
+  pdf-parse@1.1.4:
+    dependencies:
+      node-ensure: 0.0.0
 
   picocolors@1.1.1: {}
 

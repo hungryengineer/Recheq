@@ -73,7 +73,7 @@ function isSuspiciousFontCombination(
 
   // Check for extreme distribution: minor font used for <5% of runs
   if (families.length > 1) {
-    const percentages = families.map((f) => runsByFamily[f] / totalRuns);
+    const percentages = families.map((f) => (runsByFamily[f] ?? 0) / totalRuns);
     const hasExtremeMinority = percentages.some((p) => p > 0 && p < 0.05);
     if (hasExtremeMinority) {
       return true;
@@ -110,7 +110,7 @@ function calculateAnomalyConfidence(
 
   // +0.15 if extreme distribution detected
   if (families.length > 1) {
-    const percentages = families.map((f) => runsByFamily[f] / totalRuns);
+    const percentages = families.map((f) => (runsByFamily[f] ?? 0) / totalRuns);
     const minPercentage = Math.min(...percentages.filter((p) => p > 0));
     if (minPercentage > 0 && minPercentage < 0.05) {
       confidence += 0.15;

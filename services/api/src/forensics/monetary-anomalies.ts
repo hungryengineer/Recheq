@@ -55,10 +55,11 @@ function findMonetaryPatterns(
     pattern.lastIndex = 0;
 
     while ((match = pattern.exec(text)) !== null) {
-      const currencyChar = match[0][0]; // First character (currency symbol)
+      const matchedText = match[0] ?? '';
+      const currencyChar = matchedText.charAt(0); // First character (currency symbol)
       matches.push({
         position: match.index,
-        length: match[0].length,
+        length: matchedText.length,
         currency_char: currencyChar,
       });
     }
