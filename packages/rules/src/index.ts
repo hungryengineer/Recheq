@@ -24,3 +24,8 @@ export {
   type TransitionResult,
   type InvalidTransitionError,
 } from './status-machine.js';
+
+export * from './check-context.js';
+export * from './check.js';
+export * from './registry.js';
+export * from './runner.js';
