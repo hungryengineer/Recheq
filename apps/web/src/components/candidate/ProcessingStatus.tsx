@@ -36,7 +36,7 @@ export function ProcessingStatus({ status }: { status: CaseStatus }) {
     );
   }
 
-  if (status === 'complete' || status === 'employer_review') {
+  if (status === 'complete' || status === 'awaiting_employer') {
     return (
       <div className="card text-center mt-6" style={{ borderColor: 'var(--color-success)' }}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
