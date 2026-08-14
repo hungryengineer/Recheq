@@ -1,0 +1,22 @@
+{
+  "_fixture": "form16-doctored-02",
+  "_description": "Doctored Form 16 — total_tax_deducted exceeds total_income_tax_payable by an implausible margin, suggesting the tax figures were altered independently.",
+  "employee_name": "Sneha Pillai",
+  "employee_pan": "EFGSP3456J",
+  "employer_name": "FinServe Solutions Ltd",
+  "employer_tan": "BLRM98765C",
+  "employer_pan": "AABCF5678D",
+  "financial_year": "2023-24",
+  "assessment_year": "2024-25",
+  "total_tax_deducted": 336000,
+  "total_tax_deposited": 72000,
+  "gross_total_income": 2316000,
+  "total_salary": 2316000,
+  "exempt_allowances": 0,
+  "standard_deduction": 50000,
+  "professional_tax": 2400,
+  "net_taxable_salary": 2263600,
+  "total_income_tax_payable": 72000,
+  "extraction_notes": null,
+  "schema_version": "form16-v1"
+}

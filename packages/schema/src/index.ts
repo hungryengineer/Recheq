@@ -29,3 +29,7 @@ export { ConsentRecord, ConsentGrantInput } from './consent.js';
 export { EvidenceOrigin, EvidenceAssembly } from './evidence.js';
 
 export { EventRecord, EventInput } from './event.js';
+
+export { SalaryComponent, PayslipExtractionV1 } from './payslip.js';
+
+export { Form16ExtractionV1 } from './form16.js';
