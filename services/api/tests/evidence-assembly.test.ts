@@ -1,19 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { assembleEvidence } from '../src/evidence/evidence-service.js';
-import type { Database } from '../src/db/client.js';
+import { assembleEvidence, type EvidenceServiceDeps } from '../src/evidence/evidence-service.js';
 
-describe('Evidence Assembly Service', () => {
+describe('Evidence Assembly Service with Dependencies', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('assembles context with all data missing', async () => {
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const fromMock = vi.fn(() => ({ where: whereMock }));
-    const selectMock = vi.fn(() => ({ from: fromMock }));
-    const dbMock = { select: selectMock } as unknown as Database;
+    const dbMock = {
+      getDocumentsForCase: vi.fn().mockResolvedValue([]),
+      getSuccessfulExtractions: vi.fn().mockResolvedValue([]),
+      getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+    };
 
-    const context = await assembleEvidence(dbMock, 'case-123');
+    const deps: EvidenceServiceDeps = { db: dbMock };
+
+    const context = await assembleEvidence(deps, 'case-123');
 
     expect(context.assembly.origins).toEqual([]);
     expect(context.assembly.has_payslip).toBe(false);
@@ -24,24 +26,59 @@ describe('Evidence Assembly Service', () => {
     expect(context.epfoHistory).toBeNull();
   });
 
-  it('assembles context with payslip data only', async () => {
-    const whereMock = vi
-      .fn()
-      .mockResolvedValueOnce([{ id: 'doc-1', kind: 'payslip' }]) // documents
-      .mockResolvedValueOnce([
-        { document_id: 'doc-1', status: 'completed', extracted_data: { basic: 5000 } },
-      ]) // extractions
-      .mockResolvedValueOnce([]); // epfo
+  it('picks the newest document that has a successful extraction', async () => {
+    const oldDate = new Date('2023-01-01');
+    const newDate = new Date('2023-02-01');
 
-    const fromMock = vi.fn(() => ({ where: whereMock }));
-    const selectMock = vi.fn(() => ({ from: fromMock }));
-    const dbMock = { select: selectMock } as unknown as Database;
+    const dbMock = {
+      getDocumentsForCase: vi.fn().mockResolvedValue([
+        { id: 'doc-old-payslip', kind: 'payslip', created_at: oldDate },
+        { id: 'doc-new-payslip', kind: 'payslip', created_at: newDate },
+        { id: 'doc-form16', kind: 'form_16', created_at: newDate },
+      ]),
+      getSuccessfulExtractions: vi.fn().mockResolvedValue([
+        // Both payslips have extractions, but doc-new-payslip is newer
+        { document_id: 'doc-old-payslip', extracted_data: { basic: 1000 } },
+        { document_id: 'doc-new-payslip', extracted_data: { basic: 5000 } },
+        // form16 has extraction
+        { document_id: 'doc-form16', extracted_data: { tax: 200 } },
+      ]),
+      getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+    };
 
-    const context = await assembleEvidence(dbMock, 'case-123');
+    const deps: EvidenceServiceDeps = { db: dbMock };
+
+    const context = await assembleEvidence(deps, 'case-123');
 
     expect(context.assembly.origins).toContain('payslip');
+    expect(context.assembly.origins).toContain('form_16');
     expect(context.assembly.has_payslip).toBe(true);
-    expect(context.assembly.has_form16).toBe(false);
-    expect(context.payslip).toEqual({ basic: 5000 });
+    expect(context.assembly.has_form16).toBe(true);
+    expect(context.payslip).toEqual({ basic: 5000 }); // Picked the newer one
+    expect(context.form16).toEqual({ tax: 200 });
+  });
+
+  it('ignores newer documents if they failed extraction (no extraction record)', async () => {
+    const oldDate = new Date('2023-01-01');
+    const newDate = new Date('2023-02-01');
+
+    const dbMock = {
+      getDocumentsForCase: vi.fn().mockResolvedValue([
+        { id: 'doc-old-payslip', kind: 'payslip', created_at: oldDate },
+        { id: 'doc-new-payslip', kind: 'payslip', created_at: newDate },
+      ]),
+      getSuccessfulExtractions: vi.fn().mockResolvedValue([
+        // Only the old payslip has a successful extraction
+        { document_id: 'doc-old-payslip', extracted_data: { basic: 1000 } },
+      ]),
+      getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+    };
+
+    const deps: EvidenceServiceDeps = { db: dbMock };
+
+    const context = await assembleEvidence(deps, 'case-123');
+
+    expect(context.assembly.has_payslip).toBe(true);
+    expect(context.payslip).toEqual({ basic: 1000 }); // Picked the older one because the newer one failed
   });
 });
