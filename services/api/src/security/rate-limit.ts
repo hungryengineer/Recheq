@@ -43,9 +43,10 @@ export function createRateLimiter(config: RateLimitConfig = DEFAULT_CONFIG) {
 
     // Check if we have an existing record and if it's still within the window
     if (record && record.resetTime > now) {
-      record.count++;
+      const r = record as RateLimitRecord;
+      r.count++;
 
-      if (record.count > maxRequests) {
+      if (r.count > maxRequests) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
