@@ -10,9 +10,7 @@
   "hra": { "raw_label": "House Rent Allowance", "amount": 36000 },
   "da": { "raw_label": "Dearness Allowance", "amount": 9000 },
   "special_allowance": { "raw_label": "Special Allowance", "amount": 20000 },
-  "other_allowances": [
-    { "raw_label": "Transport Allowance", "amount": 3200 }
-  ],
+  "other_allowances": [{ "raw_label": "Transport Allowance", "amount": 3200 }],
   "gross_salary": 140000,
   "pf_deduction": 10800,
   "professional_tax": 200,
