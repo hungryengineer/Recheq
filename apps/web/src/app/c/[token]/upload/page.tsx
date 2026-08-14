@@ -2,7 +2,8 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCaseByToken, submitDocuments, PublicCaseContext } from '@/lib/api/candidate';
+import { getCaseByToken, submitDocuments } from '@/lib/api/candidate';
+import type { PublicCaseContext } from '@/lib/api/candidate';
 import { DocumentUploader } from '@/components/candidate/DocumentUploader';
 import { UanForm } from '@/components/candidate/UanForm';
 import { WithdrawAction } from '@/components/candidate/WithdrawAction';

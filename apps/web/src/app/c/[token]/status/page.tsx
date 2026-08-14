@@ -2,7 +2,8 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCaseByToken, PublicCaseContext } from '@/lib/api/candidate';
+import { getCaseByToken } from '@/lib/api/candidate';
+import type { PublicCaseContext } from '@/lib/api/candidate';
 import { ProcessingStatus } from '@/components/candidate/ProcessingStatus';
 
 export default function CandidateStatusPage({ params }: { params: Promise<{ token: string }> }) {

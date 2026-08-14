@@ -13,7 +13,7 @@ export interface PublicCaseContext {
 }
 
 // Temporary in-memory state since we are mocking the backend for the frontend milestones
-let mockState: PublicCaseContext = {
+const mockState: PublicCaseContext = {
   orgName: 'Acme Corp',
   employerName: 'Acme Corp Background Checks',
   candidateName: 'John Doe',
@@ -36,17 +36,17 @@ export async function getCaseByToken(token: string): Promise<PublicCaseContext> 
   return { ...mockState };
 }
 
-export async function grantConsent(token: string, ip: string, userAgent: string): Promise<void> {
+export async function grantConsent(_token: string, _ip: string, _userAgent: string): Promise<void> {
   await delay(1000);
   mockState.status = 'awaiting_documents';
 }
 
-export async function withdrawConsent(token: string): Promise<void> {
+export async function withdrawConsent(_token: string): Promise<void> {
   await delay(1000);
   mockState.status = 'withdrawn';
 }
 
-export async function uploadDocument(token: string, kind: DocumentKind, file: File): Promise<void> {
+export async function uploadDocument(_token: string, kind: DocumentKind, file: File): Promise<void> {
   await delay(1500);
   
   if (file.size > 10 * 1024 * 1024) {
@@ -58,12 +58,12 @@ export async function uploadDocument(token: string, kind: DocumentKind, file: Fi
   }
 }
 
-export async function submitUan(token: string, uan: string): Promise<void> {
+export async function submitUan(_token: string, _uan: string): Promise<void> {
   await delay(1000);
   // Just a simulation, normally the backend stores this and processes EPFO
 }
 
-export async function submitDocuments(token: string): Promise<void> {
+export async function submitDocuments(_token: string): Promise<void> {
   await delay(1000);
   // Simulating the transition to processing
   mockState.status = 'processing';

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { getCaseByToken, PublicCaseContext } from '@/lib/api/candidate';
+import { getCaseByToken } from '@/lib/api/candidate';
+import type { PublicCaseContext } from '@/lib/api/candidate';
 import { ConsentSummary } from '@/components/candidate/ConsentSummary';
 import { ConsentAction } from '@/components/candidate/ConsentAction';
 import { useRouter } from 'next/navigation';
