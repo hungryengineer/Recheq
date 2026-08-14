@@ -9,7 +9,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tieout/rules": "workspace:*",
     "@tieout/schema": "workspace:*",
-    "@tieout/rules": "workspace:*"
+    "fast-json-stable-stringify": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/fast-json-stable-stringify": "^2.1.2"
   }
 }
