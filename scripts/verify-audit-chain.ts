@@ -8,8 +8,10 @@ if (args.length !== 1) {
   process.exit(1);
 }
 
+const filePath = args[0] as string;
+
 try {
-  const fileContent = readFileSync(args[0], 'utf-8');
+  const fileContent = readFileSync(filePath, 'utf-8');
   const events = JSON.parse(fileContent);
   
   if (!Array.isArray(events)) {
