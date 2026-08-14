@@ -65,6 +65,22 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@22.20.1)
 
+  services/api:
+    dependencies:
+      '@tieout/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+      '@tieout/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      fast-json-stable-stringify:
+        specifier: ^2.1.0
+        version: 2.1.0
+    devDependencies:
+      '@types/fast-json-stable-stringify':
+        specifier: ^2.1.2
+        version: 2.1.2
+
 packages:
 
   '@ampproject/remapping@2.3.0':
@@ -470,6 +486,10 @@ packages:
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
+
+  '@types/fast-json-stable-stringify@2.1.2':
+    resolution: {integrity: sha512-vsxcbfLDdjytnCnHXtinE40Xl46Wr7l/VGRGt7ewJwCPMKEHOdEsTxXX8xwgoR7cbc+6dE8SB4jlMrOV2zAg7g==}
+    deprecated: This is a stub types definition. fast-json-stable-stringify provides its own type definitions, so you do not need this installed.
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -1511,6 +1531,10 @@ snapshots:
   '@types/deep-eql@4.0.2': {}
 
   '@types/estree@1.0.9': {}
+
+  '@types/fast-json-stable-stringify@2.1.2':
+    dependencies:
+      fast-json-stable-stringify: 2.1.0
 
   '@types/json-schema@7.0.15': {}
 
