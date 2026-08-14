@@ -14,7 +14,8 @@
     "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "fixtures": "node scripts/run-fixtures.mjs"
+    "fixtures": "node scripts/run-fixtures.mjs",
+    "check:local-dependencies": "node --experimental-strip-types scripts/check-local-dependencies.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

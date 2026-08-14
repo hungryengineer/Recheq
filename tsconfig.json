@@ -14,6 +14,6 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src", "tests", "packages", "services", "vitest.config.ts"],
+  "include": ["src", "tests", "packages", "services", "scripts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist", "coverage"]
 }
