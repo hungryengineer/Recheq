@@ -170,7 +170,9 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
         },
       ];
     } else {
-      // Text-based extraction for PDFs and text
+      // Text-based extraction for PDFs and text. Per the ExtractionRequest
+      // contract, PDFs arrive as pre-extracted plain text (Chat Completions do
+      // not accept raw Base64 PDF binary).
       return [
         {
           role: 'system',

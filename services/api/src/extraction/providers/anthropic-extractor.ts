@@ -228,7 +228,8 @@ Respond with ONLY the JSON object, no explanations.`;
         },
       ];
     } else if (request.mimeType === 'application/pdf' || request.mimeType === 'text/plain') {
-      // For PDFs and text, use text content
+      // Per the ExtractionRequest contract, PDFs arrive as pre-extracted plain
+      // text (raw Base64 PDF binary is not supported and would be gibberish here).
       return [
         {
           type: 'text',

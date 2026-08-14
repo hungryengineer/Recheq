@@ -174,6 +174,8 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
 
   private createContent(request: ExtractionRequest): string {
     if (request.mimeType === 'application/pdf' || request.mimeType === 'text/plain') {
+      // Per the ExtractionRequest contract, PDFs arrive as pre-extracted plain
+      // text (raw Base64 PDF binary is not supported).
       return `Document content (${request.mimeType}):\n${request.documentContent}`;
     } else if (request.mimeType.startsWith('image/')) {
       // Ollama doesn't support vision in standard text models

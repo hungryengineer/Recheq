@@ -23,7 +23,17 @@ export interface ExtractionResult<T> {
 export interface ExtractionRequest {
   documentId: string;
   documentKind: DocumentKind;
-  documentContent: string; // Base64 encoded or text content
+  /**
+   * Content of the document to extract from.
+   *
+   * Contract: the caller is responsible for extracting text out of the file
+   * before invoking the extractor.
+   * - `text/plain` and `application/pdf`: must be plain-text content. Raw
+   *   Base64 PDF binary is NOT supported (it is gibberish to the LLM); use a
+   *   PDF text-extraction step upstream.
+   * - `image/*`: Base64-encoded image data, consumed via provider vision blocks.
+   */
+  documentContent: string;
   mimeType: string;
   schemaVersion: string;
   /** Retry context if this is a retry after schema validation failure */
