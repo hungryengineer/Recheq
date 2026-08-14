@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { CaseRecord, CaseStatus, ConsentRecord, ConsentGrantInput, EventInput, EventRecord } from '@tieout/schema';
+import type { CaseRecord, CaseStatus, ConsentRecord, EventInput, EventRecord } from '@tieout/schema';
 import { ConsentGrantInput as ConsentGrantInputSchema } from '@tieout/schema';
 import { transitionCaseStatus } from '../../domain/case-status.js';
 import { validationError, notFoundError, conflictError } from '../../http/errors.js';

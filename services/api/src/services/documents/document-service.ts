@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { CaseRecord, DocumentRecord, DocumentUploadInput } from '@tieout/schema';
+import type { CaseRecord, DocumentRecord } from '@tieout/schema';
 import { DocumentUploadInput as DocumentUploadInputSchema } from '@tieout/schema';
 import { validationError, notFoundError } from '../../http/errors.js';
 import { sniffMimeType, isAllowedMimeType } from './mime-sniffer.js';
