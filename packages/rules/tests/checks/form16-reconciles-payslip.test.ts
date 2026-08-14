@@ -5,11 +5,11 @@ import type { CheckContext } from '../../src/check-context.js';
 describe('checkForm16ReconcilesPayslip', () => {
   it('returns not_assessed if inputs are missing', () => {
     const ctx = {
-      assembly: { has_payslip: true, has_form16: false } as any,
-      payslip: { gross_salary: 50000 } as any,
+      assembly: { has_payslip: true, has_form16: false },
+      payslip: { gross_salary: 50000 },
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkForm16ReconcilesPayslip(ctx);
     expect(findings).toHaveLength(1);
@@ -18,11 +18,11 @@ describe('checkForm16ReconcilesPayslip', () => {
 
   it('returns no findings if annualized gross matches form16 within tolerance', () => {
     const ctx = {
-      assembly: { has_payslip: true, has_form16: true } as any,
-      payslip: { gross_salary: 50000 } as any, // annualized = 600000
-      form16: { gross_total_income: 600100 } as any, // diff 100 <= 500
+      assembly: { has_payslip: true, has_form16: true },
+      payslip: { gross_salary: 50000 }, // annualized = 600000
+      form16: { gross_total_income: 600100 }, // diff 100 <= 500
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkForm16ReconcilesPayslip(ctx);
     expect(findings).toHaveLength(0);
@@ -30,11 +30,11 @@ describe('checkForm16ReconcilesPayslip', () => {
 
   it('returns finding if mismatch is outside tolerance', () => {
     const ctx = {
-      assembly: { has_payslip: true, has_form16: true } as any,
-      payslip: { gross_salary: 50000 } as any, // annualized = 600000
-      form16: { gross_total_income: 700000 } as any, // diff 100000 > 500
+      assembly: { has_payslip: true, has_form16: true },
+      payslip: { gross_salary: 50000 }, // annualized = 600000
+      form16: { gross_total_income: 700000 }, // diff 100000 > 500
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkForm16ReconcilesPayslip(ctx);
     expect(findings).toHaveLength(1);

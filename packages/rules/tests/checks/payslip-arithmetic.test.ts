@@ -5,11 +5,11 @@ import type { CheckContext } from '../../src/check-context.js';
 describe('checkPayslipArithmetic', () => {
   it('returns not_assessed if no payslip exists', () => {
     const ctx = {
-      assembly: { has_payslip: false } as any,
+      assembly: { has_payslip: false },
       payslip: null,
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkPayslipArithmetic(ctx);
     expect(findings).toHaveLength(1);
@@ -18,7 +18,7 @@ describe('checkPayslipArithmetic', () => {
 
   it('returns no findings for correct arithmetic', () => {
     const ctx = {
-      assembly: { has_payslip: true } as any,
+      assembly: { has_payslip: true },
       payslip: {
         basic: 10000,
         hra: 5000,
@@ -32,10 +32,10 @@ describe('checkPayslipArithmetic', () => {
         other_deductions: 0,
         total_deductions: 1400,
         net_salary: 13600,
-      } as any,
+      },
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkPayslipArithmetic(ctx);
     expect(findings).toHaveLength(0);
@@ -43,7 +43,7 @@ describe('checkPayslipArithmetic', () => {
 
   it('returns findings when arithmetic is incorrect', () => {
     const ctx = {
-      assembly: { has_payslip: true } as any,
+      assembly: { has_payslip: true },
       payslip: {
         basic: 10000,
         hra: 5000,
@@ -57,10 +57,10 @@ describe('checkPayslipArithmetic', () => {
         other_deductions: 0,
         total_deductions: 1400,
         net_salary: 13600, // 16000 - 1400 = 14600, so net is also wrong
-      } as any,
+      },
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkPayslipArithmetic(ctx);
     expect(findings).toHaveLength(2); // gross and net both fail

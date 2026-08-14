@@ -5,11 +5,11 @@ import type { CheckContext } from '../../src/check-context.js';
 describe('checkPfImpliesBasic', () => {
   it('returns not_assessed if no payslip exists', () => {
     const ctx = {
-      assembly: { has_payslip: false } as any,
+      assembly: { has_payslip: false },
       payslip: null,
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkPfImpliesBasic(ctx);
     expect(findings).toHaveLength(1);
@@ -18,11 +18,11 @@ describe('checkPfImpliesBasic', () => {
 
   it('returns no findings when PF is exactly 12% of basic', () => {
     const ctx = {
-      assembly: { has_payslip: true } as any,
-      payslip: { basic: 10000, pf_deduction: 1200 } as any,
+      assembly: { has_payslip: true },
+      payslip: { basic: 10000, pf_deduction: 1200 },
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkPfImpliesBasic(ctx);
     expect(findings).toHaveLength(0);
@@ -30,11 +30,11 @@ describe('checkPfImpliesBasic', () => {
 
   it('returns finding when PF is wildly off 12%', () => {
     const ctx = {
-      assembly: { has_payslip: true } as any,
-      payslip: { basic: 10000, pf_deduction: 2000 } as any, // 20%
+      assembly: { has_payslip: true },
+      payslip: { basic: 10000, pf_deduction: 2000 }, // 20%
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkPfImpliesBasic(ctx);
     expect(findings).toHaveLength(1);

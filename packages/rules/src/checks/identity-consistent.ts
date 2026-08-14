@@ -1,4 +1,4 @@
-import type { FindingInput } from '@tieout/schema';
+
 import type { RuleFunction } from '../check.js';
 
 export const checkIdentityConsistent: RuleFunction = (ctx) => {

@@ -5,11 +5,11 @@ import type { CheckContext } from '../../src/check-context.js';
 describe('checkCtcPlausible', () => {
   it('returns not_assessed if no payslip exists', () => {
     const ctx = {
-      assembly: { has_payslip: false } as any,
+      assembly: { has_payslip: false },
       payslip: null,
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkCtcPlausible(ctx);
     expect(findings).toHaveLength(1);
@@ -18,11 +18,11 @@ describe('checkCtcPlausible', () => {
 
   it('returns no findings if basic is within plausible range', () => {
     const ctx = {
-      assembly: { has_payslip: true } as any,
-      payslip: { basic: 50000, gross_salary: 100000 } as any, // 50%
+      assembly: { has_payslip: true },
+      payslip: { basic: 50000, gross_salary: 100000 }, // 50%
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkCtcPlausible(ctx);
     expect(findings).toHaveLength(0);
@@ -30,11 +30,11 @@ describe('checkCtcPlausible', () => {
 
   it('returns findings if basic is implausibly low', () => {
     const ctx = {
-      assembly: { has_payslip: true } as any,
-      payslip: { basic: 10000, gross_salary: 100000 } as any, // 10%
+      assembly: { has_payslip: true },
+      payslip: { basic: 10000, gross_salary: 100000 }, // 10%
       form16: null,
       epfoHistory: null,
-    } as CheckContext;
+    } as unknown as CheckContext;
 
     const findings = checkCtcPlausible(ctx);
     expect(findings).toHaveLength(1);

@@ -46,11 +46,11 @@ export async function loadFixtures(basePath: string): Promise<TestCase[]> {
           fixture: inputData as FixtureCase,
           expected: expectedData as ExpectedResult,
         });
-      } catch (err) {
+      } catch {
         console.warn(`[WARNING] Skipping fixture ${file}: Could not read input/expected pairs.`);
       }
     }
-  } catch (err) {
+  } catch {
     console.warn(`[WARNING] Could not read fixtures directory at ${expectedDir}`);
   }
 
