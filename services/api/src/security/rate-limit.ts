@@ -13,7 +13,7 @@ interface RateLimitConfig {
 }
 
 interface RateLimitState {
-  [key: string]: RateLimitRecord;
+  [key: string]: RateLimitRecord | undefined;
 }
 
 // In-memory storage for rate limiting
@@ -43,10 +43,9 @@ export function createRateLimiter(config: RateLimitConfig = DEFAULT_CONFIG) {
 
     // Check if we have an existing record and if it's still within the window
     if (record && record.resetTime > now) {
-      const r = record as RateLimitRecord;
-      r.count++;
+      record.count++;
 
-      if (r.count > maxRequests) {
+      if (record.count > maxRequests) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
