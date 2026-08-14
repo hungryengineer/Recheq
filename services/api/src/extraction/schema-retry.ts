@@ -9,13 +9,16 @@ import { ExtractionError, ExtractionFailureType } from './llm-document-extractor
  * Wrapper that adds schema validation and exactly one retry with validation error context
  */
 export class SchemaRetryWrapper implements LlmDocumentExtractor {
+  readonly provider: string;
+  readonly supportsStreaming: boolean;
+
   constructor(
     private readonly wrapped: LlmDocumentExtractor,
     private readonly maxRetries: number = 1
-  ) {}
-
-  readonly provider = this.wrapped.provider;
-  readonly supportsStreaming = this.wrapped.supportsStreaming;
+  ) {
+    this.provider = wrapped.provider;
+    this.supportsStreaming = wrapped.supportsStreaming;
+  }
 
   async extractPayslip(request: ExtractionRequest): Promise<ExtractionResult<PayslipExtraction>> {
     return this.extractWithRetry(request, 'payslip', this.wrapped.extractPayslip.bind(this.wrapped));
@@ -39,10 +42,14 @@ export class SchemaRetryWrapper implements LlmDocumentExtractor {
     extractFn: (req: ExtractionRequest) => Promise<ExtractionResult<T>>
   ): Promise<ExtractionResult<T>> {
     const maxAttempts = 1 + this.maxRetries; // Original + retries
+    let lastValidationError = '';
+    let lastRawOutput = '';
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const isRetry = attempt > 0;
-      const currentRequest = isRetry ? this.createRetryRequest(request, kind) : request;
+      const currentRequest = isRetry
+        ? this.createRetryRequest(request, kind, lastValidationError, lastRawOutput)
+        : request;
       
       const result = await extractFn(currentRequest);
       
@@ -61,26 +68,23 @@ export class SchemaRetryWrapper implements LlmDocumentExtractor {
           retryCount: attempt,
         };
       } catch (validationError) {
+        // Capture the validation error so the retry attempt can correct it
+        lastValidationError = validationError instanceof Error 
+          ? validationError.message 
+          : String(validationError);
+        lastRawOutput = result.rawOutput;
+
         // Schema validation failed
         if (attempt < maxAttempts - 1) {
-          // Prepare for retry with validation error context
-          const errorMessage = validationError instanceof Error 
-            ? validationError.message 
-            : String(validationError);
-          
-          // Continue to next attempt (retry)
-          console.warn(`Schema validation failed for ${kind} document ${request.documentId}, retrying with error context:`, errorMessage);
+          // Continue to next attempt (retry with validation error context)
+          console.warn(`Schema validation failed for ${kind} document ${request.documentId}, retrying with error context:`, lastValidationError);
           continue;
         } else {
           // No more retries available - mark as failure
-          const errorMessage = validationError instanceof Error 
-            ? validationError.message 
-            : String(validationError);
-          
           return {
             ...result,
             status: 'failure',
-            error: `Schema validation failed after ${maxAttempts} attempts: ${errorMessage}`,
+            error: `Schema validation failed after ${maxAttempts} attempts: ${lastValidationError}`,
             retryCount: attempt,
           };
         }
@@ -99,20 +103,23 @@ export class SchemaRetryWrapper implements LlmDocumentExtractor {
 
   private createRetryRequest(
     originalRequest: ExtractionRequest,
-    kind: 'payslip' | 'form16'
+    kind: 'payslip' | 'form16',
+    validationError: string,
+    previousAttemptRawOutput: string
   ): ExtractionRequest {
-    // In a real implementation, we would need to store validation errors from previous attempts
-    // For now, we return a modified request that indicates this is a retry
+    // Surface the actual validation failure from the previous attempt so the
+    // provider can correct the specific fields that failed validation.
     return {
       ...originalRequest,
       retryContext: {
-        validationError: `Previous ${kind} extraction failed schema validation`,
-        previousAttemptRawOutput: `Retry attempt for ${originalRequest.documentId}`,
+        validationError,
+        previousAttemptRawOutput,
       },
     };
   }
 
   private validateExtraction(kind: 'payslip' | 'form16', data: unknown): void {
+    const kindLabel = kind === 'payslip' ? 'Payslip' : 'Form 16';
     try {
       if (kind === 'payslip') {
         // Import the actual schema - for now using a basic validation
@@ -122,7 +129,8 @@ export class SchemaRetryWrapper implements LlmDocumentExtractor {
         this.validateForm16Structure(data);
       }
     } catch (error) {
-      throw new Error(`${kind.toUpperCase()} schema validation failed: ${error}`);
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`${kindLabel} schema validation failed: ${detail}`);
     }
   }
 

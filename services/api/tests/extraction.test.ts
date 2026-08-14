@@ -346,18 +346,59 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
     });
 
     it('passes retry context on retry attempts', async () => {
-      const mockResult: ExtractionResult<PayslipExtraction> = {
-        data: {} as PayslipExtraction,
-        rawOutput: '',
+      const invalidPayslip = {
+        employee_name: 'John Doe',
+        // Missing employer_name (required field) -> triggers schema validation failure
+        month: 'January',
+        year: 2024,
+        basic_raw_label: 'Basic Salary',
+        basic: 50000,
+      };
+
+      const invalidResult: ExtractionResult<PayslipExtraction> = {
+        data: invalidPayslip as PayslipExtraction,
+        rawOutput: JSON.stringify(invalidPayslip),
         modelId: 'test',
         usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         extractionDurationMs: 100,
-        status: 'failure',
-        error: 'test',
+        status: 'success',
         retryCount: 0,
       };
 
-      const extractFn = vi.fn().mockResolvedValue(mockResult);
+      const validPayslip: PayslipExtraction = {
+        employee_name: 'John Doe',
+        employer_name: 'TechCorp Inc',
+        month: 'January',
+        year: 2024,
+        basic_raw_label: 'Basic Salary',
+        basic: 50000,
+        hra: 20000,
+        da: 10000,
+        special_allowance: 15000,
+        other_allowances: 5000,
+        gross_salary: 100000,
+        pf_deduction: 12000,
+        professional_tax: 2000,
+        income_tax: 10000,
+        other_deductions: 1000,
+        total_deductions: 25000,
+        net_salary: 75000,
+        extraction_notes: 'Clear document',
+      };
+
+      const validResult: ExtractionResult<PayslipExtraction> = {
+        data: validPayslip,
+        rawOutput: JSON.stringify(validPayslip),
+        modelId: 'test',
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        extractionDurationMs: 100,
+        status: 'success',
+        retryCount: 0,
+      };
+
+      const extractFn = vi.fn()
+        .mockResolvedValueOnce(invalidResult)
+        .mockResolvedValueOnce(validResult);
       vi.mocked(mockExtractor.extractPayslip).mockImplementation(extractFn);
 
       const request: ExtractionRequest = {
@@ -372,9 +413,11 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       // Check that second call includes retry context
       expect(extractFn).toHaveBeenCalledTimes(2);
-      const secondCall = extractFn.mock.calls[1][0];
-      expect(secondCall.retryContext).toBeDefined();
-      expect(secondCall.retryContext?.validationError).toContain('Payslip schema validation failed');
+      const secondCall = extractFn.mock.calls[1]?.[0];
+      expect(secondCall).toBeDefined();
+      expect(secondCall?.retryContext).toBeDefined();
+      expect(secondCall?.retryContext?.validationError).toContain('Payslip schema validation failed');
+      expect(secondCall?.retryContext?.previousAttemptRawOutput).toBe(invalidResult.rawOutput);
     });
   });
 
@@ -412,8 +455,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
           .toThrow('API key is required');
       });
 
-      it('throws without base URL', () => {
-        expect(() => createOpenAiCompatibleExtractor({ apiKey: 'test-key' }))
+      it('throws without a valid base URL', () => {
+        // DEFAULT_CONFIG supplies the OpenAI base URL, so an empty string is
+        // the reachable "no base URL" case.
+        expect(() => createOpenAiCompatibleExtractor({ apiKey: 'test-key', baseUrl: '' }))
           .toThrow('Base URL is required');
       });
 

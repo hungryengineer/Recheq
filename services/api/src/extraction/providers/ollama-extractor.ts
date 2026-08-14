@@ -353,6 +353,9 @@ export function createRecommendedOllamaExtractor(
   baseUrl?: string
 ): OllamaExtractor {
   const model = RECOMMENDED_OLLAMA_MODELS[modelType][0];
+  if (!model) {
+    throw new Error(`No recommended model configured for ${modelType}`);
+  }
   return createOllamaExtractor({
     model,
     ...(baseUrl ? { baseUrl } : {}),
