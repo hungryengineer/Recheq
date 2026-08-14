@@ -7,6 +7,7 @@
 import { eq } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
 import { forensics } from '../db/schema/forensics.js';
+import { documents } from '../db/schema/documents.js';
 import type { FontRunAnalysis } from './font-runs.js';
 import type { MonetaryAnomalyAnalysis } from './monetary-anomalies.js';
 import type { PdfMetadata } from './pdf-metadata.js';
@@ -144,30 +145,19 @@ export async function getForensicsByDocumentId(
  * Used to assemble evidence after all documents are inspected.
  *
  * @param db - Database instance
- * @param _caseId - Case ID to retrieve forensics for
+ * @param caseId - Case ID to retrieve forensics for
  * @returns Array of forensics records
  * @throws If database query fails
- *
- * @note Implementation requires JOIN with documents table on case_id
  */
 export async function getForensicsByCase(
   db: Database,
-  _caseId: string,
-): Promise<
-  Array<
-    typeof forensics.$inferSelect & {
-      font_runs: FontRunAnalysis | null;
-      monetary_anomalies: MonetaryAnomalyAnalysis | null;
-      document_id: string;
-    }
-  >
-> {
-  // Note: This requires a JOIN with the documents table to filter by case_id
-  // Implementation depends on how your db query system handles relationships
-  const result = await db.query.forensics.findMany({
-    // Pseudo-code: where(eq(documents.case_id, caseId))
-    // In practice, you'd add a WHERE clause that joins documents
-  });
+  caseId: string,
+): Promise<Array<typeof forensics.$inferSelect>> {
+  const result = await db
+    .select()
+    .from(forensics)
+    .innerJoin(documents, eq(documents.id, forensics.document_id))
+    .where(eq(documents.case_id, caseId));
 
-  return result ?? [];
+  return result.map((row) => row.forensics);
 }

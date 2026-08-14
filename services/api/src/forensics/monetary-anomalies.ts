@@ -42,25 +42,28 @@ const MONETARY_PATTERNS = [
  */
 function findMonetaryPatterns(
   text: string,
-): Array<{ position: number; length: number; currency_char: string }> {
+): Array<{ position: number; length: number; currency_char: string; text: string }> {
   if (!text || typeof text !== 'string') {
     return [];
   }
 
-  const matches: Array<{ position: number; length: number; currency_char: string }> = [];
+  const matches: Array<{
+    position: number;
+    length: number;
+    currency_char: string;
+    text: string;
+  }> = [];
 
   for (const pattern of MONETARY_PATTERNS) {
-    let match;
-    // Reset lastIndex for global regex
-    pattern.lastIndex = 0;
-
-    while ((match = pattern.exec(text)) !== null) {
+    // matchAll scans a fresh clone of the global regex, so it never mutates
+    // the shared pattern's lastIndex state (unlike a manual exec loop).
+    for (const match of text.matchAll(pattern)) {
       const matchedText = match[0] ?? '';
-      const currencyChar = matchedText.charAt(0); // First character (currency symbol)
       matches.push({
         position: match.index,
         length: matchedText.length,
-        currency_char: currencyChar,
+        currency_char: matchedText.charAt(0), // First character (currency symbol)
+        text: matchedText,
       });
     }
   }
@@ -254,15 +257,8 @@ export function analyzeMonetaryAnomalies(documentText: string | unknown): Moneta
   const colorAnomalies = detectColorAnomalies();
   const spacingAnomalies = detectSpacingAnomalies(documentText, monetaryPositions);
 
-  // Get actual matched strings for formatting check (text not logged, only metadata)
-  const monetaryMatches: string[] = [];
-  for (const pattern of MONETARY_PATTERNS) {
-    let match;
-    pattern.lastIndex = 0;
-    while ((match = pattern.exec(documentText)) !== null) {
-      monetaryMatches.push(match[0]);
-    }
-  }
+  // Reuse the matched text collected once above (text not logged, only metadata)
+  const monetaryMatches = monetaryPositions.map((m) => m.text);
   const formattingInconsistencies = detectFormattingInconsistencies(monetaryMatches);
 
   const anomalyTypes = {
