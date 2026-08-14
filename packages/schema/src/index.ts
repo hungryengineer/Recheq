@@ -23,6 +23,7 @@ export {
   DocumentRecord,
   PayslipExtraction,
   Form16Extraction,
+  DocumentUploadInput,
 } from './document.js';
 
 export {
@@ -32,6 +33,7 @@ export {
 
 export {
   ConsentRecord,
+  ConsentGrantInput,
 } from './consent.js';
 
 export {

@@ -61,3 +61,12 @@ export const Form16Extraction = z.object({
   extraction_notes: z.string().nullable(),
 });
 export type Form16Extraction = z.infer<typeof Form16Extraction>;
+
+// ─── Document Upload Input ──────────────────────────────────────
+export const DocumentUploadInput = z.object({
+  /** Type of document being uploaded */
+  kind: DocumentKind,
+  /** Original filename as provided by the uploader */
+  original_filename: z.string().min(1).max(500),
+});
+export type DocumentUploadInput = z.infer<typeof DocumentUploadInput>;
