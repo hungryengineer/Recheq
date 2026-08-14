@@ -22,7 +22,7 @@ export const checkPayslipArithmetic: RuleFunction = (ctx) => {
   const findings: FindingInput[] = [];
 
   // Safe summation treating null as 0
-  const sum = (...vals: (number | null)[]) => vals.reduce((a, b) => (a ?? 0) + (b ?? 0), 0);
+  const sum = (...vals: (number | null)[]) => vals.reduce<number>((a, b) => a + (b ?? 0), 0);
 
   // 1. Gross Salary check
   const calculatedGross = sum(p.basic, p.hra, p.da, p.special_allowance, p.other_allowances);

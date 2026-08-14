@@ -1,6 +1,7 @@
 {
   "name": "tieout",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "Tieout hackathon monorepo",
   "packageManager": "pnpm@10.12.4",
@@ -34,7 +35,10 @@
     "react-dom": "19.2.8",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@tieout/rules": "workspace:*",
+    "@tieout/schema": "workspace:*",
+    "@tieout/test-fixtures": "workspace:*"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

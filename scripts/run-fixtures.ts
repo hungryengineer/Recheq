@@ -29,23 +29,21 @@ async function run() {
     const findings = runAllChecks(test.fixture.context);
 
     // 2. Calculate score
-    const scorableFindings = findings.map((f) => ({
+    const scorableFindings = findings.map((f: any) => ({
       status: f.status,
       severity: f.severity,
     })) as ScorableFinding[];
-    const scoreBreakdown = calculateRiskScore(scorableFindings);
+    const score = calculateRiskScore(scorableFindings);
 
-    // 3. Calculate verdict
-    const verdict = calculateVerdict(scoreBreakdown.score);
+    const verdict = calculateVerdict(scorableFindings, test.fixture.context.assembly.origins.length);
 
-    // 4. Compare
-    const comparison = compareExpected(scoreBreakdown.score, verdict, findings, test.expected);
+    const comparison = compareExpected(score, verdict, findings, test.expected);
 
     if (comparison.passed) {
-      console.log(`✅ Passed (${findings.length} findings, score: ${scoreBreakdown.score})`);
+      console.log(`✅ Passed (${findings.length} findings, score: ${score})`);
     } else {
       console.error(`❌ Failed:`);
-      comparison.errors.forEach((e) => console.error(`   - ${e}`));
+      comparison.errors.forEach((e: string) => console.error(`   - ${e}`));
       failed++;
     }
   }
