@@ -35,6 +35,14 @@ export function unauthorizedError(message: string = 'Unauthorized', details?: un
   return new AppError(401, 'UNAUTHORIZED', message, details);
 }
 
+export function conflictError(message: string = 'Conflict', details?: unknown): AppError {
+  return new AppError(409, 'CONFLICT', message, details);
+}
+
+export function goneError(message: string = 'Gone', details?: unknown): AppError {
+  return new AppError(410, 'GONE', message, details);
+}
+
 export function toErrorResponse(error: unknown): { status: number; body: ApiError } {
   if (error instanceof AppError) {
     return {

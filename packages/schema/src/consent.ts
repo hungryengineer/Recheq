@@ -21,3 +21,12 @@ export const ConsentRecord = z.object({
   created_at: z.string().datetime(),
 });
 export type ConsentRecord = z.infer<typeof ConsentRecord>;
+
+// ─── Consent Grant Input ────────────────────────────────────────
+export const ConsentGrantInput = z.object({
+  /** Verbatim consent text shown to and accepted by the candidate */
+  consent_text: z.string().min(1),
+  /** Version identifier for the consent text */
+  consent_version: z.string().min(1),
+});
+export type ConsentGrantInput = z.infer<typeof ConsentGrantInput>;
