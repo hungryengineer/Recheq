@@ -1,5 +1,4 @@
-import { TokenPurpose } from '@tieout/schema';
-import { TokenService } from '../../tokens/token-service.js';
+import type { TokenService } from '../../tokens/token-service.js';
 
 // This is a stub for the HTTP route handler, since the API framework isn't chosen yet.
 // In a real Express/Fastify app, this would be `async function inviteCandidate(req, res)`

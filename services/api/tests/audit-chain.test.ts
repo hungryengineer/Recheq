@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { calculateEventHash } from '../src/audit/hash-chain.js';
 import { verifyChain, ChainVerificationError } from '../src/audit/verify-chain.js';
-import { AuditService, IAuditRepository } from '../src/audit/audit-service.js';
-import { EventRecord } from '@tieout/schema';
+import type { IAuditRepository } from '../src/audit/audit-service.js';
+import { AuditService } from '../src/audit/audit-service.js';
+import type { EventRecord } from '@tieout/schema';
 
 describe('hash-chain', () => {
   it('calculates deterministic hashes ignoring object key order', () => {

@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { TokenPurpose } from '@tieout/schema';
+import type { TokenPurpose } from '@tieout/schema';
 
 export interface TokenRecord {
   hash: string;

@@ -1,13 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateToken } from '../src/tokens/generate-token.js';
+import type {
+  TokenRecord
+} from '../src/tokens/verify-token.js';
 import {
   verifyToken,
   TokenExpiredError,
   InvalidTokenPurposeError,
-  InvalidTokenError,
-  TokenRecord
+  InvalidTokenError
 } from '../src/tokens/verify-token.js';
-import { TokenService, ITokenRepository } from '../src/tokens/token-service.js';
+import type { ITokenRepository } from '../src/tokens/token-service.js';
+import { TokenService } from '../src/tokens/token-service.js';
 
 describe('generateToken', () => {
   it('generates a token with a prefix and valid base64url characters', () => {

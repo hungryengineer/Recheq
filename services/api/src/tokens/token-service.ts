@@ -1,6 +1,7 @@
-import { TokenPurpose } from '@tieout/schema';
+import type { TokenPurpose } from '@tieout/schema';
 import { generateToken } from './generate-token.js';
-import { TokenRecord, verifyToken } from './verify-token.js';
+import type { TokenRecord} from './verify-token.js';
+import { verifyToken } from './verify-token.js';
 
 export interface ITokenRepository {
   saveToken(record: TokenRecord): Promise<void>;

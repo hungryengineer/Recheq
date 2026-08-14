@@ -19,11 +19,15 @@ try {
   verifyChain(events);
   console.log('✅ Audit chain verified successfully. No tampering detected.');
   process.exit(0);
-} catch (err: any) {
+} catch (err: unknown) {
   console.error('❌ Audit chain verification failed!');
-  console.error(err.message);
-  if (err.eventId) {
-    console.error(`Tampered Event ID: ${err.eventId}`);
+  if (err instanceof Error) {
+    console.error(err.message);
+    if ('eventId' in err && err.eventId) {
+      console.error(`Tampered Event ID: ${err.eventId}`);
+    }
+  } else {
+    console.error(err);
   }
   process.exit(1);
 }
