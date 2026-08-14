@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { appName } from '../src/index.js';
 
 describe('repository foundation', () => {
