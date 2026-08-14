@@ -24,11 +24,11 @@ const mockState: PublicCaseContext = {
 
 export async function getCaseByToken(token: string): Promise<PublicCaseContext> {
   await delay(800);
-  
+
   if (token === 'expired') {
     throw new Error('TOKEN_EXPIRED');
   }
-  
+
   if (token === 'invalid') {
     throw new Error('TOKEN_INVALID');
   }
@@ -46,9 +46,13 @@ export async function withdrawConsent(_token: string): Promise<void> {
   mockState.status = 'withdrawn';
 }
 
-export async function uploadDocument(_token: string, kind: DocumentKind, file: File): Promise<void> {
+export async function uploadDocument(
+  _token: string,
+  kind: DocumentKind,
+  file: File,
+): Promise<void> {
   await delay(1500);
-  
+
   if (file.size > 10 * 1024 * 1024) {
     throw new Error('FILE_TOO_LARGE');
   }
@@ -67,7 +71,7 @@ export async function submitDocuments(_token: string): Promise<void> {
   await delay(1000);
   // Simulating the transition to processing
   mockState.status = 'processing';
-  
+
   // Simulate processing time
   setTimeout(() => {
     if (mockState.status === 'processing') {

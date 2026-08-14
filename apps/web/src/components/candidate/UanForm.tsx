@@ -43,30 +43,37 @@ export function UanForm({ token, onSuccess }: UanFormProps) {
       </p>
 
       {success ? (
-        <div style={{ color: 'var(--color-success)', fontWeight: 500 }}>
-          ✓ UAN Provided
-        </div>
+        <div style={{ color: 'var(--color-success)', fontWeight: 500 }}>✓ UAN Provided</div>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
-          <input 
-            type="text" 
-            placeholder="12-digit UAN" 
+          <input
+            type="text"
+            placeholder="12-digit UAN"
             value={uan}
             onChange={(e) => setUan(e.target.value)}
             disabled={loading}
-            style={{ 
-              flex: 1, 
-              padding: '0.75rem', 
-              borderRadius: 'var(--radius-md)', 
-              border: '1px solid var(--color-border)' 
+            style={{
+              flex: 1,
+              padding: '0.75rem',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border)',
             }}
           />
-          <button type="submit" disabled={loading} className="btn btn-outline" style={{ width: 'auto' }}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-outline"
+            style={{ width: 'auto' }}
+          >
             {loading ? '...' : 'Save'}
           </button>
         </form>
       )}
-      {error && <p className="text-danger mt-2" style={{ fontSize: '0.875rem' }}>{error}</p>}
+      {error && (
+        <p className="text-danger mt-2" style={{ fontSize: '0.875rem' }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

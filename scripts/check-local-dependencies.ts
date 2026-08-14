@@ -7,7 +7,9 @@ interface CheckResult {
   message: string;
 }
 
-const databaseUrl = new URL(process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/tieout');
+const databaseUrl = new URL(
+  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/tieout',
+);
 const s3Endpoint = process.env.S3_ENDPOINT ?? 'http://localhost:9000';
 const s3Bucket = process.env.S3_BUCKET ?? process.env.MINIO_BUCKET ?? 'tieout-local';
 const s3Region = process.env.S3_REGION ?? 'us-east-1';

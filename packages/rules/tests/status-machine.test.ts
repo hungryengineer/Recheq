@@ -86,9 +86,14 @@ describe('status-machine: transition()', () => {
 
   it('withdrawn is terminal — no event works', () => {
     const events: TransitionEvent[] = [
-      'invite_sent', 'consent_granted', 'documents_submitted',
-      'processing_started', 'processing_complete', 'employer_request_sent',
-      'employer_responded', 'withdrawn',
+      'invite_sent',
+      'consent_granted',
+      'documents_submitted',
+      'processing_started',
+      'processing_complete',
+      'employer_request_sent',
+      'employer_responded',
+      'withdrawn',
     ];
     for (const event of events) {
       const result = transition('withdrawn', event);

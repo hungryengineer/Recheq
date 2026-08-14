@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCase, listCases, getCase, type CaseServiceDeps } from '../src/services/cases/case-service.js';
+import {
+  createCase,
+  listCases,
+  getCase,
+  type CaseServiceDeps,
+} from '../src/services/cases/case-service.js';
 import { AppError } from '../src/http/errors.js';
 import type { CaseRecord, CaseSummary } from '@tieout/schema';
 
@@ -43,7 +48,7 @@ describe('Case Service', () => {
         created_at: '2023-10-01T00:00:00Z',
         updated_at: '2023-10-01T00:00:00Z',
       };
-      
+
       vi.mocked(mockDeps.db.createCase).mockResolvedValueOnce(mockResult);
 
       const result = await createCase(validCreateInput, userId, orgId, mockDeps);

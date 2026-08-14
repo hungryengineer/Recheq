@@ -10,27 +10,24 @@ export interface MimeResult {
 
 // ─── Magic Byte Signatures ──────────────────────────────────────
 
-const SIGNATURES: Array<{ bytes: number[]; offset: number; mimeType: string; extension: string }> = [
-  // PDF: %PDF (0x25 0x50 0x44 0x46)
-  { bytes: [0x25, 0x50, 0x44, 0x46], offset: 0, mimeType: 'application/pdf', extension: 'pdf' },
-  // PNG: 89 50 4E 47 0D 0A 1A 0A
-  {
-    bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
-    offset: 0,
-    mimeType: 'image/png',
-    extension: 'png',
-  },
-  // JPEG: FF D8 FF
-  { bytes: [0xff, 0xd8, 0xff], offset: 0, mimeType: 'image/jpeg', extension: 'jpg' },
-];
+const SIGNATURES: Array<{ bytes: number[]; offset: number; mimeType: string; extension: string }> =
+  [
+    // PDF: %PDF (0x25 0x50 0x44 0x46)
+    { bytes: [0x25, 0x50, 0x44, 0x46], offset: 0, mimeType: 'application/pdf', extension: 'pdf' },
+    // PNG: 89 50 4E 47 0D 0A 1A 0A
+    {
+      bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+      offset: 0,
+      mimeType: 'image/png',
+      extension: 'png',
+    },
+    // JPEG: FF D8 FF
+    { bytes: [0xff, 0xd8, 0xff], offset: 0, mimeType: 'image/jpeg', extension: 'jpg' },
+  ];
 
 // ─── Allowed MIME Types ─────────────────────────────────────────
 
-const ALLOWED_MIME_TYPES = new Set([
-  'application/pdf',
-  'image/jpeg',
-  'image/png',
-]);
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 
 /**
  * Sniffs the MIME type from file content by checking magic bytes.

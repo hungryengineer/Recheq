@@ -1,6 +1,10 @@
 import type { RequestContext } from '../../observability/request-context.js';
 import type { ConsentServiceDeps } from '../../services/consent/consent-service.js';
-import { grantConsent, withdrawConsent, hashToken } from '../../services/consent/consent-service.js';
+import {
+  grantConsent,
+  withdrawConsent,
+  hashToken,
+} from '../../services/consent/consent-service.js';
 import type { TokenVerifier } from './token-auth.js';
 import { resolveToken } from './token-auth.js';
 import { toErrorResponse } from '../../http/errors.js';
@@ -24,10 +28,7 @@ export interface ConsentRouteDeps extends ConsentServiceDeps {
   tokenVerifier: TokenVerifier;
 }
 
-export async function grantConsentHandler(
-  req: ConsentGrantRequest,
-  deps: ConsentRouteDeps,
-) {
+export async function grantConsentHandler(req: ConsentGrantRequest, deps: ConsentRouteDeps) {
   try {
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
 
@@ -63,10 +64,7 @@ export interface WithdrawConsentRequest {
   context: RequestContext;
 }
 
-export async function withdrawConsentHandler(
-  req: WithdrawConsentRequest,
-  deps: ConsentRouteDeps,
-) {
+export async function withdrawConsentHandler(req: WithdrawConsentRequest, deps: ConsentRouteDeps) {
   try {
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
 

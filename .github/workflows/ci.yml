@@ -1,60 +1,126 @@
-name: CI
+name: CI Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - master
   pull_request:
+    branches:
+      - master
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+env:
+  CI: true
+  NODE_ENV: test
 
 jobs:
-  quality:
-    name: Quality gates
+  security-scan:
+    name: 🔒 Stage 1 - Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: ⬇️ Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for accurate secret scanning across commits
+
+      - name: 🕵️‍♂️ Check for Leaked Secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  static-analysis:
+    name: 🧹 Stage 2 - Static Analysis
+    needs: security-scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      CI: true
-      NODE_ENV: test
-
     steps:
-      - name: Check out repository
+      - name: ⬇️ Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
+      - name: 📦 Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.12.4
 
-      - name: Set up Node.js
+      - name: 🟢 Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
+          cache: 'pnpm'
 
-      # There is intentionally no production-provider setup here. Unit tests
-      # use local deterministic code and must run without database, storage,
-      # email, LLM, or Sentry credentials.
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Lint
+      - name: 💅 Check formatting
+        run: pnpm format:check
+
+      - name: 🚨 Run linter
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm typecheck
+  unit-tests:
+    name: 🧪 Stage 3 - Unit Testing
+    needs: static-analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: ⬇️ Check out repository
+        uses: actions/checkout@v4
 
-      - name: Unit tests
+      - name: 📦 Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🃏 Run unit tests
         run: pnpm test
 
-      - name: Build
+  build-artifacts:
+    name: 🏗️ Stage 4 - Typecheck & Build
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: ⬇️ Check out repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🏷️ Run typecheck
+        run: pnpm typecheck
+
+      - name: 📦 Build packages
         run: pnpm build
 
       # OPS-05 reservation: turn this into a required gate after the fixture
       # runner and committed expected outputs are implemented.
-      - name: Fixture validation (reserved for OPS-05)
+      - name: 🧩 Fixture validation (reserved for OPS-05)
         if: ${{ false }}
         run: pnpm fixtures

@@ -1,6 +1,10 @@
 import type { TokenPurpose } from '@tieout/schema';
 import { AppError } from '../../http/errors.js';
-import { TokenExpiredError, InvalidTokenError, InvalidTokenPurposeError } from '../../tokens/verify-token.js';
+import {
+  TokenExpiredError,
+  InvalidTokenError,
+  InvalidTokenPurposeError,
+} from '../../tokens/verify-token.js';
 
 // ─── Token Verifier Interface ───────────────────────────────────
 // Minimal interface for token verification in public route handlers.

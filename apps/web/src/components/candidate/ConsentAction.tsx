@@ -13,7 +13,7 @@ export function ConsentAction({ token }: { token: string }) {
     setLoading(true);
     setError(null);
     try {
-      // In a real implementation we would collect IP and User Agent server-side, 
+      // In a real implementation we would collect IP and User Agent server-side,
       // but we pass dummy values to match the signature.
       await grantConsent(token, '127.0.0.1', navigator.userAgent);
       router.push(`/c/${token}/upload`);
@@ -28,15 +28,13 @@ export function ConsentAction({ token }: { token: string }) {
       <p style={{ marginBottom: '1rem', fontSize: '0.9rem', fontWeight: 500 }}>
         By clicking below, you agree to the processing of your data as described above.
       </p>
-      <button 
-        onClick={handleConsent} 
-        disabled={loading}
-        className="btn btn-primary"
-      >
+      <button onClick={handleConsent} disabled={loading} className="btn btn-primary">
         {loading ? 'Processing...' : 'I Consent & Agree'}
       </button>
       {error && (
-        <p className="text-danger mt-4" style={{ fontSize: '0.875rem' }}>{error}</p>
+        <p className="text-danger mt-4" style={{ fontSize: '0.875rem' }}>
+          {error}
+        </p>
       )}
     </div>
   );

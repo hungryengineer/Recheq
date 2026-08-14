@@ -22,12 +22,7 @@ interface SecurityHeadersConfig {
 const DEFAULT_CONFIG: SecurityHeadersConfig = {
   allowedOrigins: ['https://recheq.ai', 'https://www.recheq.ai'],
   allowedMethods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Request-ID',
-    'X-Forwarded-For',
-  ],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For'],
   exposeHeaders: ['X-Request-ID'],
   maxAge: 86400, // 24 hours
   credentials: true,
@@ -95,7 +90,10 @@ export function createSecurityHeadersMiddleware(config: SecurityHeadersConfig = 
     }
 
     headers.set('Access-Control-Allow-Methods', allowedMethods?.join(', ') || 'GET, POST, OPTIONS');
-    headers.set('Access-Control-Allow-Headers', allowedHeaders?.join(', ') || 'Content-Type, Authorization');
+    headers.set(
+      'Access-Control-Allow-Headers',
+      allowedHeaders?.join(', ') || 'Content-Type, Authorization',
+    );
     headers.set('Access-Control-Expose-Headers', exposeHeaders?.join(', ') || 'X-Request-ID');
 
     if (maxAge !== undefined) {
@@ -109,7 +107,10 @@ export function createSecurityHeadersMiddleware(config: SecurityHeadersConfig = 
     // ─── Security Headers ─────────────────────────────────────────
     // HSTS (HTTP Strict Transport Security)
     if (enableHSTS) {
-      headers.set('Strict-Transport-Security', `max-age=${hstsMaxAge ?? 31536000}; includeSubDomains`);
+      headers.set(
+        'Strict-Transport-Security',
+        `max-age=${hstsMaxAge ?? 31536000}; includeSubDomains`,
+      );
     }
 
     // CSP (Content Security Policy)

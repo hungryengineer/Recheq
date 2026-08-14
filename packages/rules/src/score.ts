@@ -50,10 +50,7 @@ function countOpenBySeverity(findings: readonly ScorableFinding[]): {
  */
 export function calculateRiskScore(findings: readonly ScorableFinding[]): number {
   const counts = countOpenBySeverity(findings);
-  const raw =
-    counts.high * HIGH_WEIGHT +
-    counts.medium * MEDIUM_WEIGHT +
-    counts.low * LOW_WEIGHT;
+  const raw = counts.high * HIGH_WEIGHT + counts.medium * MEDIUM_WEIGHT + counts.low * LOW_WEIGHT;
 
   return Math.min(MAX_SCORE, raw);
 }
@@ -70,10 +67,7 @@ export function getScoreBreakdown(findings: readonly ScorableFinding[]): {
   capped: number;
 } {
   const counts = countOpenBySeverity(findings);
-  const raw =
-    counts.high * HIGH_WEIGHT +
-    counts.medium * MEDIUM_WEIGHT +
-    counts.low * LOW_WEIGHT;
+  const raw = counts.high * HIGH_WEIGHT + counts.medium * MEDIUM_WEIGHT + counts.low * LOW_WEIGHT;
 
   return {
     ...counts,

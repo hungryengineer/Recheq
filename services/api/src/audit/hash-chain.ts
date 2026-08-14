@@ -11,13 +11,13 @@ export function calculateEventHash(
   prevHash: string | null,
   seq: number,
   kind: EventKind,
-  payload: unknown
+  payload: unknown,
 ): string {
   const normalizedPrevHash = prevHash ?? '';
   const canonicalPayload = toCanonicalJson(payload);
-  
+
   // Format: prev_hash|seq|kind|canonical_json(payload)
   const dataToHash = `${normalizedPrevHash}|${seq}|${kind}|${canonicalPayload}`;
-  
+
   return crypto.createHash('sha256').update(dataToHash).digest('hex');
 }

@@ -81,13 +81,25 @@ describe('CaseRecord', () => {
   });
 
   it('rejects risk_score above 100', () => {
-    expect(() => CaseRecord.parse({
-      id: uuid(), org_id: uuid(), created_by: uuid(),
-      employer_name: 'X', candidate_name: 'Y', title: 'T',
-      claimed_ctc: 100, employment_start: '2024-01-01', employment_end: '2025-01-01',
-      uan: null, status: 'complete', verdict: 'verified',
-      risk_score: 101, created_at: now(), updated_at: now(),
-    })).toThrow();
+    expect(() =>
+      CaseRecord.parse({
+        id: uuid(),
+        org_id: uuid(),
+        created_by: uuid(),
+        employer_name: 'X',
+        candidate_name: 'Y',
+        title: 'T',
+        claimed_ctc: 100,
+        employment_start: '2024-01-01',
+        employment_end: '2025-01-01',
+        uan: null,
+        status: 'complete',
+        verdict: 'verified',
+        risk_score: 101,
+        created_at: now(),
+        updated_at: now(),
+      }),
+    ).toThrow();
   });
 });
 
@@ -111,12 +123,20 @@ describe('DocumentRecord', () => {
   });
 
   it('rejects invalid document kind', () => {
-    expect(() => DocumentRecord.parse({
-      id: uuid(), case_id: uuid(), kind: 'resume',
-      status: 'pending', original_filename: 'f.pdf',
-      mime_type: 'application/pdf', sha256: 'a'.repeat(64),
-      size_bytes: 100, storage_path: 'x', uploaded_at: now(),
-    })).toThrow();
+    expect(() =>
+      DocumentRecord.parse({
+        id: uuid(),
+        case_id: uuid(),
+        kind: 'resume',
+        status: 'pending',
+        original_filename: 'f.pdf',
+        mime_type: 'application/pdf',
+        sha256: 'a'.repeat(64),
+        size_bytes: 100,
+        storage_path: 'x',
+        uploaded_at: now(),
+      }),
+    ).toThrow();
   });
 });
 
@@ -195,12 +215,22 @@ describe('FindingRecord', () => {
   });
 
   it('rejects invalid severity', () => {
-    expect(() => FindingRecord.parse({
-      id: uuid(), case_id: uuid(), rule_id: 'X',
-      severity: 'critical', status: 'open', title: 'T',
-      explanation: 'E', expected: null, observed: null,
-      source_document_ids: [], created_at: now(), updated_at: now(),
-    })).toThrow();
+    expect(() =>
+      FindingRecord.parse({
+        id: uuid(),
+        case_id: uuid(),
+        rule_id: 'X',
+        severity: 'critical',
+        status: 'open',
+        title: 'T',
+        explanation: 'E',
+        expected: null,
+        observed: null,
+        source_document_ids: [],
+        created_at: now(),
+        updated_at: now(),
+      }),
+    ).toThrow();
   });
 });
 
@@ -260,20 +290,34 @@ describe('EventRecord', () => {
   });
 
   it('rejects seq < 1', () => {
-    expect(() => EventRecord.parse({
-      id: uuid(), case_id: uuid(), seq: 0,
-      kind: 'case_created', payload: {},
-      hash: 'b'.repeat(64), prev_hash: null,
-      actor: 'system', created_at: now(),
-    })).toThrow();
+    expect(() =>
+      EventRecord.parse({
+        id: uuid(),
+        case_id: uuid(),
+        seq: 0,
+        kind: 'case_created',
+        payload: {},
+        hash: 'b'.repeat(64),
+        prev_hash: null,
+        actor: 'system',
+        created_at: now(),
+      }),
+    ).toThrow();
   });
 
   it('rejects invalid hash length', () => {
-    expect(() => EventRecord.parse({
-      id: uuid(), case_id: uuid(), seq: 1,
-      kind: 'case_created', payload: {},
-      hash: 'short', prev_hash: null,
-      actor: 'system', created_at: now(),
-    })).toThrow();
+    expect(() =>
+      EventRecord.parse({
+        id: uuid(),
+        case_id: uuid(),
+        seq: 1,
+        kind: 'case_created',
+        payload: {},
+        hash: 'short',
+        prev_hash: null,
+        actor: 'system',
+        created_at: now(),
+      }),
+    ).toThrow();
   });
 });

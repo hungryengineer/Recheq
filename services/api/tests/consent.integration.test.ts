@@ -234,14 +234,10 @@ describe('grantConsent', () => {
   });
 
   it('rejects when case is not in awaiting_consent status', async () => {
-    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(
-      makeCaseRecord({ status: 'draft' }),
-    );
+    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(makeCaseRecord({ status: 'draft' }));
     vi.mocked(deps.db.getConsentByCaseId).mockResolvedValueOnce(null);
 
-    await expect(
-      grantConsent('case-001', validConsentInput, defaultMeta, deps),
-    ).rejects.toThrow();
+    await expect(grantConsent('case-001', validConsentInput, defaultMeta, deps)).rejects.toThrow();
   });
 
   it('rejects when consent was already granted', async () => {
@@ -253,9 +249,9 @@ describe('grantConsent', () => {
     await expect(
       grantConsent('case-001', validConsentInput, defaultMeta, deps),
     ).rejects.toThrowError(AppError);
-    await expect(
-      grantConsent('case-001', validConsentInput, defaultMeta, deps),
-    ).rejects.toThrow(/already granted/i);
+    await expect(grantConsent('case-001', validConsentInput, defaultMeta, deps)).rejects.toThrow(
+      /already granted/i,
+    );
   });
 
   it('throws 404 for non-existent case', async () => {
@@ -318,9 +314,7 @@ describe('withdrawConsent', () => {
   });
 
   it('allows withdrawal from processing state', async () => {
-    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(
-      makeCaseRecord({ status: 'processing' }),
-    );
+    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(makeCaseRecord({ status: 'processing' }));
     vi.mocked(deps.db.getConsentByCaseId).mockResolvedValueOnce(makeConsentRecord());
 
     await withdrawConsent('case-001', deps);
@@ -349,9 +343,7 @@ describe('withdrawConsent', () => {
   });
 
   it('rejects withdrawal from terminal withdrawn case state', async () => {
-    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(
-      makeCaseRecord({ status: 'withdrawn' }),
-    );
+    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(makeCaseRecord({ status: 'withdrawn' }));
     vi.mocked(deps.db.getConsentByCaseId).mockResolvedValueOnce(makeConsentRecord());
 
     // The state machine should reject withdrawn → withdrawn

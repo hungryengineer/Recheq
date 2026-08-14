@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { calculateVerdict } from '../src/verdict.js';
 import type { VerdictableFinding } from '../src/verdict.js';
 
-function finding(severity: 'high' | 'medium' | 'low', status: 'open' | 'disputed' | 'resolved' | 'not_assessed' = 'open'): VerdictableFinding {
+function finding(
+  severity: 'high' | 'medium' | 'low',
+  status: 'open' | 'disputed' | 'resolved' | 'not_assessed' = 'open',
+): VerdictableFinding {
   return { severity, status };
 }
 
@@ -28,19 +31,16 @@ describe('calculateVerdict', () => {
   });
 
   it('returns needs_review with mixed high and medium', () => {
-    expect(calculateVerdict([
-      finding('high'),
-      finding('medium'),
-      finding('low'),
-    ], 3)).toBe('needs_review');
+    expect(calculateVerdict([finding('high'), finding('medium'), finding('low')], 3)).toBe(
+      'needs_review',
+    );
   });
 
   it('ignores disputed high findings for verdict', () => {
     // High is disputed, only medium is open → verified_with_notes
-    expect(calculateVerdict([
-      finding('high', 'disputed'),
-      finding('medium'),
-    ], 2)).toBe('verified_with_notes');
+    expect(calculateVerdict([finding('high', 'disputed'), finding('medium')], 2)).toBe(
+      'verified_with_notes',
+    );
   });
 
   // ─── Rule 3: medium without high → verified_with_notes ──────
@@ -50,10 +50,7 @@ describe('calculateVerdict', () => {
   });
 
   it('returns verified_with_notes with medium and low', () => {
-    expect(calculateVerdict([
-      finding('medium'),
-      finding('low'),
-    ], 2)).toBe('verified_with_notes');
+    expect(calculateVerdict([finding('medium'), finding('low')], 2)).toBe('verified_with_notes');
   });
 
   // ─── Rule 4: clean → verified ───────────────────────────────
@@ -67,16 +64,13 @@ describe('calculateVerdict', () => {
   });
 
   it('returns verified when all findings are resolved', () => {
-    expect(calculateVerdict([
-      finding('high', 'resolved'),
-      finding('medium', 'resolved'),
-    ], 2)).toBe('verified');
+    expect(calculateVerdict([finding('high', 'resolved'), finding('medium', 'resolved')], 2)).toBe(
+      'verified',
+    );
   });
 
   it('returns verified when all findings are not_assessed', () => {
-    expect(calculateVerdict([
-      finding('high', 'not_assessed'),
-    ], 2)).toBe('verified');
+    expect(calculateVerdict([finding('high', 'not_assessed')], 2)).toBe('verified');
   });
 
   // ─── Frozen contract: never returns rejected ────────────────
@@ -88,9 +82,14 @@ describe('calculateVerdict', () => {
       { findings: [], origins: 0 },
       {
         findings: [
-          finding('high'), finding('high'), finding('high'),
-          finding('medium'), finding('medium'),
-          finding('low'), finding('low'), finding('low'),
+          finding('high'),
+          finding('high'),
+          finding('high'),
+          finding('medium'),
+          finding('medium'),
+          finding('low'),
+          finding('low'),
+          finding('low'),
         ],
         origins: 10,
       },

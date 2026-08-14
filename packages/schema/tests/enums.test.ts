@@ -14,8 +14,13 @@ import {
 describe('CaseStatus', () => {
   it('accepts all valid case statuses', () => {
     const valid = [
-      'draft', 'awaiting_consent', 'awaiting_documents',
-      'processing', 'awaiting_employer', 'complete', 'withdrawn',
+      'draft',
+      'awaiting_consent',
+      'awaiting_documents',
+      'processing',
+      'awaiting_employer',
+      'complete',
+      'withdrawn',
     ];
     for (const v of valid) {
       expect(CaseStatus.parse(v)).toBe(v);
@@ -31,9 +36,7 @@ describe('CaseStatus', () => {
 
 describe('Verdict', () => {
   it('accepts all valid verdicts', () => {
-    const valid = [
-      'verified', 'verified_with_notes', 'needs_review', 'insufficient_evidence',
-    ];
+    const valid = ['verified', 'verified_with_notes', 'needs_review', 'insufficient_evidence'];
     for (const v of valid) {
       expect(Verdict.parse(v)).toBe(v);
     }

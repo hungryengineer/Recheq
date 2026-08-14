@@ -1,5 +1,11 @@
 import crypto from 'node:crypto';
-import type { CaseRecord, CaseStatus, ConsentRecord, EventInput, EventRecord } from '@tieout/schema';
+import type {
+  CaseRecord,
+  CaseStatus,
+  ConsentRecord,
+  EventInput,
+  EventRecord,
+} from '@tieout/schema';
 import { ConsentGrantInput as ConsentGrantInputSchema } from '@tieout/schema';
 import { transitionCaseStatus } from '../../domain/case-status.js';
 import { validationError, notFoundError, conflictError } from '../../http/errors.js';
@@ -158,10 +164,7 @@ export async function grantConsent(
  *
  * After withdrawal, candidates cannot submit more documents.
  */
-export async function withdrawConsent(
-  caseId: string,
-  deps: ConsentServiceDeps,
-): Promise<void> {
+export async function withdrawConsent(caseId: string, deps: ConsentServiceDeps): Promise<void> {
   const caseRecord = await deps.db.getCaseById(caseId);
   if (!caseRecord) {
     throw notFoundError('Case not found');

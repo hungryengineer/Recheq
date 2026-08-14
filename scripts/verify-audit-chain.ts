@@ -13,7 +13,7 @@ const filePath = args[0] as string;
 try {
   const fileContent = readFileSync(filePath, 'utf-8');
   const events = JSON.parse(fileContent);
-  
+
   if (!Array.isArray(events)) {
     throw new Error('Expected JSON file to contain an array of events.');
   }

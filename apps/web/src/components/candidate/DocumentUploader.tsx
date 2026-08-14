@@ -48,8 +48,8 @@ export function DocumentUploader({ token, kind, label, onSuccess }: DocumentUplo
         </div>
       ) : (
         <div>
-          <input 
-            type="file" 
+          <input
+            type="file"
             accept="application/pdf,image/jpeg,image/png"
             onChange={handleFileChange}
             disabled={loading}

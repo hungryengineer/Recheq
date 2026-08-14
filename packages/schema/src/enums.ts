@@ -27,12 +27,7 @@ export const FindingSeverity = z.enum(['high', 'medium', 'low']);
 export type FindingSeverity = z.infer<typeof FindingSeverity>;
 
 // ─── Finding Status ─────────────────────────────────────────────
-export const FindingStatus = z.enum([
-  'open',
-  'disputed',
-  'resolved',
-  'not_assessed',
-]);
+export const FindingStatus = z.enum(['open', 'disputed', 'resolved', 'not_assessed']);
 export type FindingStatus = z.infer<typeof FindingStatus>;
 
 // ─── Document Kind ──────────────────────────────────────────────
@@ -40,12 +35,7 @@ export const DocumentKind = z.enum(['payslip', 'form_16']);
 export type DocumentKind = z.infer<typeof DocumentKind>;
 
 // ─── Document Status ────────────────────────────────────────────
-export const DocumentStatus = z.enum([
-  'pending',
-  'processing',
-  'extracted',
-  'failed',
-]);
+export const DocumentStatus = z.enum(['pending', 'processing', 'extracted', 'failed']);
 export type DocumentStatus = z.infer<typeof DocumentStatus>;
 
 // ─── Consent Status ─────────────────────────────────────────────

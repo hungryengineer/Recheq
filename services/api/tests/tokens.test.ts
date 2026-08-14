@@ -1,13 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateToken } from '../src/tokens/generate-token.js';
-import type {
-  TokenRecord
-} from '../src/tokens/verify-token.js';
+import type { TokenRecord } from '../src/tokens/verify-token.js';
 import {
   verifyToken,
   TokenExpiredError,
   InvalidTokenPurposeError,
-  InvalidTokenError
+  InvalidTokenError,
 } from '../src/tokens/verify-token.js';
 import type { ITokenRepository } from '../src/tokens/token-service.js';
 import { TokenService } from '../src/tokens/token-service.js';
@@ -26,7 +24,7 @@ describe('verifyToken', () => {
   const { rawToken, tokenHash } = generateToken();
   const future = new Date(Date.now() + 100000).toISOString();
   const past = new Date(Date.now() - 100000).toISOString();
-  
+
   const validRecord: TokenRecord = {
     hash: tokenHash,
     case_id: 'case-123',
@@ -62,25 +60,27 @@ describe('TokenService', () => {
       saveToken: vi.fn(),
       getTokenByHash: vi.fn(),
     };
-    
+
     const service = new TokenService(mockRepo);
-    
+
     // Create token
     const rawToken = await service.createToken('case-1', 'consent', 3600000);
     expect(rawToken).toBeTypeOf('string');
     expect(mockRepo.saveToken).toHaveBeenCalledOnce();
-    
+
     const savedRecord = vi.mocked(mockRepo.saveToken).mock.calls[0]![0];
     expect(savedRecord.purpose).toBe('consent');
     expect(savedRecord.case_id).toBe('case-1');
-    
+
     // Verify token
     vi.mocked(mockRepo.getTokenByHash).mockResolvedValue(savedRecord);
-    
+
     const caseId = await service.verifyAndGetCaseId(rawToken, 'consent');
     expect(caseId).toBe('case-1');
-    
+
     // Attempt verification with wrong purpose
-    await expect(service.verifyAndGetCaseId(rawToken, 'employer')).rejects.toThrow(InvalidTokenPurposeError);
+    await expect(service.verifyAndGetCaseId(rawToken, 'employer')).rejects.toThrow(
+      InvalidTokenPurposeError,
+    );
   });
 });
