@@ -4,7 +4,12 @@
 // - Validates request headers and content types
 // - Prevents secret leakage in responses
 
-import { verifyToken, InvalidTokenError, TokenExpiredError, InvalidTokenPurposeError } from '../tokens/verify-token.js';
+import {
+  verifyToken,
+  InvalidTokenError,
+  TokenExpiredError,
+  InvalidTokenPurposeError,
+} from '../tokens/verify-token.js';
 import type { TokenPurpose } from '@tieout/schema';
 import { AppError, forbiddenError, unauthorizedError } from '../http/errors.js';
 import type { TokenRecord } from '../tokens/verify-token.js';
@@ -124,9 +129,7 @@ export function sanitizeSensitiveFields(data: unknown): unknown {
   if (typeof data === 'object') {
     const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-      const isSensitive = SENSITIVE_FIELDS.some((field) =>
-        new RegExp(field, 'i').test(key),
-      );
+      const isSensitive = SENSITIVE_FIELDS.some((field) => new RegExp(field, 'i').test(key));
 
       if (isSensitive) {
         // Redact sensitive fields
@@ -153,10 +156,7 @@ export function containsSecrets(text: string): boolean {
 /**
  * Validates Content-Type for requests that require it
  */
-export function validateContentType(
-  headers: Headers,
-  requiredContentType?: string,
-): boolean {
+export function validateContentType(headers: Headers, requiredContentType?: string): boolean {
   const contentType = headers.get('content-type');
   if (!requiredContentType) {
     return true;
@@ -170,7 +170,9 @@ export function validateContentType(
 /**
  * Creates middleware that validates token purpose and sanitizes responses
  */
-export function createRequestValidationMiddleware(getTokenByHash: (hash: string) => Promise<TokenRecord | null>) {
+export function createRequestValidationMiddleware(
+  getTokenByHash: (hash: string) => Promise<TokenRecord | null>,
+) {
   return async function requestValidationMiddleware(
     req: Request,
     next: (req: Request) => Promise<Response>,

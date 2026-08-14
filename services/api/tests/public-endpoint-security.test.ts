@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createRateLimiter, clearRateLimitState, getRateLimitStatus } from '../src/security/rate-limit.js';
+import {
+  createRateLimiter,
+  clearRateLimitState,
+  getRateLimitStatus,
+} from '../src/security/rate-limit.js';
 import { createSecurityHeadersMiddleware } from '../src/security/security-headers.js';
 import {
   extractTokenFromUrl,
@@ -361,18 +365,18 @@ describe('validateTokenPurpose', () => {
     const mockGetTokenByHash = vi.fn().mockResolvedValue(record);
     const url = new URL(`http://localhost/api/public/${token}/consent`);
 
-    await expect(
-      validateTokenPurpose(url, 'employer', mockGetTokenByHash),
-    ).rejects.toThrow('Token purpose does not match required purpose');
+    await expect(validateTokenPurpose(url, 'employer', mockGetTokenByHash)).rejects.toThrow(
+      'Token purpose does not match required purpose',
+    );
   });
 
   it('throws for missing token in URL', async () => {
     const mockGetTokenByHash = vi.fn();
     const url = new URL('http://localhost/api/cases/123');
 
-    await expect(
-      validateTokenPurpose(url, 'consent', mockGetTokenByHash),
-    ).rejects.toThrow('Token not provided');
+    await expect(validateTokenPurpose(url, 'consent', mockGetTokenByHash)).rejects.toThrow(
+      'Token not provided',
+    );
   });
 });
 
@@ -441,7 +445,12 @@ describe('createRequestValidationMiddleware', () => {
     );
 
     const response = await middleware(req, next);
-    const body = (await response.json()) as { caseId: string; secretKey: string; apiKey: string; normalField: string };
+    const body = (await response.json()) as {
+      caseId: string;
+      secretKey: string;
+      apiKey: string;
+      normalField: string;
+    };
 
     expect(body).toEqual({
       caseId: 'case-123',
