@@ -1,7 +1,11 @@
 // ─── OpenAI Compatible Provider Implementation ─────────────────
 // Implementation using OpenAI API or compatible services (Azure, Groq, etc.)
 
-import type { LlmDocumentExtractor, ExtractionRequest, ExtractionResult } from '../llm-document-extractor.js';
+import type {
+  LlmDocumentExtractor,
+  ExtractionRequest,
+  ExtractionResult,
+} from '../llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 
 interface OpenAiCompatibleConfig {
@@ -72,15 +76,15 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
 
   private async extractDocument<T>(
     request: ExtractionRequest,
-    documentType: 'payslip' | 'form16'
+    documentType: 'payslip' | 'form16',
   ): Promise<ExtractionResult<T>> {
     const startTime = Date.now();
     let rawOutput = '';
     let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
-    
+
     try {
       const messages = this.createMessages(request, documentType);
-      
+
       const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: this.createHeaders(),
@@ -135,13 +139,16 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
   private createHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.config.apiKey}`,
+      Authorization: `Bearer ${this.config.apiKey}`,
     };
   }
 
-  private createMessages(request: ExtractionRequest, documentType: 'payslip' | 'form16'): Array<Record<string, unknown>> {
+  private createMessages(
+    request: ExtractionRequest,
+    documentType: 'payslip' | 'form16',
+  ): Array<Record<string, unknown>> {
     const systemPrompt = this.createSystemPrompt(documentType, request);
-    
+
     if (this.config.useVision && request.mimeType.startsWith('image/')) {
       // Vision API format for images
       return [
@@ -177,9 +184,12 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
     }
   }
 
-  private createSystemPrompt(documentType: 'payslip' | 'form16', request: ExtractionRequest): string {
+  private createSystemPrompt(
+    documentType: 'payslip' | 'form16',
+    request: ExtractionRequest,
+  ): string {
     const schemaTemplate = this.getSchemaTemplate(documentType);
-    
+
     return `You are a document extraction assistant. Extract structured data from ${documentType} documents.
 
 CRITICAL RULES:
@@ -240,7 +250,7 @@ IMPORTANT: Respond with ONLY the JSON object, no explanations, no markdown forma
     try {
       // Clean the output - sometimes LLMs add markdown code blocks
       let jsonStr = rawOutput.trim();
-      
+
       // Remove markdown code blocks if present
       if (jsonStr.startsWith('```json')) {
         jsonStr = jsonStr.substring(7);
@@ -251,26 +261,28 @@ IMPORTANT: Respond with ONLY the JSON object, no explanations, no markdown forma
       if (jsonStr.endsWith('```')) {
         jsonStr = jsonStr.substring(0, jsonStr.length - 3);
       }
-      
+
       jsonStr = jsonStr.trim();
-      
+
       const parsed = JSON.parse(jsonStr);
-      
+
       // Basic validation of structure
       if (typeof parsed !== 'object' || parsed === null) {
         throw new Error('Invalid JSON structure: expected object');
       }
-      
+
       return parsed as T;
     } catch (error) {
-      throw new Error(`Failed to parse ${documentType} JSON: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to parse ${documentType} JSON: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   private estimateCostPer1kTokens(): number {
     // Rough estimates based on model family
     const model = this.config.model.toLowerCase();
-    
+
     if (model.includes('gpt-4o')) {
       return 0.005; // GPT-4o mini input cost
     } else if (model.includes('gpt-4')) {
@@ -288,7 +300,9 @@ IMPORTANT: Respond with ONLY the JSON object, no explanations, no markdown forma
 /**
  * Create an OpenAI compatible extractor with the given configuration
  */
-export function createOpenAiCompatibleExtractor(config: Partial<OpenAiCompatibleConfig> = {}): OpenAiCompatibleExtractor {
+export function createOpenAiCompatibleExtractor(
+  config: Partial<OpenAiCompatibleConfig> = {},
+): OpenAiCompatibleExtractor {
   const fullConfig = { ...DEFAULT_CONFIG, ...config };
   return new OpenAiCompatibleExtractor(fullConfig);
 }
@@ -296,7 +310,10 @@ export function createOpenAiCompatibleExtractor(config: Partial<OpenAiCompatible
 /**
  * Create an OpenAI extractor with default OpenAI settings
  */
-export function createOpenAiExtractor(apiKey: string, model: string = 'gpt-4o-mini'): OpenAiCompatibleExtractor {
+export function createOpenAiExtractor(
+  apiKey: string,
+  model: string = 'gpt-4o-mini',
+): OpenAiCompatibleExtractor {
   return createOpenAiCompatibleExtractor({
     apiKey,
     model,
@@ -311,7 +328,7 @@ export function createAzureOpenAiExtractor(
   apiKey: string,
   deploymentName: string,
   resourceName: string,
-  apiVersion: string = '2024-02-01'
+  apiVersion: string = '2024-02-01',
 ): OpenAiCompatibleExtractor {
   return createOpenAiCompatibleExtractor({
     apiKey,
@@ -323,7 +340,10 @@ export function createAzureOpenAiExtractor(
 /**
  * Create a Groq extractor
  */
-export function createGroqExtractor(apiKey: string, model: string = 'mixtral-8x7b-32768'): OpenAiCompatibleExtractor {
+export function createGroqExtractor(
+  apiKey: string,
+  model: string = 'mixtral-8x7b-32768',
+): OpenAiCompatibleExtractor {
   return createOpenAiCompatibleExtractor({
     apiKey,
     model,

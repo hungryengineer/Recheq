@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { LlmDocumentExtractor, ExtractionRequest, ExtractionResult } from '../src/extraction/llm-document-extractor.js';
+import type {
+  LlmDocumentExtractor,
+  ExtractionRequest,
+  ExtractionResult,
+} from '../src/extraction/llm-document-extractor.js';
 import type { PayslipExtraction } from '@tieout/schema';
 import { createFixtureExtractor } from '../src/extraction/fixture-extractor.js';
 import { withSchemaRetry } from '../src/extraction/schema-retry.js';
@@ -396,7 +400,8 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         retryCount: 0,
       };
 
-      const extractFn = vi.fn()
+      const extractFn = vi
+        .fn()
         .mockResolvedValueOnce(invalidResult)
         .mockResolvedValueOnce(validResult);
       vi.mocked(mockExtractor.extractPayslip).mockImplementation(extractFn);
@@ -416,7 +421,9 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const secondCall = extractFn.mock.calls[1]?.[0];
       expect(secondCall).toBeDefined();
       expect(secondCall?.retryContext).toBeDefined();
-      expect(secondCall?.retryContext?.validationError).toContain('Payslip schema validation failed');
+      expect(secondCall?.retryContext?.validationError).toContain(
+        'Payslip schema validation failed',
+      );
       expect(secondCall?.retryContext?.previousAttemptRawOutput).toBe(invalidResult.rawOutput);
     });
   });
@@ -444,22 +451,26 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
     describe('OpenAiCompatibleExtractor', () => {
       it('creates extractor with required config', () => {
-        expect(() => createOpenAiCompatibleExtractor({ 
-          apiKey: 'test-key', 
-          baseUrl: 'https://api.example.com' 
-        })).not.toThrow();
+        expect(() =>
+          createOpenAiCompatibleExtractor({
+            apiKey: 'test-key',
+            baseUrl: 'https://api.example.com',
+          }),
+        ).not.toThrow();
       });
 
       it('throws without API key', () => {
-        expect(() => createOpenAiCompatibleExtractor({ baseUrl: 'https://api.example.com' }))
-          .toThrow('API key is required');
+        expect(() =>
+          createOpenAiCompatibleExtractor({ baseUrl: 'https://api.example.com' }),
+        ).toThrow('API key is required');
       });
 
       it('throws without a valid base URL', () => {
         // DEFAULT_CONFIG supplies the OpenAI base URL, so an empty string is
         // the reachable "no base URL" case.
-        expect(() => createOpenAiCompatibleExtractor({ apiKey: 'test-key', baseUrl: '' }))
-          .toThrow('Base URL is required');
+        expect(() => createOpenAiCompatibleExtractor({ apiKey: 'test-key', baseUrl: '' })).toThrow(
+          'Base URL is required',
+        );
       });
 
       it('estimates costs based on model', () => {
@@ -484,7 +495,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
     describe('OllamaExtractor', () => {
       it('creates extractor with default config', () => {
         const extractor = createOllamaExtractor();
-        
+
         expect(extractor.provider).toBe('ollama');
         expect(extractor.supportsStreaming).toBe(false);
       });

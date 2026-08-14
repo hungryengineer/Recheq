@@ -1,7 +1,11 @@
 // ─── Anthropic Provider Implementation ─────────────────────────
 // Implementation using Claude API for document extraction
 
-import type { LlmDocumentExtractor, ExtractionRequest, ExtractionResult } from '../llm-document-extractor.js';
+import type {
+  LlmDocumentExtractor,
+  ExtractionRequest,
+  ExtractionResult,
+} from '../llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 
 interface AnthropicConfig {
@@ -69,15 +73,15 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
 
   private async extractDocument<T>(
     request: ExtractionRequest,
-    documentType: 'payslip' | 'form16'
+    documentType: 'payslip' | 'form16',
   ): Promise<ExtractionResult<T>> {
     const startTime = Date.now();
     let rawOutput = '';
     let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
-    
+
     try {
       const prompt = this.createExtractionPrompt(request, documentType);
-      
+
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: this.createHeaders(),
@@ -148,7 +152,10 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
     };
   }
 
-  private createExtractionPrompt(request: ExtractionRequest, documentType: 'payslip' | 'form16'): string {
+  private createExtractionPrompt(
+    request: ExtractionRequest,
+    documentType: 'payslip' | 'form16',
+  ): string {
     const basePrompt = `Extract the following information from the provided ${documentType} document.
 
 CRITICAL RULES:
@@ -243,7 +250,7 @@ Respond with ONLY the JSON object, no explanations.`;
     try {
       // Clean the output - sometimes LLMs add markdown code blocks
       let jsonStr = rawOutput.trim();
-      
+
       // Remove markdown code blocks if present
       if (jsonStr.startsWith('```json')) {
         jsonStr = jsonStr.substring(7);
@@ -254,19 +261,21 @@ Respond with ONLY the JSON object, no explanations.`;
       if (jsonStr.endsWith('```')) {
         jsonStr = jsonStr.substring(0, jsonStr.length - 3);
       }
-      
+
       jsonStr = jsonStr.trim();
-      
+
       const parsed = JSON.parse(jsonStr);
-      
+
       // Basic validation of structure
       if (typeof parsed !== 'object' || parsed === null) {
         throw new Error('Invalid JSON structure: expected object');
       }
-      
+
       return parsed as T;
     } catch (error) {
-      throw new Error(`Failed to parse ${documentType} JSON: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to parse ${documentType} JSON: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }
@@ -274,7 +283,9 @@ Respond with ONLY the JSON object, no explanations.`;
 /**
  * Create an Anthropic extractor with the given configuration
  */
-export function createAnthropicExtractor(config: Partial<AnthropicConfig> = {}): AnthropicExtractor {
+export function createAnthropicExtractor(
+  config: Partial<AnthropicConfig> = {},
+): AnthropicExtractor {
   const fullConfig = { ...DEFAULT_CONFIG, ...config };
   return new AnthropicExtractor(fullConfig);
 }

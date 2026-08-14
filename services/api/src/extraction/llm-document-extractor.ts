@@ -40,19 +40,19 @@ export interface ExtractionRequest {
 export interface LlmDocumentExtractor {
   readonly provider: string;
   readonly supportsStreaming: boolean;
-  
+
   /**
    * Extract structured data from a payslip document
    * Returns null for missing/illegible values, never computes arithmetic
    */
   extractPayslip(request: ExtractionRequest): Promise<ExtractionResult<PayslipExtraction>>;
-  
+
   /**
    * Extract structured data from a Form 16 document
    * Returns null for missing/illegible values, never computes arithmetic
    */
   extractForm16(request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>>;
-  
+
   /**
    * Get provider metadata including costs, rate limits, etc.
    */
@@ -62,7 +62,7 @@ export interface LlmDocumentExtractor {
     supportsPdfText: boolean;
     costPer1kTokens: number;
   };
-  
+
   /**
    * Check if the provider is available/healthy
    */
@@ -91,7 +91,7 @@ export class ExtractionError extends Error {
     public readonly documentId: string,
     public readonly documentKind: DocumentKind,
     public readonly provider?: string,
-    public readonly originalError?: unknown
+    public readonly originalError?: unknown,
   ) {
     super(message);
     this.name = 'ExtractionError';
@@ -107,9 +107,15 @@ export class SchemaValidationError extends ExtractionError {
     documentId: string,
     documentKind: DocumentKind,
     public readonly validationError: string,
-    provider?: string
+    provider?: string,
   ) {
-    super(message, ExtractionFailureType.SCHEMA_VALIDATION_FAILED, documentId, documentKind, provider);
+    super(
+      message,
+      ExtractionFailureType.SCHEMA_VALIDATION_FAILED,
+      documentId,
+      documentKind,
+      provider,
+    );
     this.name = 'SchemaValidationError';
   }
 }
@@ -118,12 +124,7 @@ export class SchemaValidationError extends ExtractionError {
  * Provider unavailable error
  */
 export class ProviderUnavailableError extends ExtractionError {
-  constructor(
-    message: string,
-    documentId: string,
-    documentKind: DocumentKind,
-    provider?: string
-  ) {
+  constructor(message: string, documentId: string, documentKind: DocumentKind, provider?: string) {
     super(message, ExtractionFailureType.PROVIDER_UNAVAILABLE, documentId, documentKind, provider);
     this.name = 'ProviderUnavailableError';
   }

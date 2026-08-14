@@ -1,7 +1,11 @@
 // ─── Fixture Document Extractor ────────────────────────────────
 // Deterministic extractor for testing that uses fixture data instead of real LLMs
 
-import type { LlmDocumentExtractor, ExtractionRequest, ExtractionResult } from './llm-document-extractor.js';
+import type {
+  LlmDocumentExtractor,
+  ExtractionRequest,
+  ExtractionResult,
+} from './llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 
 interface FixtureData {
@@ -21,14 +25,14 @@ export class FixtureExtractor implements LlmDocumentExtractor {
 
   async extractPayslip(request: ExtractionRequest): Promise<ExtractionResult<PayslipExtraction>> {
     const startTime = Date.now();
-    
+
     const fixture = this.fixtures.payslips[request.documentId];
-    
+
     if (!fixture) {
       return this.createErrorResult<PayslipExtraction>(
         request,
         `No fixture found for payslip document ID: ${request.documentId}`,
-        'fixture-missing'
+        'fixture-missing',
       );
     }
 
@@ -51,14 +55,14 @@ export class FixtureExtractor implements LlmDocumentExtractor {
 
   async extractForm16(request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
     const startTime = Date.now();
-    
+
     const fixture = this.fixtures.form16s[request.documentId];
-    
+
     if (!fixture) {
       return this.createErrorResult<Form16Extraction>(
         request,
         `No fixture found for Form 16 document ID: ${request.documentId}`,
-        'fixture-missing'
+        'fixture-missing',
       );
     }
 
@@ -95,7 +99,7 @@ export class FixtureExtractor implements LlmDocumentExtractor {
   private createErrorResult<T>(
     request: ExtractionRequest,
     errorMessage: string,
-    modelId: string
+    modelId: string,
   ): ExtractionResult<T> {
     return {
       data: {} as T,

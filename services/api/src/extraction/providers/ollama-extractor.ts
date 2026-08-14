@@ -1,7 +1,11 @@
 // ─── Ollama Provider Implementation ────────────────────────────
 // Implementation using local Ollama server for document extraction
 
-import type { LlmDocumentExtractor, ExtractionRequest, ExtractionResult } from '../llm-document-extractor.js';
+import type {
+  LlmDocumentExtractor,
+  ExtractionRequest,
+  ExtractionResult,
+} from '../llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 
 interface OllamaConfig {
@@ -59,17 +63,18 @@ export class OllamaExtractor implements LlmDocumentExtractor {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
         return false;
       }
-      
+
       const data = await response.json();
       const models = data.models || [];
-      
+
       // Check if the configured model is available
-      return models.some((model: { name: string }) => 
-        model.name === this.config.model || model.name.includes(this.config.model)
+      return models.some(
+        (model: { name: string }) =>
+          model.name === this.config.model || model.name.includes(this.config.model),
       );
     } catch {
       return false;
@@ -78,15 +83,15 @@ export class OllamaExtractor implements LlmDocumentExtractor {
 
   private async extractDocument<T>(
     request: ExtractionRequest,
-    documentType: 'payslip' | 'form16'
+    documentType: 'payslip' | 'form16',
   ): Promise<ExtractionResult<T>> {
     const startTime = Date.now();
     let rawOutput = '';
-    
+
     try {
       const prompt = this.createExtractionPrompt(request, documentType);
       const content = this.createContent(request);
-      
+
       const response = await fetch(`${this.config.baseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,7 +115,7 @@ export class OllamaExtractor implements LlmDocumentExtractor {
 
       const data = await response.json();
       rawOutput = data.response || '';
-      
+
       // Ollama doesn't provide token usage in standard API
       const usage = {
         promptTokens: this.estimateTokens(prompt),
@@ -145,9 +150,12 @@ export class OllamaExtractor implements LlmDocumentExtractor {
     }
   }
 
-  private createExtractionPrompt(request: ExtractionRequest, documentType: 'payslip' | 'form16'): string {
+  private createExtractionPrompt(
+    request: ExtractionRequest,
+    documentType: 'payslip' | 'form16',
+  ): string {
     const schemaTemplate = this.getSchemaTemplate(documentType);
-    
+
     return `Extract structured data from the ${documentType} document that follows.
 
 CRITICAL RULES:
@@ -219,7 +227,7 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
     try {
       // Clean the output - sometimes LLMs add markdown code blocks
       let jsonStr = rawOutput.trim();
-      
+
       // Remove markdown code blocks if present
       if (jsonStr.startsWith('```json')) {
         jsonStr = jsonStr.substring(7);
@@ -230,19 +238,21 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
       if (jsonStr.endsWith('```')) {
         jsonStr = jsonStr.substring(0, jsonStr.length - 3);
       }
-      
+
       jsonStr = jsonStr.trim();
-      
+
       const parsed = JSON.parse(jsonStr);
-      
+
       // Basic validation of structure
       if (typeof parsed !== 'object' || parsed === null) {
         throw new Error('Invalid JSON structure: expected object');
       }
-      
+
       return parsed as T;
     } catch (error) {
-      throw new Error(`Failed to parse ${documentType} JSON: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to parse ${documentType} JSON: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -256,7 +266,7 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
    */
   async pullModel(modelName?: string): Promise<boolean> {
     const modelToPull = modelName || this.config.model;
-    
+
     try {
       const response = await fetch(`${this.config.baseUrl}/api/pull`, {
         method: 'POST',
@@ -266,7 +276,7 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
           stream: false,
         }),
       });
-      
+
       return response.ok;
     } catch {
       return false;
@@ -282,11 +292,11 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
         return [];
       }
-      
+
       const data = await response.json();
       return (data.models || []).map((model: { name: string }) => model.name);
     } catch {
@@ -299,7 +309,7 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
    */
   async getModelInfo(modelName?: string): Promise<unknown> {
     const model = modelName || this.config.model;
-    
+
     try {
       const response = await fetch(`${this.config.baseUrl}/api/show`, {
         method: 'POST',
@@ -308,11 +318,11 @@ Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
           name: model,
         }),
       });
-      
+
       if (!response.ok) {
         return null;
       }
-      
+
       return await response.json();
     } catch {
       return null;
@@ -334,13 +344,13 @@ export function createOllamaExtractor(config: Partial<OllamaConfig> = {}): Ollam
 export const RECOMMENDED_OLLAMA_MODELS = {
   // Small, fast models for structured extraction
   FAST_EXTRACTION: ['llama3.2:3b', 'phi3:mini', 'qwen2.5:3b'],
-  
+
   // Balanced models for accuracy and speed
   BALANCED: ['llama3.1:8b', 'mistral:7b', 'gemma2:9b'],
-  
+
   // High accuracy models (slower)
   HIGH_ACCURACY: ['llama3.1:70b', 'qwen2.5:32b', 'mixtral:8x22b'],
-  
+
   // Vision-capable models (for image extraction)
   VISION: ['llava:7b', 'bakllava:7b'],
 };
@@ -350,7 +360,7 @@ export const RECOMMENDED_OLLAMA_MODELS = {
  */
 export function createRecommendedOllamaExtractor(
   modelType: keyof typeof RECOMMENDED_OLLAMA_MODELS = 'FAST_EXTRACTION',
-  baseUrl?: string
+  baseUrl?: string,
 ): OllamaExtractor {
   const model = RECOMMENDED_OLLAMA_MODELS[modelType][0];
   if (!model) {
