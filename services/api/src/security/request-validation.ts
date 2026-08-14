@@ -6,7 +6,7 @@
 
 import { verifyToken, InvalidTokenError, TokenExpiredError, InvalidTokenPurposeError } from '../tokens/verify-token.js';
 import type { TokenPurpose } from '@tieout/schema';
-import { AppError, notFoundError, forbiddenError, unauthorizedError } from '../http/errors.js';
+import { AppError, forbiddenError, unauthorizedError } from '../http/errors.js';
 import type { TokenRecord } from '../tokens/verify-token.js';
 
 // Secret patterns to filter from responses
@@ -205,7 +205,7 @@ export function createRequestValidationMiddleware(getTokenByHash: (hash: string)
           caseId: record.case_id,
           purpose: record.purpose,
         };
-      } catch (error) {
+      } catch {
         return new Response(
           JSON.stringify({
             error: {

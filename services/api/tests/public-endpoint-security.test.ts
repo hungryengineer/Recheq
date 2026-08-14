@@ -9,7 +9,6 @@ import {
   createRequestValidationMiddleware,
 } from '../src/security/request-validation.js';
 import type { TokenRecord } from '../src/tokens/verify-token.js';
-import { TokenPurpose } from '@tieout/schema';
 
 describe('rate-limit.ts', () => {
   beforeEach(() => {
