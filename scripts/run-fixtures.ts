@@ -29,7 +29,7 @@ async function run() {
     const findings = runAllChecks(test.fixture.context);
 
     // 2. Calculate score
-    const scorableFindings = findings.map((f: any) => ({
+    const scorableFindings = findings.map((f) => ({
       status: f.status,
       severity: f.severity,
     })) as ScorableFinding[];
