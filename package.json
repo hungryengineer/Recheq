@@ -15,7 +15,7 @@
     "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "fixtures": "node scripts/run-fixtures.mjs",
+    "fixtures": "node --experimental-strip-types scripts/run-fixtures.ts",
     "check:local-dependencies": "node --experimental-strip-types scripts/check-local-dependencies.ts"
   },
   "devDependencies": {

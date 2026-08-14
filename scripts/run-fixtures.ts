@@ -35,7 +35,10 @@ async function run() {
     })) as ScorableFinding[];
     const score = calculateRiskScore(scorableFindings);
 
-    const verdict = calculateVerdict(scorableFindings, test.fixture.context.assembly.origins.length);
+    const verdict = calculateVerdict(
+      scorableFindings,
+      test.fixture.context.assembly.origins.length,
+    );
 
     const comparison = compareExpected(score, verdict, findings, test.expected);
 
