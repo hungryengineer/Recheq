@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CI: true
+      NODE_ENV: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      # There is intentionally no production-provider setup here. Unit tests
+      # use local deterministic code and must run without database, storage,
+      # email, LLM, or Sentry credentials.
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      # OPS-05 reservation: turn this into a required gate after the fixture
+      # runner and committed expected outputs are implemented.
+      - name: Fixture validation (reserved for OPS-05)
+        if: ${{ false }}
+        run: pnpm fixtures
