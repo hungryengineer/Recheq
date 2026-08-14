@@ -34,7 +34,7 @@ export function createRateLimiter(config: RateLimitConfig = DEFAULT_CONFIG) {
   ): Promise<Response> {
     const url = new URL(req.url);
     const token = url.pathname.split('/')[3]; // Extract token from /api/public/:token/...
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
     const key = `${ip}:${token}`;
 
