@@ -33,10 +33,7 @@ export interface ForensicsData {
  * @returns Forensics record ID
  * @throws If database insertion fails
  */
-export async function createForensicsRecord(
-  db: Database,
-  documentId: string,
-): Promise<string> {
+export async function createForensicsRecord(db: Database, documentId: string): Promise<string> {
   const [record] = await db
     .insert(forensics)
     .values({
@@ -129,10 +126,11 @@ export async function getForensicsByDocumentId(
   db: Database,
   documentId: string,
 ): Promise<
-  (typeof forensics.$inferSelect & {
-    font_runs: FontRunAnalysis | null;
-    monetary_anomalies: MonetaryAnomalyAnalysis | null;
-  }) | null
+  | (typeof forensics.$inferSelect & {
+      font_runs: FontRunAnalysis | null;
+      monetary_anomalies: MonetaryAnomalyAnalysis | null;
+    })
+  | null
 > {
   const result = await db.query.forensics.findFirst({
     where: eq(forensics.document_id, documentId),

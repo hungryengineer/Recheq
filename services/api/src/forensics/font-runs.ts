@@ -185,16 +185,8 @@ export function analyzeFontRuns(fontRuns: unknown[]): FontRunAnalysis {
   }
 
   const uniqueFamilies = Object.keys(runsByFamily);
-  const anomaly_detected = isSuspiciousFontCombination(
-    uniqueFamilies,
-    runsByFamily,
-    totalRuns,
-  );
-  const confidence = calculateAnomalyConfidence(
-    uniqueFamilies,
-    runsByFamily,
-    totalRuns,
-  );
+  const anomaly_detected = isSuspiciousFontCombination(uniqueFamilies, runsByFamily, totalRuns);
+  const confidence = calculateAnomalyConfidence(uniqueFamilies, runsByFamily, totalRuns);
 
   return {
     total_runs: totalRuns,

@@ -277,10 +277,7 @@ export function analyzeMonetaryAnomalies(documentText: string | unknown): Moneta
 
   // Confidence: ratio of detected anomalies to total monetary values
   // Clamp to 0-1 range
-  const confidence = Math.min(
-    totalAnomalies / Math.max(monetaryPositions.length, 1) / 5,
-    1.0,
-  );
+  const confidence = Math.min(totalAnomalies / Math.max(monetaryPositions.length, 1) / 5, 1.0);
 
   return {
     anomalies_detected: totalAnomalies > 0,

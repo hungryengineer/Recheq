@@ -7,7 +7,11 @@
 import { describe, it, expect } from 'vitest';
 import { analyzeFontRuns } from '../src/forensics/font-runs.js';
 import { analyzeMonetaryAnomalies } from '../src/forensics/monetary-anomalies.js';
-import { extractPdfMetadata, parseMetadataDate, extractMetadataString } from '../src/forensics/pdf-metadata.js';
+import {
+  extractPdfMetadata,
+  parseMetadataDate,
+  extractMetadataString,
+} from '../src/forensics/pdf-metadata.js';
 
 describe('DOC-03 — Node-side PDF Inspection', () => {
   describe('PDF Metadata Extraction', () => {
@@ -123,11 +127,7 @@ describe('DOC-03 — Node-side PDF Inspection', () => {
 
   describe('Font Anomaly Detection', () => {
     it('detects no anomalies in consistent single-font document', () => {
-      const fontRuns = [
-        { fontName: 'Arial' },
-        { fontName: 'Arial' },
-        { fontName: 'Arial' },
-      ];
+      const fontRuns = [{ fontName: 'Arial' }, { fontName: 'Arial' }, { fontName: 'Arial' }];
 
       const result = analyzeFontRuns(fontRuns);
 

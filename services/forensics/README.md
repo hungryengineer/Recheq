@@ -74,6 +74,7 @@ PDF File (on disk)
 **Safe Logging**: All outputs are strings or timestamps. Never logs raw PDF content.
 
 **Example**:
+
 ```typescript
 import * as pdf from 'pdf-parse';
 import { extractPdfMetadata } from './pdf-metadata.js';
@@ -99,15 +100,16 @@ const metadata = extractPdfMetadata(doc.info);
 
 **Anomaly Detection Heuristics**:
 
-| Condition | Severity | Confidence |
-|-----------|----------|------------|
-| >3 distinct font families | Suspicious | +0.3-0.4 |
-| Business font + suspicious font mix (e.g., Arial + Wingdings) | Suspicious | +0.2 |
-| Extreme distribution (one font <5% of runs, others >90%) | Suspicious | +0.15 |
+| Condition                                                     | Severity   | Confidence |
+| ------------------------------------------------------------- | ---------- | ---------- |
+| >3 distinct font families                                     | Suspicious | +0.3-0.4   |
+| Business font + suspicious font mix (e.g., Arial + Wingdings) | Suspicious | +0.2       |
+| Extreme distribution (one font <5% of runs, others >90%)      | Suspicious | +0.15      |
 
 **Safe Logging**: Returns only aggregated data (family names, counts, percentages). Never logs character-level analysis.
 
 **Example**:
+
 ```typescript
 import { analyzeFontRuns } from './font-runs.js';
 
@@ -136,21 +138,23 @@ const analysis = analyzeFontRuns(fontRuns);
 
 **Anomaly Types Detected**:
 
-| Anomaly Type | Example | Detection Method |
-|---|---|---|
-| Font changes | `$1000` in different font than surrounding text | Proximity analysis (~5 char window) |
-| Size changes | Monetary values sized differently | Standard deviation of lengths |
-| Color changes | Red vs. black currency | (Placeholder for full PDF rendering layer) |
-| Spacing anomalies | `value$1000` without space | Whitespace boundary analysis |
-| Formatting inconsistencies | Mixed `$1,000.00` and `$2.000,00` | Delimiter consistency check |
+| Anomaly Type               | Example                                         | Detection Method                           |
+| -------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| Font changes               | `$1000` in different font than surrounding text | Proximity analysis (~5 char window)        |
+| Size changes               | Monetary values sized differently               | Standard deviation of lengths              |
+| Color changes              | Red vs. black currency                          | (Placeholder for full PDF rendering layer) |
+| Spacing anomalies          | `value$1000` without space                      | Whitespace boundary analysis               |
+| Formatting inconsistencies | Mixed `$1,000.00` and `$2.000,00`               | Delimiter consistency check                |
 
 **Safe Logging**: Returns only:
+
 - Boolean flags (anomalies_detected)
 - Counts (total_anomalies, per type)
 - Confidence score (0.0–1.0)
 - Never raw amounts, text snippets, or document content
 
 **Example**:
+
 ```typescript
 import { analyzeMonetaryAnomalies } from './monetary-anomalies.js';
 
@@ -195,12 +199,14 @@ const analysis = analyzeMonetaryAnomalies(text);
   - Returns: Full forensics record with all fields, or null
 
 **Service Pattern**:
+
 - All functions are async and throw on database errors
 - No Result<T> wrapper (consistent with extraction-service pattern)
 - Uses Drizzle ORM with typed queries
 - Graceful failure: updateForensicsFailure marks as not_assessed, not failed
 
 **Example**:
+
 ```typescript
 import { createForensicsRecord, updateForensicsSuccess } from './forensics-service.js';
 
@@ -210,7 +216,7 @@ const forensicsId = await createForensicsRecord(db, documentId);
 await updateForensicsSuccess(db, forensicsId, {
   metadata: { producer, creator, creation_date, modification_date },
   fontRuns: fontAnalysis,
-  monetaryAnomalies: monetaryAnalysis
+  monetaryAnomalies: monetaryAnalysis,
 });
 ```
 
@@ -318,6 +324,7 @@ logger.info('font_analysis', context, {
 ```
 
 **Logger Redaction**: The logger automatically redacts keys matching:
+
 - `/document[-_]?content/i`
 - `/raw[-_]?document/i`
 - `/extraction[-_]?payload/i`
@@ -348,7 +355,7 @@ async function inspectPdf(filePath: string): Promise<ForensicsData | null> {
       error_type: err.name,
       error_message: err.message,
     });
-    
+
     // Mark as not_assessed, allow investigation to continue
     await updateForensicsFailure(db, forensicsId, err.message);
     return null;
@@ -359,6 +366,7 @@ async function inspectPdf(filePath: string): Promise<ForensicsData | null> {
 ### Missing Field Handling
 
 All three modules gracefully handle missing/malformed input:
+
 - `extractPdfMetadata({})` → all fields null
 - `analyzeFontRuns([])` → empty analysis, no anomaly
 - `analyzeMonetaryAnomalies(null)` → empty analysis, no anomaly
@@ -377,12 +385,14 @@ npm run test -- tests/forensics.test.ts
 ```
 
 **Test Coverage**:
+
 - Metadata extraction: 10 test cases (valid, missing, malformed, date parsing)
 - Font anomaly detection: 8 test cases (single/multi-font, suspicious, extreme distribution)
 - Monetary anomaly detection: 10 test cases (currencies, spacing, formatting, no logging)
 - Integration: 2 test cases (graceful degradation, safe serialization)
 
 **Total**: 30+ test cases ensuring:
+
 - ✅ All fields extracted where available
 - ✅ Graceful degradation on missing/corrupt data
 - ✅ No raw document content in outputs
@@ -399,6 +409,7 @@ npm run test -- tests/forensics.test.ts
 - **Database operations**: Standard Drizzle ORM performance
 
 For large PDFs (>10MB), consider:
+
 1. Streaming PDF parsing if available
 2. Batching font/monetary analysis
 3. Deferring forensics inspection to a background worker queue
