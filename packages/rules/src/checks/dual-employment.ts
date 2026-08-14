@@ -1,4 +1,3 @@
-
 import type { RuleFunction } from '../check.js';
 
 export const checkDualEmployment: RuleFunction = (ctx) => {
