@@ -2,16 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   CaseCreateInput,
   CaseRecord,
-  CaseSummary,
   DocumentRecord,
   PayslipExtraction,
-  Form16Extraction,
   FindingRecord,
-  FindingInput,
   ConsentRecord,
   EvidenceAssembly,
   EventRecord,
-  EventInput,
 } from '../src/index.js';
 
 // ─── Helpers ────────────────────────────────────────────────────
@@ -42,7 +38,7 @@ describe('CaseCreateInput', () => {
   });
 
   it('accepts missing UAN (optional)', () => {
-    const { uan, ...rest } = valid;
+    const { uan: _uan, ...rest } = valid;
     const result = CaseCreateInput.parse(rest);
     expect(result.uan).toBeUndefined();
   });
