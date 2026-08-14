@@ -11,9 +11,12 @@
   "dependencies": {
     "@tieout/rules": "workspace:*",
     "@tieout/schema": "workspace:*",
-    "fast-json-stable-stringify": "^2.1.0"
+    "drizzle-orm": "^0.45.2",
+    "fast-json-stable-stringify": "^2.1.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@types/fast-json-stable-stringify": "^2.1.2"
+    "@types/fast-json-stable-stringify": "^2.1.2",
+    "drizzle-kit": "^0.31.10"
   }
 }
