@@ -25,9 +25,12 @@ describe('Evidence Assembly Service', () => {
   });
 
   it('assembles context with payslip data only', async () => {
-    const whereMock = vi.fn()
+    const whereMock = vi
+      .fn()
       .mockResolvedValueOnce([{ id: 'doc-1', kind: 'payslip' }]) // documents
-      .mockResolvedValueOnce([{ document_id: 'doc-1', status: 'completed', extracted_data: { basic: 5000 } }]) // extractions
+      .mockResolvedValueOnce([
+        { document_id: 'doc-1', status: 'completed', extracted_data: { basic: 5000 } },
+      ]) // extractions
       .mockResolvedValueOnce([]); // epfo
 
     const fromMock = vi.fn(() => ({ where: whereMock }));

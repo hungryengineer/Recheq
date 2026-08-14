@@ -17,7 +17,7 @@ export class FixtureEpfoProvider implements EpfoProvider {
     if (uan === '100000000001') {
       return this.loadFixture('clean-history.json');
     }
-    
+
     if (uan === '100000000002') {
       return this.loadFixture('anomalous-history.json');
     }

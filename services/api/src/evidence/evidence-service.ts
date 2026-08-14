@@ -4,13 +4,18 @@ import { documents } from '../db/schema/documents.js';
 import { extractions } from '../db/schema/extractions.js';
 import { epfoRecords } from '../db/schema/epfo-records.js';
 import type { CheckContext } from './check-context.js';
-import type { EvidenceOrigin, EvidenceAssembly, PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type {
+  EvidenceOrigin,
+  EvidenceAssembly,
+  PayslipExtraction,
+  Form16Extraction,
+} from '@tieout/schema';
 import type { EpfoHistory } from '../epfo/epfo-provider.js';
 
 export async function assembleEvidence(db: Database, caseId: string): Promise<CheckContext> {
   // 1. Fetch all documents for the case to find the Payslip and Form 16
   const docs = await db.select().from(documents).where(eq(documents.case_id, caseId));
-  
+
   const payslipDoc = docs.find((d: { id: string; kind: string }) => d.kind === 'payslip');
   const form16Doc = docs.find((d: { id: string; kind: string }) => d.kind === 'form_16');
 
@@ -25,10 +30,7 @@ export async function assembleEvidence(db: Database, caseId: string): Promise<Ch
       .select()
       .from(extractions)
       .where(
-        and(
-          inArray(extractions.document_id, docIdsToFetch),
-          eq(extractions.status, 'completed')
-        )
+        and(inArray(extractions.document_id, docIdsToFetch), eq(extractions.status, 'completed')),
       );
 
     for (const ext of exts) {
@@ -44,16 +46,12 @@ export async function assembleEvidence(db: Database, caseId: string): Promise<Ch
   const [epfoRec] = await db
     .select()
     .from(epfoRecords)
-    .where(
-      and(
-        eq(epfoRecords.case_id, caseId),
-        eq(epfoRecords.status, 'completed')
-      )
-    );
+    .where(and(eq(epfoRecords.case_id, caseId), eq(epfoRecords.status, 'completed')));
 
-  const epfoHistory: EpfoHistory | null = epfoRec && epfoRec.employment_history 
-    ? (epfoRec.employment_history as unknown as EpfoHistory) 
-    : null;
+  const epfoHistory: EpfoHistory | null =
+    epfoRec && epfoRec.employment_history
+      ? (epfoRec.employment_history as unknown as EpfoHistory)
+      : null;
 
   // 4. Assemble the context
   const origins: EvidenceOrigin[] = [];

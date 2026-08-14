@@ -15,7 +15,7 @@ export async function syncEpfoHistory(
   db: Database,
   caseId: string,
   consentId: string,
-  uan: string
+  uan: string,
 ): Promise<string> {
   // Create pending record
   const [record] = await db
