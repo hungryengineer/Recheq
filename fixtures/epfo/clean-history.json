@@ -1,0 +1,17 @@
+{
+  "uan": "100000000001",
+  "periods": [
+    {
+      "employerName": "Tech Corp India Pvt Ltd",
+      "establishmentId": "MH12345",
+      "startDate": "2020-04-01",
+      "endDate": "2023-03-31"
+    },
+    {
+      "employerName": "Current Employer Inc",
+      "establishmentId": "KA98765",
+      "startDate": "2023-04-01",
+      "endDate": null
+    }
+  ]
+}
