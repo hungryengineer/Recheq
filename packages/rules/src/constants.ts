@@ -24,7 +24,7 @@ export const PAYSLIP_ARITHMETIC_TOLERANCE = 1;
 export const PF_RATE_TOLERANCE = 0.01;
 
 /** CTC plausibility tolerance (percentage) */
-export const CTC_PLAUSIBILITY_TOLERANCE = 0.10;
+export const CTC_PLAUSIBILITY_TOLERANCE = 0.1;
 
 /** Form 16 vs payslip reconciliation tolerance (absolute, INR) */
 export const FORM16_RECONCILIATION_TOLERANCE = 500;

@@ -20,10 +20,7 @@ export interface CandidateRouteDeps extends ConsentServiceDeps {
   tokenVerifier: TokenVerifier;
 }
 
-export async function getCandidateHandler(
-  req: CandidateRouteRequest,
-  deps: CandidateRouteDeps,
-) {
+export async function getCandidateHandler(req: CandidateRouteRequest, deps: CandidateRouteDeps) {
   try {
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
     const view = await getCandidateView(caseId, deps);

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { uploadDocument, type DocumentServiceDeps } from '../src/services/documents/document-service.js';
+import {
+  uploadDocument,
+  type DocumentServiceDeps,
+} from '../src/services/documents/document-service.js';
 import { sniffMimeType, isAllowedMimeType } from '../src/services/documents/mime-sniffer.js';
 import { AppError } from '../src/http/errors.js';
 import type { CaseRecord, DocumentRecord } from '@tieout/schema';
@@ -253,23 +256,21 @@ describe('uploadDocument', () => {
 
     vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(makeCaseRecord());
 
-    await expect(
-      uploadDocument('case-001', oversized, validMetadata, deps),
-    ).rejects.toThrowError(AppError);
-    await expect(
-      uploadDocument('case-001', oversized, validMetadata, deps),
-    ).rejects.toThrow(/exceeds/i);
+    await expect(uploadDocument('case-001', oversized, validMetadata, deps)).rejects.toThrowError(
+      AppError,
+    );
+    await expect(uploadDocument('case-001', oversized, validMetadata, deps)).rejects.toThrow(
+      /exceeds/i,
+    );
   });
 
   it('rejects empty files', async () => {
     const empty = Buffer.alloc(0);
 
-    await expect(
-      uploadDocument('case-001', empty, validMetadata, deps),
-    ).rejects.toThrowError(AppError);
-    await expect(
-      uploadDocument('case-001', empty, validMetadata, deps),
-    ).rejects.toThrow(/empty/i);
+    await expect(uploadDocument('case-001', empty, validMetadata, deps)).rejects.toThrowError(
+      AppError,
+    );
+    await expect(uploadDocument('case-001', empty, validMetadata, deps)).rejects.toThrow(/empty/i);
   });
 
   it('rejects unsupported MIME types', async () => {
@@ -289,28 +290,24 @@ describe('uploadDocument', () => {
   it('rejects upload when case is not in awaiting_documents status', async () => {
     const content = makePdfContent();
 
-    vi.mocked(deps.db.getCaseById).mockResolvedValue(
-      makeCaseRecord({ status: 'draft' }),
-    );
+    vi.mocked(deps.db.getCaseById).mockResolvedValue(makeCaseRecord({ status: 'draft' }));
 
-    await expect(
-      uploadDocument('case-001', content, validMetadata, deps),
-    ).rejects.toThrowError(AppError);
-    await expect(
-      uploadDocument('case-001', content, validMetadata, deps),
-    ).rejects.toThrow(/awaiting_documents/i);
+    await expect(uploadDocument('case-001', content, validMetadata, deps)).rejects.toThrowError(
+      AppError,
+    );
+    await expect(uploadDocument('case-001', content, validMetadata, deps)).rejects.toThrow(
+      /awaiting_documents/i,
+    );
   });
 
   it('rejects upload when case is withdrawn (withdrawn candidates cannot submit documents)', async () => {
     const content = makePdfContent();
 
-    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(
-      makeCaseRecord({ status: 'withdrawn' }),
-    );
+    vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(makeCaseRecord({ status: 'withdrawn' }));
 
-    await expect(
-      uploadDocument('case-001', content, validMetadata, deps),
-    ).rejects.toThrowError(AppError);
+    await expect(uploadDocument('case-001', content, validMetadata, deps)).rejects.toThrowError(
+      AppError,
+    );
   });
 
   it('rejects invalid metadata schema', async () => {
@@ -326,12 +323,12 @@ describe('uploadDocument', () => {
 
     vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(null);
 
-    await expect(
-      uploadDocument('case-missing', content, validMetadata, deps),
-    ).rejects.toThrowError(AppError);
-    await expect(
-      uploadDocument('case-missing', content, validMetadata, deps),
-    ).rejects.toThrow(/not found/i);
+    await expect(uploadDocument('case-missing', content, validMetadata, deps)).rejects.toThrowError(
+      AppError,
+    );
+    await expect(uploadDocument('case-missing', content, validMetadata, deps)).rejects.toThrow(
+      /not found/i,
+    );
   });
 
   it('accepts Form 16 document kind', async () => {
@@ -339,7 +336,9 @@ describe('uploadDocument', () => {
 
     vi.mocked(deps.db.getCaseById).mockResolvedValueOnce(makeCaseRecord());
     vi.mocked(deps.db.getDocumentByCaseAndSha).mockResolvedValueOnce(null);
-    vi.mocked(deps.db.createDocument).mockResolvedValueOnce(makeDocumentRecord({ kind: 'form_16' }));
+    vi.mocked(deps.db.createDocument).mockResolvedValueOnce(
+      makeDocumentRecord({ kind: 'form_16' }),
+    );
 
     const result = await uploadDocument(
       'case-001',

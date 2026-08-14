@@ -13,11 +13,7 @@ export {
   EventKind,
 } from './enums.js';
 
-export {
-  CaseCreateInput,
-  CaseRecord,
-  CaseSummary,
-} from './case.js';
+export { CaseCreateInput, CaseRecord, CaseSummary } from './case.js';
 
 export {
   DocumentRecord,
@@ -26,22 +22,10 @@ export {
   DocumentUploadInput,
 } from './document.js';
 
-export {
-  FindingRecord,
-  FindingInput,
-} from './finding.js';
+export { FindingRecord, FindingInput } from './finding.js';
 
-export {
-  ConsentRecord,
-  ConsentGrantInput,
-} from './consent.js';
+export { ConsentRecord, ConsentGrantInput } from './consent.js';
 
-export {
-  EvidenceOrigin,
-  EvidenceAssembly,
-} from './evidence.js';
+export { EvidenceOrigin, EvidenceAssembly } from './evidence.js';
 
-export {
-  EventRecord,
-  EventInput,
-} from './event.js';
+export { EventRecord, EventInput } from './event.js';

@@ -22,7 +22,7 @@ vi.mock('../src/lib/api/candidate', () => ({
 describe('Candidate Consent UI', () => {
   it('renders the mandatory disclosures in ConsentSummary', () => {
     render(<ConsentSummary orgName="TestOrg" />);
-    
+
     // Acceptance criteria: explains what is collected, why, documents requested, sources checked, retention, third-party processing, withdrawal, and dispute path.
     expect(screen.getByText(/Data Processing Disclosure/i)).toBeTruthy();
     expect(screen.getByText(/Payslips/i)).toBeTruthy();
@@ -36,18 +36,18 @@ describe('Candidate Consent UI', () => {
     vi.mocked(grantConsent).mockResolvedValueOnce();
 
     render(<ConsentAction token="test-token" />);
-    
+
     const button = screen.getByRole('button', { name: /I Consent & Agree/i });
     expect(button).not.toBeDisabled();
-    
+
     fireEvent.click(button);
-    
+
     // Button shows processing and is disabled
     expect(screen.getByRole('button', { name: /Processing/i })).toBeDisabled();
-    
+
     // API is called
     expect(grantConsent).toHaveBeenCalledWith('test-token', expect.any(String), expect.any(String));
-    
+
     // Redirects to upload page
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith('/c/test-token/upload');

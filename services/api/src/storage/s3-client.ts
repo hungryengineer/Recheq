@@ -29,7 +29,10 @@ export interface S3Client {
 
 const EMPTY_BODY_SHA256 = createHash('sha256').update('').digest('hex');
 
-export function createS3Client(config: S3ClientConfig, transport: S3Transport = defaultTransport): S3Client {
+export function createS3Client(
+  config: S3ClientConfig,
+  transport: S3Transport = defaultTransport,
+): S3Client {
   return {
     headBucket: (bucket) => sendSignedS3Request(config, { method: 'HEAD', bucket }, transport),
     createBucket: (bucket) => sendSignedS3Request(config, { method: 'PUT', bucket }, transport),

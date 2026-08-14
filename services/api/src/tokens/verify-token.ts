@@ -37,7 +37,7 @@ export function verifyToken(
   rawToken: string,
   requiredPurpose: TokenPurpose,
   record: TokenRecord | null,
-  nowUtcIso: string = new Date().toISOString()
+  nowUtcIso: string = new Date().toISOString(),
 ): void {
   if (!record) {
     throw new InvalidTokenError();
@@ -53,6 +53,8 @@ export function verifyToken(
   }
 
   if (record.purpose !== requiredPurpose) {
-    throw new InvalidTokenPurposeError(`Expected purpose '${requiredPurpose}', but token has purpose '${record.purpose}'`);
+    throw new InvalidTokenPurposeError(
+      `Expected purpose '${requiredPurpose}', but token has purpose '${record.purpose}'`,
+    );
   }
 }

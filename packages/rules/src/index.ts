@@ -12,16 +12,9 @@ export {
   FORM16_RECONCILIATION_TOLERANCE,
 } from './constants.js';
 
-export {
-  calculateRiskScore,
-  getScoreBreakdown,
-  type ScorableFinding,
-} from './score.js';
+export { calculateRiskScore, getScoreBreakdown, type ScorableFinding } from './score.js';
 
-export {
-  calculateVerdict,
-  type VerdictableFinding,
-} from './verdict.js';
+export { calculateVerdict, type VerdictableFinding } from './verdict.js';
 
 export {
   transition,

@@ -23,10 +23,7 @@ export interface DocumentRouteDeps extends DocumentServiceDeps {
   tokenVerifier: TokenVerifier;
 }
 
-export async function uploadDocumentHandler(
-  req: DocumentUploadRequest,
-  deps: DocumentRouteDeps,
-) {
+export async function uploadDocumentHandler(req: DocumentUploadRequest, deps: DocumentRouteDeps) {
   try {
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
 

@@ -30,7 +30,8 @@ describe('Database Schema', () => {
     // but we can check if it's defined
     expect(config.uniqueConstraints).toBeDefined();
     const hasDedup = config.uniqueConstraints?.some(
-      (u) => u.columns.some((c) => c.name === 'case_id') && u.columns.some((c) => c.name === 'sha256'),
+      (u) =>
+        u.columns.some((c) => c.name === 'case_id') && u.columns.some((c) => c.name === 'sha256'),
     );
     expect(hasDedup).toBe(true);
   });
@@ -54,7 +55,7 @@ describe('Database Schema', () => {
   it('findings table has required columns', () => {
     const config = getTableConfig(schema.findings);
     const colNames = config.columns.map((c) => c.name);
-    
+
     expect(colNames).toContain('rule_id');
     expect(colNames).toContain('severity');
     expect(colNames).toContain('status');

@@ -48,10 +48,16 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
   };
 
   if (loading || !context) {
-    return <div className="container text-center mt-8"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div className="container text-center mt-8">
+        <p className="text-muted">Loading...</p>
+      </div>
+    );
   }
 
-  const allRequiredProvided = context.documentsRequired.every(doc => context.documentsProvided.includes(doc));
+  const allRequiredProvided = context.documentsRequired.every((doc) =>
+    context.documentsProvided.includes(doc),
+  );
 
   return (
     <div className="container animate-fade-in">
@@ -60,25 +66,20 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
         <p className="mt-2 text-muted">Please provide the required documents below.</p>
       </div>
 
-      <DocumentUploader 
-        token={token} 
-        kind="payslip" 
-        label="Recent Payslip" 
-        onSuccess={refreshContext} 
+      <DocumentUploader
+        token={token}
+        kind="payslip"
+        label="Recent Payslip"
+        onSuccess={refreshContext}
       />
-      
-      <DocumentUploader 
-        token={token} 
-        kind="form_16" 
-        label="Form 16" 
-        onSuccess={refreshContext} 
-      />
+
+      <DocumentUploader token={token} kind="form_16" label="Form 16" onSuccess={refreshContext} />
 
       <UanForm token={token} onSuccess={refreshContext} />
 
       <div className="mt-8">
-        <button 
-          onClick={handleSubmitAll} 
+        <button
+          onClick={handleSubmitAll}
           disabled={!allRequiredProvided || submitting}
           className="btn btn-primary"
         >

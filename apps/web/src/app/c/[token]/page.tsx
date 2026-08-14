@@ -19,7 +19,11 @@ export default function CandidateConsentPage({ params }: { params: Promise<{ tok
   useEffect(() => {
     getCaseByToken(token)
       .then((data) => {
-        if (data.status === 'awaiting_documents' || data.status === 'processing' || data.status === 'complete') {
+        if (
+          data.status === 'awaiting_documents' ||
+          data.status === 'processing' ||
+          data.status === 'complete'
+        ) {
           // Already consented, redirect to status or upload
           if (data.status === 'awaiting_documents') {
             router.push(`/c/${token}/upload`);
@@ -50,7 +54,7 @@ export default function CandidateConsentPage({ params }: { params: Promise<{ tok
         <div className="card text-center" style={{ borderColor: 'var(--color-danger)' }}>
           <h2 className="text-danger">Access Denied</h2>
           <p className="mt-2 text-muted">
-            {error === 'TOKEN_EXPIRED' 
+            {error === 'TOKEN_EXPIRED'
               ? 'This link has expired for your security. Please request a new link from your employer.'
               : 'This link is invalid or could not be verified.'}
           </p>
@@ -68,7 +72,8 @@ export default function CandidateConsentPage({ params }: { params: Promise<{ tok
           {context.orgName} Background Verification
         </h1>
         <p className="mt-2 text-muted" style={{ fontSize: '1.1rem' }}>
-          Hello {context.candidateName}, please review and provide your consent to begin the verification process.
+          Hello {context.candidateName}, please review and provide your consent to begin the
+          verification process.
         </p>
       </div>
 

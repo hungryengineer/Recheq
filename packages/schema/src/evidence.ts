@@ -2,13 +2,7 @@ import { z } from 'zod';
 
 // ─── Evidence Origin ────────────────────────────────────────────
 // Tracks which independent sources contributed evidence for a case.
-export const EvidenceOrigin = z.enum([
-  'payslip',
-  'form_16',
-  'epfo',
-  'employer',
-  'forensics',
-]);
+export const EvidenceOrigin = z.enum(['payslip', 'form_16', 'epfo', 'employer', 'forensics']);
 export type EvidenceOrigin = z.infer<typeof EvidenceOrigin>;
 
 // ─── Evidence Assembly ──────────────────────────────────────────

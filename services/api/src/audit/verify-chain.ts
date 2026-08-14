@@ -2,7 +2,10 @@ import type { EventRecord } from '@tieout/schema';
 import { calculateEventHash } from './hash-chain.js';
 
 export class ChainVerificationError extends Error {
-  constructor(message: string, public readonly eventId: string) {
+  constructor(
+    message: string,
+    public readonly eventId: string,
+  ) {
     super(message);
     this.name = 'ChainVerificationError';
   }
@@ -23,14 +26,14 @@ export function verifyChain(events: EventRecord[]): void {
     if (event.seq !== expectedSeq) {
       throw new ChainVerificationError(
         `Sequence mismatch: expected ${expectedSeq}, got ${event.seq}`,
-        event.id
+        event.id,
       );
     }
 
     if (event.prev_hash !== expectedPrevHash) {
       throw new ChainVerificationError(
         `prev_hash mismatch: expected ${expectedPrevHash}, got ${event.prev_hash}`,
-        event.id
+        event.id,
       );
     }
 
@@ -38,13 +41,13 @@ export function verifyChain(events: EventRecord[]): void {
       event.prev_hash,
       event.seq,
       event.kind,
-      event.payload
+      event.payload,
     );
 
     if (calculatedHash !== event.hash) {
       throw new ChainVerificationError(
         `Hash mismatch: Payload or metadata was tampered with`,
-        event.id
+        event.id,
       );
     }
 

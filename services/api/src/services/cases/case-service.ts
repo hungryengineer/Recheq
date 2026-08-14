@@ -5,7 +5,9 @@ import { validationError, notFoundError } from '../../http/errors.js';
 // to allow easy mocking in unit tests.
 export interface CaseServiceDeps {
   db: {
-    createCase: (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<CaseRecord>;
+    createCase: (
+      input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>,
+    ) => Promise<CaseRecord>;
     listCasesByOrg: (orgId: string) => Promise<CaseSummary[]>;
     getCaseByIdAndOrg: (caseId: string, orgId: string) => Promise<CaseRecord | null>;
   };

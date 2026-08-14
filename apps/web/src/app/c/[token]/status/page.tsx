@@ -39,7 +39,11 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
   }, [token, router]);
 
   if (loading || !context) {
-    return <div className="container text-center mt-8"><p className="text-muted">Loading...</p></div>;
+    return (
+      <div className="container text-center mt-8">
+        <p className="text-muted">Loading...</p>
+      </div>
+    );
   }
 
   return (
@@ -47,9 +51,9 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
       <div className="text-center mb-6">
         <h1 style={{ fontSize: '1.75rem', color: 'var(--color-primary)' }}>Status</h1>
       </div>
-      
+
       <ProcessingStatus status={context.status} />
-      
+
       <div className="mt-8 text-center">
         <p className="text-muted" style={{ fontSize: '0.875rem' }}>
           If you have any questions, please contact {context.employerName}.

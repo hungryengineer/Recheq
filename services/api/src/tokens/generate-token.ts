@@ -14,8 +14,8 @@ export interface GeneratedToken {
 export function generateToken(prefix: string = ''): GeneratedToken {
   const entropy = crypto.randomBytes(32).toString('base64url');
   const rawToken = `${prefix}${entropy}`;
-  
+
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  
+
   return { rawToken, tokenHash };
 }

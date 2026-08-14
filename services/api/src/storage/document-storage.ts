@@ -46,7 +46,14 @@ export function createDocumentStorage(
     async putObject(key: string, content: Buffer, contentType: string): Promise<void> {
       const url = getObjectUrl(config, key);
       const bodyHash = createHash('sha256').update(content).digest('hex');
-      const headers = signObjectRequest(config, url, bodyHash, contentType, content.length, new Date());
+      const headers = signObjectRequest(
+        config,
+        url,
+        bodyHash,
+        contentType,
+        content.length,
+        new Date(),
+      );
 
       const response = await transport(url, {
         method: 'PUT',
@@ -55,9 +62,7 @@ export function createDocumentStorage(
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to upload document: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
     },
   };
@@ -190,7 +195,10 @@ function toAmzDate(date: Date): string {
   return date.toISOString().replace(/[:-]|\.\\d{3}/g, '');
 }
 
-async function defaultTransport(url: URL, init: RequestInit): Promise<{ ok: boolean; status: number; statusText: string }> {
+async function defaultTransport(
+  url: URL,
+  init: RequestInit,
+): Promise<{ ok: boolean; status: number; statusText: string }> {
   const response = await fetch(url, init);
   return {
     ok: response.ok,

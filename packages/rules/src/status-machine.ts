@@ -27,8 +27,7 @@ export interface InvalidTransitionError {
 // ─── Transition Result ──────────────────────────────────────────
 
 export type TransitionResult =
-  | { ok: true; status: CaseStatus }
-  | { ok: false; error: InvalidTransitionError };
+  { ok: true; status: CaseStatus } | { ok: false; error: InvalidTransitionError };
 
 // ─── Transition Table ───────────────────────────────────────────
 // Each key is a current status. Each value maps events to the next status.
@@ -76,10 +75,7 @@ const TRANSITIONS: Record<CaseStatus, Partial<Record<TransitionEvent, CaseStatus
  * @param event - The event triggering the transition
  * @returns A TransitionResult indicating success with new status, or failure with typed error
  */
-export function transition(
-  currentStatus: CaseStatus,
-  event: TransitionEvent,
-): TransitionResult {
+export function transition(currentStatus: CaseStatus, event: TransitionEvent): TransitionResult {
   const allowed = TRANSITIONS[currentStatus];
   const nextStatus = allowed?.[event];
 
@@ -101,10 +97,7 @@ export function transition(
 /**
  * Check if a transition is valid without performing it.
  */
-export function canTransition(
-  currentStatus: CaseStatus,
-  event: TransitionEvent,
-): boolean {
+export function canTransition(currentStatus: CaseStatus, event: TransitionEvent): boolean {
   const allowed = TRANSITIONS[currentStatus];
   return allowed?.[event] !== undefined;
 }

@@ -10,11 +10,11 @@ case creation → consent → upload → extraction → evidence → rules → v
 
 ## Team ownership
 
-| Member | Primary workstream | Owns | Does not own |
-|---|---|---|---|
-| Member 1 — Backend Developer | Domain, database, API, rules, workflows | Business correctness and persistent state | UI styling, deployment infrastructure |
-| Member 2 — Product Developer | Web product, extraction, PDF inspection | User journeys and document perception | Verdict semantics, infrastructure |
-| Member 3 — AIOps/DevOps | Platform, CI/CD, security, observability, demo reliability | Running, protecting, and validating the system | Business-rule decisions, primary UI implementation |
+| Member                       | Primary workstream                                         | Owns                                           | Does not own                                       |
+| ---------------------------- | ---------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| Member 1 — Backend Developer | Domain, database, API, rules, workflows                    | Business correctness and persistent state      | UI styling, deployment infrastructure              |
+| Member 2 — Product Developer | Web product, extraction, PDF inspection                    | User journeys and document perception          | Verdict semantics, infrastructure                  |
+| Member 3 — AIOps/DevOps      | Platform, CI/CD, security, observability, demo reliability | Running, protecting, and validating the system | Business-rule decisions, primary UI implementation |
 
 ## Frozen contracts everyone must preserve
 
@@ -1154,4 +1154,3 @@ Each story commit should contain:
 - Sensitive data is not logged or exposed.
 - The story can be demonstrated or verified independently.
 - Cursor/Codex reports files changed, commands run, and remaining risks.
-
