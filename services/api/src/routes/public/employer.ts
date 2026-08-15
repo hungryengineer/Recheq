@@ -5,13 +5,11 @@ import type { TokenVerifier } from './token-auth.js';
 import { resolveToken } from './token-auth.js';
 import { toErrorResponse } from '../../http/errors.js';
 import { validateBody } from '../../security/request-validation.js';
-import type {
-  EmployerServiceDeps,
-  EmployerResponsePayload as EmployerResponsePayloadType,
-} from '../../services/employer/employer-service.js';
+import type { EmployerServiceDeps } from '../../services/employer/employer-service.js';
 import {
   getEmployerForm,
   submitEmployerResponse,
+  EmployerResponsePayloadSchema,
 } from '../../services/employer/employer-service.js';
 
 export interface EmployerRouteRequest {
@@ -25,14 +23,6 @@ export interface EmployerRouteRequest {
 export interface EmployerRouteDeps extends EmployerServiceDeps {
   tokenVerifier: TokenVerifier;
 }
-
-const EmployerResponsePayload: z.ZodType<EmployerResponsePayloadType> = z.object({
-  confirmed: z.boolean(),
-  corrected_name: z.string().optional(),
-  corrected_title: z.string().optional(),
-  corrected_ctc: z.number().finite().optional(),
-  note: z.string().optional(),
-});
 
 export async function getEmployerHandler(req: EmployerRouteRequest, deps: EmployerRouteDeps) {
   try {
@@ -57,7 +47,7 @@ export async function submitEmployerHandler(req: EmployerRouteRequest, deps: Emp
     await resolveToken(req.params.token, 'employer', deps.tokenVerifier);
 
     const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
-    const payload = validateBody(req.body, EmployerResponsePayload);
+    const payload = validateBody(req.body, EmployerResponsePayloadSchema);
 
     await submitEmployerResponse(tokenHash, payload, deps);
 

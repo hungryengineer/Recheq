@@ -125,13 +125,17 @@ export async function getEmployerForm(tokenHash: string, deps: EmployerServiceDe
   });
 }
 
-export interface EmployerResponsePayload extends Record<string, unknown> {
-  confirmed: boolean;
-  corrected_name?: string;
-  corrected_title?: string;
-  corrected_ctc?: number;
-  note?: string;
-}
+import { z } from 'zod';
+
+export const EmployerResponsePayloadSchema = z.object({
+  confirmed: z.boolean(),
+  corrected_name: z.string().optional(),
+  corrected_title: z.string().optional(),
+  corrected_ctc: z.number().finite().optional(),
+  note: z.string().optional(),
+});
+
+export type EmployerResponsePayload = z.infer<typeof EmployerResponsePayloadSchema>;
 
 export async function submitEmployerResponse(
   tokenHash: string,

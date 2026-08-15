@@ -11,7 +11,7 @@ import {
 import { TokenService, type ITokenRepository } from '../src/tokens/token-service.js';
 import { resolveToken, type TokenVerifier } from '../src/routes/public/token-auth.js';
 import { getCandidateHandler } from '../src/routes/public/candidate.js';
-import { getEmployerHandler } from '../src/routes/public/employer.js';
+import { getEmployerHandler, type EmployerRouteDeps } from '../src/routes/public/employer.js';
 import { getCaseHandler } from '../src/routes/cases/get.js';
 import { listCasesHandler } from '../src/routes/cases/list.js';
 import { getCandidateView } from '../src/services/consent/consent-service.js';
