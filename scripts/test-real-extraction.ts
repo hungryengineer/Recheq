@@ -1,7 +1,7 @@
 /**
  * Real-world extraction test against GROQ API
  * Tests the full pipeline: document → extraction → validation → findings
- * 
+ *
  * Usage: npx tsx scripts/test-real-extraction.ts
  */
 
@@ -20,7 +20,9 @@ if (fs.existsSync(envFile)) {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
       const [key, ...valueParts] = trimmed.split('=');
-      process.env[key.trim()] = valueParts.join('=').trim();
+      if (key) {
+        process.env[key.trim()] = valueParts.join('=').trim();
+      }
     }
   }
 }
@@ -121,7 +123,7 @@ try {
   const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -158,7 +160,9 @@ try {
 
   console.log('✓ API Response received');
   console.log(`  Model: ${OPENAI_MODEL}`);
-  console.log(`  Tokens used: ${tokenUsage?.prompt_tokens || '?'} input + ${tokenUsage?.completion_tokens || '?'} output\n`);
+  console.log(
+    `  Tokens used: ${tokenUsage?.prompt_tokens || '?'} input + ${tokenUsage?.completion_tokens || '?'} output\n`,
+  );
 
   // Parse the extracted data
   console.log('🔄 Step 2: Parsing extracted JSON...\n');
@@ -193,10 +197,23 @@ try {
   console.log('🔄 Step 4: Displaying Extracted Data...\n');
 
   const fieldGroups = {
-    'Employee Information': ['employee_name', 'employer_name', 'month', 'year', 'uan', 'pf_account_number'],
-    'Earnings': ['basic', 'hra', 'da', 'special_allowance', 'other_allowances', 'gross_salary'],
-    'Deductions': ['pf_deduction', 'professional_tax', 'income_tax', 'other_deductions', 'total_deductions'],
-    'Result': ['net_salary'],
+    'Employee Information': [
+      'employee_name',
+      'employer_name',
+      'month',
+      'year',
+      'uan',
+      'pf_account_number',
+    ],
+    Earnings: ['basic', 'hra', 'da', 'special_allowance', 'other_allowances', 'gross_salary'],
+    Deductions: [
+      'pf_deduction',
+      'professional_tax',
+      'income_tax',
+      'other_deductions',
+      'total_deductions',
+    ],
+    Result: ['net_salary'],
   };
 
   for (const [group, fields] of Object.entries(fieldGroups)) {

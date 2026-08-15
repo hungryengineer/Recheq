@@ -18,7 +18,9 @@ if (fs.existsSync(envFile)) {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
       const [key, ...valueParts] = trimmed.split('=');
-      process.env[key.trim()] = valueParts.join('=').trim();
+      if (key) {
+        process.env[key.trim()] = valueParts.join('=').trim();
+      }
     }
   }
 }
@@ -37,7 +39,9 @@ console.log('║   OpenAI Extraction Test Suite         ║');
 console.log('╚════════════════════════════════════════╝\n');
 
 console.log(`Configuration:`);
-console.log(`  API Key: ${OPENAI_API_KEY.substring(0, 10)}...${OPENAI_API_KEY.substring(OPENAI_API_KEY.length - 4)}`);
+console.log(
+  `  API Key: ${OPENAI_API_KEY.substring(0, 10)}...${OPENAI_API_KEY.substring(OPENAI_API_KEY.length - 4)}`,
+);
 console.log(`  Model: ${OPENAI_MODEL}`);
 console.log(`  Base URL: ${OPENAI_BASE_URL}\n`);
 
@@ -45,7 +49,7 @@ console.log(`  Base URL: ${OPENAI_BASE_URL}\n`);
 console.log('🔍 Test 1: API Connectivity');
 try {
   const response = await fetch(`${OPENAI_BASE_URL}/models`, {
-    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
   });
 
   if (response.status === 200) {
@@ -63,7 +67,7 @@ try {
 console.log('🔍 Test 2: Model Availability');
 try {
   const response = await fetch(`${OPENAI_BASE_URL}/models`, {
-    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
   });
   const data = (await response.json()) as { data?: Array<{ id: string }> };
   const models = (data.data || []).map((m) => m.id);
@@ -98,7 +102,7 @@ try {
   const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -106,7 +110,8 @@ try {
       messages: [
         {
           role: 'system',
-          content: 'You are a document extraction specialist. Extract data from payslips and return valid JSON.',
+          content:
+            'You are a document extraction specialist. Extract data from payslips and return valid JSON.',
         },
         {
           role: 'user',
@@ -166,5 +171,7 @@ console.log('  4. Monitor OpenAI usage dashboard for token counts\n');
 
 console.log('Documentation:');
 console.log('  - Extraction system: services/api/src/extraction/');
-console.log('  - OpenAI provider: services/api/src/extraction/providers/openai-compatible-extractor.ts');
+console.log(
+  '  - OpenAI provider: services/api/src/extraction/providers/openai-compatible-extractor.ts',
+);
 console.log('  - Schema definitions: packages/schema/src/\n');

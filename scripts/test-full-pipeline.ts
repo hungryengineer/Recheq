@@ -1,7 +1,7 @@
 /**
  * Full end-to-end pipeline test
  * Document → Extraction → Validation → Rules Engine → Findings
- * 
+ *
  * Usage: npx tsx scripts/test-full-pipeline.ts
  */
 
@@ -20,7 +20,9 @@ if (fs.existsSync(envFile)) {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
       const [key, ...valueParts] = trimmed.split('=');
-      process.env[key.trim()] = valueParts.join('=').trim();
+      if (key) {
+        process.env[key.trim()] = valueParts.join('=').trim();
+      }
     }
   }
 }
@@ -48,15 +50,17 @@ console.log(`  Description: ${_description}\n`);
 console.log('🔄 Step 2: Validating extracted data against schema...\n');
 
 try {
-  const { PayslipExtractionV1 } = await import(path.join(PROJECT_ROOT, 'packages/schema/src/payslip.js'));
-  
+  const { PayslipExtractionV1 } = await import(
+    path.join(PROJECT_ROOT, 'packages/schema/src/payslip.js')
+  );
+
   const validation = PayslipExtractionV1.safeParse(extractedData);
-  
+
   if (validation.success) {
     console.log('✓ Data validates against PayslipExtractionV1 schema\n');
   } else {
     console.error('❌ Schema validation failed:');
-    validation.error.issues.forEach((issue) => {
+    validation.error.issues.forEach((issue: { path: Array<string | number>; message: string }) => {
       console.error(`   - ${issue.path.join('.')}: ${issue.message}`);
     });
     process.exit(1);
@@ -130,7 +134,7 @@ const checks = [
   },
 ];
 
-let findings = [];
+const findings = [];
 let passedChecks = 0;
 
 for (const check of checks) {
@@ -171,7 +175,11 @@ console.log(`  Risk Score: ${riskScore}/100`);
 
 // Determine verdict
 const verdict =
-  findings.length === 0 ? 'PASS' : findings.some((f) => f.severity === 'high') ? 'FAILED' : 'FLAGGED';
+  findings.length === 0
+    ? 'PASS'
+    : findings.some((f) => f.severity === 'high')
+      ? 'FAILED'
+      : 'FLAGGED';
 console.log(`  Verdict: ${verdict}\n`);
 
 // Display findings
@@ -198,7 +206,9 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log(`Document:     ${_fixture}`);
 console.log(`Extracted:    ${Object.keys(extractedData).length} fields`);
 console.log(`Validations:  ${passedChecks}/${checks.length} passed`);
-console.log(`Findings:     ${findings.length} (${findings.filter((f) => f.severity === 'high').length} high)`);
+console.log(
+  `Findings:     ${findings.length} (${findings.filter((f) => f.severity === 'high').length} high)`,
+);
 console.log(`Risk Score:   ${riskScore}/100`);
 console.log(`Verdict:      ${verdict}`);
 console.log(`Employee:     ${extractedData.employee_name}`);

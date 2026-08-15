@@ -13,6 +13,7 @@ This document outlines the security measures in place to prevent sensitive data 
 ## Protected Sensitive Files
 
 ### Environment Variables & API Keys
+
 - `.env.local` ✅ IGNORED
 - `.env.*.local` ✅ IGNORED (environment-specific overrides)
 - `.env.production.local` ✅ IGNORED
@@ -20,6 +21,7 @@ This document outlines the security measures in place to prevent sensitive data 
 - `.env.development.local` ✅ IGNORED
 
 ### Certificates & Keys
+
 - `*.pem` ✅ IGNORED
 - `*.key` ✅ IGNORED
 - `*.p12` ✅ IGNORED
@@ -30,6 +32,7 @@ This document outlines the security measures in place to prevent sensitive data 
 - `*.keystore` ✅ IGNORED
 
 ### SSH Keys
+
 - `id_rsa` ✅ IGNORED
 - `id_rsa.pub` ✅ IGNORED
 - `id_ecdsa` ✅ IGNORED
@@ -39,6 +42,7 @@ This document outlines the security measures in place to prevent sensitive data 
 - `known_hosts` ✅ IGNORED
 
 ### Cloud Provider Credentials
+
 - `credentials.json` ✅ IGNORED
 - `service-account-key.json` ✅ IGNORED
 - AWS credentials ✅ IGNORED
@@ -46,12 +50,14 @@ This document outlines the security measures in place to prevent sensitive data 
 - Azure credentials ✅ IGNORED
 
 ### Package Manager Credentials
+
 - `.npmrc` ✅ IGNORED (npm auth tokens)
 - `.yarnrc` ✅ IGNORED (yarn auth tokens)
 - `.netrc` ✅ IGNORED (network auth)
 
 ### Database & Backups
-- `*.sql` (data only) ✅ IGNORED 
+
+- `*.sql` (data only) ✅ IGNORED
 - `*.sqlite` ✅ IGNORED
 - `*.sqlite3` ✅ IGNORED
 - `*.db` ✅ IGNORED
@@ -59,7 +65,9 @@ This document outlines the security measures in place to prevent sensitive data 
 - `*.backup` ✅ IGNORED
 
 ### Note on Schema Files
+
 Migration files (e.g., `db/migrations/0001_initial_schema.sql`) **ARE tracked** because they contain:
+
 - Schema definitions (structure, not data)
 - Database initialization scripts
 - Version control for schema changes
@@ -68,15 +76,15 @@ These do NOT contain sensitive data.
 
 ## Repository Status
 
-| Metric | Value |
-|--------|-------|
-| Total tracked files | 190 |
-| Sensitive files exposed | 0 |
-| .env files in git | 0 |
-| API keys in git | 0 |
-| SSH keys in git | 0 |
-| Build artifacts in git | 0 |
-| Dependency files (node_modules) in git | 0 |
+| Metric                                 | Value |
+| -------------------------------------- | ----- |
+| Total tracked files                    | 190   |
+| Sensitive files exposed                | 0     |
+| .env files in git                      | 0     |
+| API keys in git                        | 0     |
+| SSH keys in git                        | 0     |
+| Build artifacts in git                 | 0     |
+| Dependency files (node_modules) in git | 0     |
 
 ## File Distribution
 
@@ -93,6 +101,7 @@ Total:                  190 files (100%)
 ## Removed from Tracking
 
 ### Build Outputs
+
 - `dist/` - Compiled TypeScript
 - `build/` - Build artifacts
 - `.next/` - Next.js output
@@ -100,20 +109,24 @@ Total:                  190 files (100%)
 - `coverage/` - Test coverage reports
 
 ### Dependencies
+
 - `node_modules/` - npm/pnpm packages
 - `.pnpm-store/` - pnpm store
 
 ### Deployment Artifacts
+
 - `.vercel/` - Vercel deployments
 - `.netlify/` - Netlify deployments
 - `tmp/`, `temp/` - Temporary files
 
 ### Local Caches & Metadata
+
 - `.cache/` - Cache files
 - `.eslintcache` - ESLint cache
 - `.turbo/` - Turbo cache
 
 ### OS & Editor Files
+
 - `.DS_Store` - macOS
 - `Thumbs.db` - Windows
 - `.idea/` - IntelliJ IDEs
@@ -123,6 +136,7 @@ Total:                  190 files (100%)
 ## Intentionally Tracked
 
 ### Package Management
+
 - `pnpm-lock.yaml` ✅ TRACKED
   - Used for reproducible builds
   - Single package manager (pnpm enforced)
@@ -132,6 +146,7 @@ Total:                  190 files (100%)
   - Monorepo workspace configuration
 
 ### Templates & Examples
+
 - `.env.example` ✅ TRACKED
   - Template for developers to copy
   - Contains NO actual secrets
@@ -140,6 +155,7 @@ Total:                  190 files (100%)
   - Environment-specific templates
 
 ### Schema & Migrations
+
 - `db/migrations/*.sql` ✅ TRACKED
   - Schema definitions (not data dumps)
   - Version controlled for reproducibility
@@ -162,6 +178,7 @@ git diff --cached | grep -iE '(password|token|secret|api[_-]?key)' && echo "⚠�
 ## Environment Setup
 
 ### First Time Setup
+
 ```bash
 # Copy template
 cp .env.example .env.local
@@ -174,7 +191,9 @@ git check-ignore .env.local
 ```
 
 ### Developers
+
 Always:
+
 1. Copy `.env.example` to `.env.local`
 2. Add your own API keys/secrets to `.env.local`
 3. NEVER commit `.env.local`
@@ -183,11 +202,13 @@ Always:
 ## CI/CD Security
 
 ### GitHub Actions
+
 - `.env` files are passed via GitHub Secrets, not .gitignore
 - API keys injected at runtime
 - No secrets stored in repository code
 
 ### Production Deployment
+
 - Secrets managed via platform-specific secret stores:
   - Vercel Environment Secrets
   - Netlify Environment Variables
@@ -195,25 +216,27 @@ Always:
 
 ## Audit Trail
 
-| Date | Check | Result | Action |
-|------|-------|--------|--------|
+| Date       | Check                  | Result  | Action              |
+| ---------- | ---------------------- | ------- | ------------------- |
 | 2026-08-15 | Initial Security Audit | ✅ PASS | Enhanced .gitignore |
-| 2026-08-15 | .env.local Protection | ✅ PASS | Confirmed ignored |
-| 2026-08-15 | Credential Check | ✅ PASS | No secrets found |
-| 2026-08-15 | SSH Key Check | ✅ PASS | No keys tracked |
-| 2026-08-15 | Database Check | ✅ PASS | Schema only |
+| 2026-08-15 | .env.local Protection  | ✅ PASS | Confirmed ignored   |
+| 2026-08-15 | Credential Check       | ✅ PASS | No secrets found    |
+| 2026-08-15 | SSH Key Check          | ✅ PASS | No keys tracked     |
+| 2026-08-15 | Database Check         | ✅ PASS | Schema only         |
 
 ## Quick Reference
 
 ### Safe to Commit
+
 ✅ Source code (.ts, .tsx, .js, .jsx)  
 ✅ Configuration files (non-secret)  
 ✅ Schema migrations  
 ✅ Documentation  
 ✅ Tests  
-✅ Package manager configs (pnpm-lock.yaml)  
+✅ Package manager configs (pnpm-lock.yaml)
 
 ### Never Commit
+
 ❌ `.env.local` or any `.env*` files  
 ❌ API keys or tokens  
 ❌ SSH keys  
@@ -221,11 +244,12 @@ Always:
 ❌ Database dumps or backups  
 ❌ Build outputs  
 ❌ node_modules/  
-❌ Sensitive certificates  
+❌ Sensitive certificates
 
 ## Support
 
 For security concerns or questions:
+
 1. Review `.gitignore` patterns
 2. Run security audit: `git ls-files | grep -E '\.(env|key|pem)'`
 3. Verify patterns are working: `git check-ignore -v [file]`
