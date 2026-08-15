@@ -1,6 +1,6 @@
 import React from 'react';
 import { getCases } from '../../../lib/api/cases';
-import { CaseTable } from '../../../components/dashboard/CaseTable';
+import { CaseTable } from '@/components/dashboard/CaseTable';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';

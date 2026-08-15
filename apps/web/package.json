@@ -10,22 +10,27 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tieout/api": "workspace:*",
+    "@tieout/schema": "workspace:*",
     "next": "16.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "@tieout/schema": "workspace:*"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
-    "typescript": "^5",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/dom": "^10.0.0",
-    "@testing-library/jest-dom": "^6.4.0",
-    "@testing-library/user-event": "^14.5.0",
-    "jsdom": "^24.0.0"
+    "jsdom": "^24.0.0",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5"
   }
 }

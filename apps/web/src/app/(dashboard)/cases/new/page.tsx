@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreateCaseForm } from '../../../components/dashboard/CreateCaseForm';
+import { CreateCaseForm } from '@/components/dashboard/CreateCaseForm';
 
 export default function NewCasePage() {
   return (
