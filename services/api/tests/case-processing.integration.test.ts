@@ -27,6 +27,7 @@ describe('Case Processing Orchestration', () => {
           .mockResolvedValue({ content: 'base64', mimeType: 'application/pdf' }),
         replaceFindings: vi.fn().mockResolvedValue(undefined),
         updateCaseStatusAndVerdict: vi.fn().mockResolvedValue(undefined),
+        transaction: vi.fn(async (cb) => cb({})),
       } as unknown as CaseProcessingDeps['db'],
       audit: {
         appendEvent: vi.fn().mockResolvedValue({}),
@@ -37,7 +38,8 @@ describe('Case Processing Orchestration', () => {
           .mockResolvedValue({ establishment: { establishmentId: 'A' } }),
       } as unknown as CaseProcessingDeps['epfoProvider'],
       extractor: {
-        extract: vi.fn().mockResolvedValue({ extractedData: {}, usage: {} }),
+        extractPayslip: vi.fn().mockResolvedValue({ data: {}, usage: {} }),
+        extractForm16: vi.fn().mockResolvedValue({ data: {}, usage: {} }),
       } as unknown as CaseProcessingDeps['extractor'],
     };
 
@@ -45,15 +47,21 @@ describe('Case Processing Orchestration', () => {
     await expect(processPromise).resolves.toBeUndefined();
 
     // Verify evidence assembly and rules were run (findings saved and verdict calculated)
-    expect(_deps.db.replaceFindings).toHaveBeenCalledWith('case-1', expect.any(Array));
+    // Verify evidence assembly and rules were run (findings saved and verdict calculated)
+    expect(_deps.db.replaceFindings).toHaveBeenCalledWith(
+      expect.anything(),
+      'case-1',
+      expect.any(Array),
+    );
     expect(_deps.db.updateCaseStatusAndVerdict).toHaveBeenCalledWith(
+      expect.anything(),
       'case-1',
       'complete',
       expect.any(String),
       expect.any(Number),
     );
     expect(_deps.audit.appendEvent).toHaveBeenCalledWith(
-      null,
+      expect.anything(),
       expect.objectContaining({
         kind: 'verdict_calculated',
         case_id: 'case-1',

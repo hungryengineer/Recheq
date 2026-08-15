@@ -5,7 +5,8 @@ import { transitionCaseStatus } from '../../domain/case-status.js';
 export interface ReprocessServiceDeps {
   db: {
     getCaseById: (caseId: string) => Promise<{ id: string; status: CaseStatus } | null>;
-    updateCaseStatus: (caseId: string, status: CaseStatus) => Promise<void>;
+    updateCaseStatus: (tx: unknown, caseId: string, status: CaseStatus) => Promise<void>;
+    transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
   };
   audit: {
     appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
@@ -28,15 +29,17 @@ export async function requestReprocess(caseId: string, deps: ReprocessServiceDep
   // Transition case status - will throw INVALID_TRANSITION if not allowed
   const newStatus = transitionCaseStatus(caseRecord.status, 'processing_started');
 
-  await deps.db.updateCaseStatus(caseId, newStatus);
+  await deps.db.transaction(async (tx) => {
+    await deps.db.updateCaseStatus(tx, caseId, newStatus);
 
-  await deps.audit.appendEvent(null, {
-    case_id: caseId,
-    kind: 'case_reprocessed',
-    payload: {
-      previous_status: caseRecord.status,
-    },
-    actor: 'verifier',
+    await deps.audit.appendEvent(tx, {
+      case_id: caseId,
+      kind: 'case_reprocessed',
+      payload: {
+        previous_status: caseRecord.status,
+      },
+      actor: 'verifier',
+    });
   });
 
   // Enqueue job for background worker

@@ -5,10 +5,14 @@ import type { EventInput, EventRecord } from '@tieout/schema';
 export interface DeleteCaseDeps {
   db: {
     getCaseById: (caseId: string) => Promise<{ id: string; org_id: string } | null>;
-    redactCase: (caseId: string) => Promise<void>;
+    redactCaseAll: (tx: unknown, caseId: string) => Promise<void>;
+    transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
   };
   audit: {
     appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
+  };
+  storage: {
+    deleteDirectory: (caseId: string) => Promise<void>;
   };
 }
 
@@ -32,17 +36,23 @@ export async function deleteCaseHandler(req: DeleteCaseRequest, deps: DeleteCase
       throw notFoundError(`Case ${caseId} not found`);
     }
 
-    // Overwrite PII with [REDACTED]
-    await deps.db.redactCase(caseId);
+    // 1. Delete documents from object storage
+    await deps.storage.deleteDirectory(caseId);
 
-    // Append audit event
-    await deps.audit.appendEvent(null, {
-      case_id: caseId,
-      kind: 'case_deleted',
-      payload: {
-        message: 'Case personally identifiable information has been redacted',
-      },
-      actor: 'verifier',
+    // 2. Transactionally redact DB entries
+    await deps.db.transaction(async (tx) => {
+      // Overwrite PII with [REDACTED] in case, extractions, and forensics
+      await deps.db.redactCaseAll(tx, caseId);
+
+      // Append audit event
+      await deps.audit.appendEvent(tx, {
+        case_id: caseId,
+        kind: 'case_deleted',
+        payload: {
+          message: 'Case and associated data personally identifiable information has been redacted',
+        },
+        actor: 'verifier',
+      });
     });
 
     return {
