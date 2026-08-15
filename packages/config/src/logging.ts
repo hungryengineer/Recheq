@@ -33,7 +33,7 @@ export type LogFields = Record<string, unknown>;
 
 export interface LogRecord {
   timestamp: string;
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   service: string;
   event: string;
   durationMs: number;
