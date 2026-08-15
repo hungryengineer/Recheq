@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  async rewrites() {
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        {
+          source: '/api/:path*',
+          destination: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/:path*`,
+        },
+      ],
+    };
+  },
 };
 
 export default nextConfig;
