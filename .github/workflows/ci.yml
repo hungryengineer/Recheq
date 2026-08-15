@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -35,9 +36,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  code-review-ai:
+    name: 🐰 Stage 1b - AI Code Review (CodeRabbit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: ⬇️ Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐰 CodeRabbit AI Review
+        uses: coderabbitai/github-action@latest
+        with:
+          debug: false
+          framework: typescript
+          language: en
+
   static-analysis:
     name: 🧹 Stage 2 - Static Analysis
-    needs: security-scan
+    needs: [security-scan, code-review-ai]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

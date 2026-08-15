@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tieout-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tieout
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d tieout']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tieout
+
+  minio:
+    image: minio/minio:latest
+    container_name: tieout-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tieout
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: tieout-mailpit
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8025']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tieout
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  tieout:
+    driver: bridge

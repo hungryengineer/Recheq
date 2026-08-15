@@ -1,0 +1,155 @@
+#!/usr/bin/env node
+
+/**
+ * Bootstrap script: verify versions, start services, wait for readiness
+ *
+ * Usage: pnpm bootstrap
+ */
+
+import { execSync } from 'node:child_process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+
+interface VersionReq {
+  name: string;
+  min: string;
+  check: () => string;
+}
+
+const versionChecks: VersionReq[] = [
+  {
+    name: 'Node.js',
+    min: '18.0.0',
+    check: () => process.version.slice(1),
+  },
+  {
+    name: 'pnpm',
+    min: '8.0.0',
+    check: () => {
+      const output = execSync('pnpm --version', { encoding: 'utf-8' });
+      return output.trim();
+    },
+  },
+  {
+    name: 'Docker',
+    min: '20.0.0',
+    check: () => {
+      const output = execSync('docker --version', { encoding: 'utf-8' });
+      const match = output.match(/Docker version ([\d.]+)/);
+      return match ? match[1] : '0.0.0';
+    },
+  },
+];
+
+function compareVersions(actual: string, required: string): boolean {
+  const aParts = actual.split('.').map(Number);
+  const rParts = required.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(aParts.length, rParts.length); i++) {
+    const a = aParts[i] || 0;
+    const r = rParts[i] || 0;
+    if (a > r) return true;
+    if (a < r) return false;
+  }
+  return true;
+}
+
+async function verifyVersions(): Promise<void> {
+  console.log('🔍 Verifying versions...\n');
+
+  for (const req of versionChecks) {
+    try {
+      const actual = req.check();
+      const ok = compareVersions(actual, req.min);
+
+      if (ok) {
+        console.log(`  ✓ ${req.name.padEnd(12)} ${actual}`);
+      } else {
+        console.error(`  ✗ ${req.name.padEnd(12)} ${actual} (required: ≥${req.min})`);
+        process.exit(1);
+      }
+    } catch {
+      console.error(`  ✗ ${req.name.padEnd(12)} not found`);
+      process.exit(1);
+    }
+  }
+
+  console.log('');
+}
+
+async function startServices(): Promise<void> {
+  console.log('🐳 Starting Docker services...\n');
+
+  try {
+    execSync('docker compose up -d', { cwd: PROJECT_ROOT, stdio: 'inherit' });
+  } catch {
+    console.error('Failed to start Docker services');
+    process.exit(1);
+  }
+
+  console.log('');
+}
+
+async function waitForReadiness(): Promise<void> {
+  const { waitForServices } = await import('./wait-for-services.js');
+  await waitForServices();
+}
+
+async function verifyEnv(): Promise<void> {
+  console.log('🔐 Verifying environment...\n');
+
+  const envFile = path.join(PROJECT_ROOT, '.env.example');
+  if (!fs.existsSync(envFile)) {
+    console.warn('  ⚠️  .env.example not found');
+  } else {
+    console.log('  ✓ .env.example exists');
+  }
+
+  const localEnv = path.join(PROJECT_ROOT, '.env.local');
+  if (!fs.existsSync(localEnv)) {
+    console.log(`  ℹ️  Creating .env.local from .env.example`);
+    if (fs.existsSync(envFile)) {
+      fs.copyFileSync(envFile, localEnv);
+    }
+  } else {
+    console.log('  ✓ .env.local exists');
+  }
+
+  console.log('');
+}
+
+async function printServiceUrls(): Promise<void> {
+  console.log('🎯 Service URLs:\n');
+  console.log('  PostgreSQL:   postgresql://postgres:postgres@localhost:5432/tieout');
+  console.log('  MinIO:        http://localhost:9000 (console: http://localhost:9001)');
+  console.log('  Mailpit:      http://localhost:8025\n');
+}
+
+async function main(): Promise<void> {
+  console.log('╔═══════════════════════════════════════════════════════════╗');
+  console.log('║              Tieout Bootstrap                             ║');
+  console.log('╚═══════════════════════════════════════════════════════════╝\n');
+
+  try {
+    await verifyVersions();
+    await verifyEnv();
+    await startServices();
+    await waitForReadiness();
+    await printServiceUrls();
+
+    console.log('✅ Bootstrap complete!\n');
+    console.log('Next steps:');
+    console.log('  1. pnpm install');
+    console.log('  2. pnpm typecheck');
+    console.log('  3. pnpm test\n');
+  } catch (err) {
+    console.error('\n❌ Bootstrap failed:', err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+}
+
+main();
