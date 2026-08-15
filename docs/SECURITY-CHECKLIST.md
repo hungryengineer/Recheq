@@ -51,7 +51,7 @@ This document outlines the security measures in place to prevent sensitive data 
 - `.netrc` ✅ IGNORED (network auth)
 
 ### Database & Backups
-- `*.sql` (data only) ✅ IGNORED
+- `*.sql` (data only) ✅ IGNORED 
 - `*.sqlite` ✅ IGNORED
 - `*.sqlite3` ✅ IGNORED
 - `*.db` ✅ IGNORED
