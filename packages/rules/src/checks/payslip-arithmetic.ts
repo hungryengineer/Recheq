@@ -25,7 +25,13 @@ export const checkPayslipArithmetic: RuleFunction = (ctx) => {
   const sum = (...vals: (number | null)[]) => vals.reduce<number>((a, b) => a + (b ?? 0), 0);
 
   // 1. Gross Salary check
-  const calculatedGross = sum(p.basic, p.hra, p.da, p.special_allowance, p.other_allowances);
+  const calculatedGross = sum(
+    p.basic.amount,
+    p.hra.amount,
+    p.da.amount,
+    p.special_allowance.amount,
+    ...p.other_allowances.map((a) => a.amount),
+  );
   if (p.gross_salary !== null) {
     const diff = Math.abs(calculatedGross - p.gross_salary);
     if (diff > PAYSLIP_ARITHMETIC_TOLERANCE) {

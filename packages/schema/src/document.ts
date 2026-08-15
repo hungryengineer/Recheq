@@ -21,47 +21,6 @@ export const DocumentRecord = z.object({
 });
 export type DocumentRecord = z.infer<typeof DocumentRecord>;
 
-// ─── Payslip Extraction (all numeric fields nullable per spec) ──
-export const PayslipExtraction = z.object({
-  employee_name: z.string().nullable(),
-  employer_name: z.string().nullable(),
-  month: z.string().nullable(),
-  year: z.number().int().nullable(),
-  /** Raw printed label for basic salary */
-  basic_raw_label: z.string().nullable(),
-  basic: z.number().nullable(),
-  hra: z.number().nullable(),
-  da: z.number().nullable(),
-  special_allowance: z.number().nullable(),
-  other_allowances: z.number().nullable(),
-  gross_salary: z.number().nullable(),
-  pf_deduction: z.number().nullable(),
-  professional_tax: z.number().nullable(),
-  income_tax: z.number().nullable(),
-  other_deductions: z.number().nullable(),
-  total_deductions: z.number().nullable(),
-  net_salary: z.number().nullable(),
-  /** Any notes about extraction difficulties */
-  extraction_notes: z.string().nullable(),
-});
-export type PayslipExtraction = z.infer<typeof PayslipExtraction>;
-
-// ─── Form 16 Extraction (all numeric fields nullable) ───────────
-export const Form16Extraction = z.object({
-  employee_name: z.string().nullable(),
-  employer_name: z.string().nullable(),
-  pan: z.string().nullable(),
-  tan: z.string().nullable(),
-  financial_year: z.string().nullable(),
-  assessment_year: z.string().nullable(),
-  gross_total_income: z.number().nullable(),
-  total_tax_deducted: z.number().nullable(),
-  total_salary: z.number().nullable(),
-  /** Any notes about extraction difficulties */
-  extraction_notes: z.string().nullable(),
-});
-export type Form16Extraction = z.infer<typeof Form16Extraction>;
-
 // ─── Document Upload Input ──────────────────────────────────────
 export const DocumentUploadInput = z.object({
   /** Type of document being uploaded */

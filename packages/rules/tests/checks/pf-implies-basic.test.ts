@@ -19,7 +19,7 @@ describe('checkPfImpliesBasic', () => {
   it('returns no findings when PF is exactly 12% of basic', () => {
     const ctx = {
       assembly: { has_payslip: true },
-      payslip: { basic: 10000, pf_deduction: 1200 },
+      payslip: { basic: { amount: 10000 }, pf_deduction: 1200 },
       form16: null,
       epfoHistory: null,
     } as unknown as CheckContext;
@@ -31,7 +31,7 @@ describe('checkPfImpliesBasic', () => {
   it('returns finding when PF is wildly off 12%', () => {
     const ctx = {
       assembly: { has_payslip: true },
-      payslip: { basic: 10000, pf_deduction: 2000 }, // 20%
+      payslip: { basic: { amount: 10000 }, pf_deduction: 2000 }, // 20%
       form16: null,
       epfoHistory: null,
     } as unknown as CheckContext;

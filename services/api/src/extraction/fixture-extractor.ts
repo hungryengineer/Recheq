@@ -7,6 +7,9 @@ import type {
   ExtractionResult,
 } from './llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 interface FixtureData {
   payslips: Record<string, PayslipExtraction>;
@@ -122,99 +125,29 @@ export class FixtureExtractor implements LlmDocumentExtractor {
  * Create default test fixtures matching the spec requirements
  */
 function createDefaultFixtures(): FixtureData {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const fixturesPath = path.resolve(__dirname, '../../../../fixtures/extraction');
+
+  const readJson = (filename: string) => {
+    try {
+      const content = fs.readFileSync(path.join(fixturesPath, filename), 'utf8');
+      return JSON.parse(content);
+    } catch (err) {
+      console.warn(`Could not load fixture ${filename}`, err);
+      return {};
+    }
+  };
+
   return {
     payslips: {
-      // Clean payslip (all values present)
-      'clean-payslip-1': {
-        employee_name: 'John Doe',
-        employer_name: 'TechCorp Inc',
-        month: 'January',
-        year: 2024,
-        basic_raw_label: 'Basic Salary',
-        basic: 50000,
-        hra: 20000,
-        da: 10000,
-        special_allowance: 15000,
-        other_allowances: 5000,
-        gross_salary: 100000,
-        pf_deduction: 12000,
-        professional_tax: 2000,
-        income_tax: 10000,
-        other_deductions: 1000,
-        total_deductions: 25000,
-        net_salary: 75000,
-        extraction_notes: 'Clear and legible document',
-      },
-      // Partial payslip (some null values)
-      'partial-payslip-1': {
-        employee_name: 'Jane Smith',
-        employer_name: 'FinanceCo Ltd',
-        month: 'February',
-        year: 2024,
-        basic_raw_label: 'Base Pay',
-        basic: 60000,
-        hra: 24000,
-        da: 12000,
-        special_allowance: 18000,
-        other_allowances: 6000,
-        gross_salary: 120000,
-        pf_deduction: 14400,
-        professional_tax: 2500,
-        income_tax: null, // Missing/illegible
-        other_deductions: 1000,
-        total_deductions: null, // Missing calculation
-        net_salary: null, // Missing calculation
-        extraction_notes: 'Income tax section smudged',
-      },
-      // Forged payslip (for verification testing)
-      'forged-payslip-1': {
-        employee_name: 'Robert Johnson',
-        employer_name: 'Innovate Systems',
-        month: 'March',
-        year: 2024,
-        basic_raw_label: 'Basic',
-        basic: 80000,
-        hra: 32000,
-        da: 16000,
-        special_allowance: 24000,
-        other_allowances: 8000,
-        gross_salary: 160000,
-        pf_deduction: 19200,
-        professional_tax: 3000,
-        income_tax: 20000,
-        other_deductions: 1500,
-        total_deductions: 43700,
-        net_salary: 116300,
-        extraction_notes: 'Document appears altered',
-      },
+      'clean-payslip-1': readJson('payslip-clean-01.json'),
+      'partial-payslip-1': readJson('payslip-clean-02.json'),
+      'forged-payslip-1': readJson('payslip-doctored-01.json'),
     },
     form16s: {
-      // Clean Form 16
-      'clean-form16-1': {
-        employee_name: 'John Doe',
-        employer_name: 'TechCorp Inc',
-        pan: 'ABCDE1234F',
-        tan: 'BANG12345B',
-        financial_year: '2023-24',
-        assessment_year: '2024-25',
-        gross_total_income: 1200000,
-        total_tax_deducted: 120000,
-        total_salary: 1200000,
-        extraction_notes: 'Complete and legible',
-      },
-      // Partial Form 16
-      'partial-form16-1': {
-        employee_name: 'Jane Smith',
-        employer_name: 'FinanceCo Ltd',
-        pan: 'FGHIJ5678K',
-        tan: null, // Missing
-        financial_year: '2023-24',
-        assessment_year: '2024-25',
-        gross_total_income: 1440000,
-        total_tax_deducted: 144000,
-        total_salary: null, // Missing
-        extraction_notes: 'TAN number not visible',
-      },
+      'clean-form16-1': readJson('form16-clean-01.json'),
+      'partial-form16-1': readJson('form16-clean-02.json'),
     },
   };
 }

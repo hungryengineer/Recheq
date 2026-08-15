@@ -16,7 +16,7 @@ export const SalaryComponent = z.object({
 export type SalaryComponent = z.infer<typeof SalaryComponent>;
 
 // ─── Payslip Extraction ─────────────────────────────────────────
-export const PayslipExtractionV1 = z.object({
+export const PayslipExtraction = z.object({
   // ── Identity ────────────────────────────────────────────────
   employee_name: z.string().nullable(),
   employee_id: z.string().nullable(),
@@ -74,4 +74,4 @@ export const PayslipExtractionV1 = z.object({
   /** Schema version used during extraction */
   schema_version: z.literal('payslip-v1'),
 });
-export type PayslipExtractionV1 = z.infer<typeof PayslipExtractionV1>;
+export type PayslipExtraction = z.infer<typeof PayslipExtraction>;

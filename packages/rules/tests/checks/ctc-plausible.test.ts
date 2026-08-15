@@ -19,7 +19,7 @@ describe('checkCtcPlausible', () => {
   it('returns no findings if basic is within plausible range', () => {
     const ctx = {
       assembly: { has_payslip: true },
-      payslip: { basic: 50000, gross_salary: 100000 }, // 50%
+      payslip: { basic: { amount: 50000 }, gross_salary: 100000 }, // 50%
       form16: null,
       epfoHistory: null,
     } as unknown as CheckContext;
@@ -31,7 +31,7 @@ describe('checkCtcPlausible', () => {
   it('returns findings if basic is implausibly low', () => {
     const ctx = {
       assembly: { has_payslip: true },
-      payslip: { basic: 10000, gross_salary: 100000 }, // 10%
+      payslip: { basic: { amount: 10000 }, gross_salary: 100000 }, // 10%
       form16: null,
       epfoHistory: null,
     } as unknown as CheckContext;

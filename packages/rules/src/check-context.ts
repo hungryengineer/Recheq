@@ -1,5 +1,27 @@
 import type { EvidenceAssembly, Form16Extraction, PayslipExtraction } from '@tieout/schema';
 
+// ─── Forensics Data ──────────────────────────────────────────────
+export interface FontRunAnalysis {
+  total_characters: number;
+  unique_fonts: number;
+  dominant_font: string;
+  anomalous_characters: number;
+}
+
+export interface MonetaryAnomalyAnalysis {
+  flagged_regions: number;
+  highest_confidence_anomaly: number;
+}
+
+export interface ForensicsData {
+  producer: string | null;
+  creator: string | null;
+  creation_date: Date | null;
+  modification_date: Date | null;
+  font_runs: FontRunAnalysis | null;
+  monetary_anomalies: MonetaryAnomalyAnalysis | null;
+}
+
 // ─── EPFO Data Structures ───────────────────────────────────────
 export interface EpfoPeriod {
   employerName: string;
@@ -30,4 +52,7 @@ export interface CheckContext {
 
   /** The EPFO employment history, if successfully fetched */
   epfoHistory: EpfoHistory | null;
+
+  /** The forensics data extracted from document files */
+  forensics: ForensicsData[] | null;
 }

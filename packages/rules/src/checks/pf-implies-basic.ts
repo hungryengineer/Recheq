@@ -20,12 +20,12 @@ export const checkPfImpliesBasic: RuleFunction = (ctx) => {
 
   const p = ctx.payslip;
 
-  if (p.basic === null || p.pf_deduction === null || p.basic === 0) {
+  if (p.basic.amount === null || p.pf_deduction === null || p.basic.amount === 0) {
     return [];
   }
 
   const findings: FindingInput[] = [];
-  const calculatedPfRate = p.pf_deduction / p.basic;
+  const calculatedPfRate = p.pf_deduction / p.basic.amount;
 
   if (Math.abs(calculatedPfRate - 0.12) > PF_RATE_TOLERANCE) {
     findings.push({

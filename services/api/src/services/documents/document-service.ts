@@ -20,6 +20,9 @@ export interface DocumentServiceDeps {
   storage: {
     putObject: (key: string, content: Buffer, contentType: string) => Promise<void>;
   };
+  forensics?: {
+    createRecord: (documentId: string) => Promise<string>;
+  };
 }
 
 // ─── Upload Result ──────────────────────────────────────────────
@@ -114,6 +117,15 @@ export async function uploadDocument(
     size_bytes: content.length,
     storage_path: storagePath,
   });
+
+  // ── 9. Initiate forensics for PDFs ──────────────────────────────
+  if (mimeResult.mimeType === 'application/pdf' && deps.forensics) {
+    try {
+      await deps.forensics.createRecord(document.id);
+    } catch (err) {
+      console.error(`Failed to initiate forensics for document ${document.id}`, err);
+    }
+  }
 
   return { document, deduplicated: false };
 }
