@@ -153,13 +153,14 @@ export function FindingCard({ finding }: { finding: Record<string, any> }) {
                     <tr className="border-b border-gray-100">
                       <td className="py-3">Basic Salary</td>
                       <td className="py-3 text-right">₹ 52,000</td>
-                      <td className="py-3 pl-8 relative">
-                        <span className="relative z-10 text-gray-800">Provident Fund (PF)</span>
-                        <div className="absolute inset-y-1 left-6 right-0 bg-red-500/10 border-2 border-red-500/40 rounded-sm pointer-events-none"></div>
+                      <td className="py-3 pl-8 relative group cursor-default">
+                        <span className="relative z-10 text-gray-900 font-medium">Provident Fund (PF)</span>
+                        <div className="absolute inset-y-1 -left-2 right-0 bg-yellow-300/40 border-2 border-yellow-400/80 rounded shadow-sm mix-blend-multiply pointer-events-none transition-all group-hover:bg-yellow-300/60"></div>
+                        <div className="absolute top-1/2 -left-6 w-2 h-2 rounded-full bg-red-500 animate-pulse -translate-y-1/2"></div>
                       </td>
-                      <td className="py-3 text-right relative">
-                        <span className="relative z-10 text-gray-800">₹ 3,600</span>
-                        <div className="absolute inset-y-1 left-0 right-0 bg-red-500/10 border-2 border-red-500/40 rounded-sm pointer-events-none"></div>
+                      <td className="py-3 text-right relative group cursor-default">
+                        <span className="relative z-10 text-gray-900 font-medium">₹ 3,600</span>
+                        <div className="absolute inset-y-1 -left-2 -right-2 bg-yellow-300/40 border-2 border-yellow-400/80 rounded shadow-sm mix-blend-multiply pointer-events-none transition-all group-hover:bg-yellow-300/60"></div>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-100">
