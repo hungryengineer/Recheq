@@ -12,6 +12,11 @@ export interface DocumentStorage {
    * @param contentType - MIME type of the file
    */
   putObject(key: string, content: Buffer, contentType: string): Promise<void>;
+  
+  /**
+   * Retrieves a document from the private storage bucket.
+   */
+  getObject(key: string): Promise<Buffer>;
 }
 
 // ─── S3 Configuration ───────────────────────────────────────────
@@ -65,6 +70,25 @@ export function createDocumentStorage(
         throw new Error(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
     },
+    async getObject(key: string): Promise<Buffer> {
+      const url = getObjectUrl(config, key);
+      const emptyHash = createHash('sha256').update('').digest('hex');
+      const headers = signObjectRequest(
+        config,
+        url,
+        emptyHash,
+        '',
+        0,
+        new Date(),
+        'GET'
+      );
+      
+      const response = await fetch(url, { method: 'GET', headers });
+      if (!response.ok) {
+        throw new Error(`Failed to get document: ${response.status} ${response.statusText}`);
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
   };
 }
 
@@ -109,24 +133,28 @@ function signObjectRequest(
   contentType: string,
   contentLength: number,
   now: Date,
+  method: 'GET' | 'PUT' | 'HEAD' = 'PUT',
 ): Headers {
   const amzDate = toAmzDate(now);
   const dateStamp = amzDate.slice(0, 8);
   const credentialScope = `${dateStamp}/${config.region}/s3/aws4_request`;
 
   const headers = new Headers({
-    'content-length': String(contentLength),
-    'content-type': contentType,
     host: url.host,
     'x-amz-content-sha256': bodyHash,
     'x-amz-date': amzDate,
   });
+  
+  if (contentLength > 0 || method === 'PUT') {
+      headers.set('content-length', String(contentLength));
+      if (contentType) headers.set('content-type', contentType);
+  }
 
   const canonicalHeaders = getCanonicalHeaders(headers);
   const signedHeaders = getSignedHeaders(headers);
 
   const canonicalRequest = [
-    'PUT',
+    method,
     encodeURI(url.pathname),
     url.searchParams.toString(),
     canonicalHeaders,
