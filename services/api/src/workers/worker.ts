@@ -39,8 +39,10 @@ async function processCaseJob(jobs: PgBoss.Job[]): Promise<void> {
   }
 }
 
+import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
+
 async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
-  for (const job of jobs) console.log('employer job', { id: job.id });
+  await processEmployerWorkflowJob(jobs);
 }
 async function retentionJob(jobs: PgBoss.Job[]): Promise<void> {
   for (const job of jobs) console.log('retention cleanup', { id: job.id });

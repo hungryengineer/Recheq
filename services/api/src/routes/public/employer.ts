@@ -1,0 +1,79 @@
+import { z } from 'zod';
+import type { RequestContext } from '../../observability/request-context.js';
+import type { TokenVerifier } from './token-auth.js';
+import { toErrorResponse } from '../../http/errors.js';
+import { validateBody } from '../../security/request-validation.js';
+import type {
+  EmployerServiceDeps,
+  EmployerResponsePayload as EmployerResponsePayloadType,
+} from '../../services/employer/employer-service.js';
+import {
+  getEmployerForm,
+  submitEmployerResponse,
+} from '../../services/employer/employer-service.js';
+import crypto from 'node:crypto';
+
+export interface EmployerRouteRequest {
+  params: {
+    token: string;
+  };
+  body?: unknown;
+  context: RequestContext;
+}
+
+export interface EmployerRouteDeps extends EmployerServiceDeps {
+  tokenVerifier: TokenVerifier;
+}
+
+const EmployerResponsePayload = z.object({
+  confirmed: z.boolean(),
+  corrected_name: z.string().optional(),
+  corrected_title: z.string().optional(),
+  corrected_ctc: z.number().finite().optional(),
+  note: z.string().optional(),
+});
+
+export async function getEmployerHandler(req: EmployerRouteRequest, deps: EmployerRouteDeps) {
+  try {
+    // Validate token
+    await deps.tokenVerifier.verifyAndGetCaseId(req.params.token, 'employer');
+
+    // Hash token to look up request
+    const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    const form = await getEmployerForm(tokenHash, deps);
+
+    return {
+      status: 200,
+      body: {
+        data: form,
+      },
+    };
+  } catch (err) {
+    return toErrorResponse(err);
+  }
+}
+
+export async function submitEmployerHandler(req: EmployerRouteRequest, deps: EmployerRouteDeps) {
+  try {
+    // Validate token
+    await deps.tokenVerifier.verifyAndGetCaseId(req.params.token, 'employer');
+
+    // Hash token to look up request
+    const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    const payload = validateBody(req.body, EmployerResponsePayload);
+
+    await submitEmployerResponse(tokenHash, payload as EmployerResponsePayloadType, deps);
+
+    return {
+      status: 200,
+      body: {
+        success: true,
+        message: 'Employer response submitted successfully',
+      },
+    };
+  } catch (err) {
+    return toErrorResponse(err);
+  }
+}

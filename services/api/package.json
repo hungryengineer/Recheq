@@ -15,7 +15,8 @@
     "fast-json-stable-stringify": "^2.1.0",
     "pdf-parse": "^1.1.1",
     "pg-boss": "^10.3.0",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/fast-json-stable-stringify": "^2.1.2",
