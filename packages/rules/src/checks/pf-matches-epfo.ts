@@ -1,33 +1,45 @@
 import type { FindingInput } from '@tieout/schema';
+import type { EpfoPeriod } from '../check-context.js';
 import type { RuleFunction } from '../check.js';
 import { PAYSLIP_ARITHMETIC_TOLERANCE } from '../constants.js';
 
 /**
  * pf-matches-epfo
  *
- * Compares the payslip pf_deduction for the payslip month against the
- * employee_share filed by the employer in the EPFO record for that same month.
+ * Compares payslip pf_deduction against the employer-filed employee_share
+ * in the EPFO record for the same month and employer.
  *
- * The employer files EPFO contributions independently — the candidate cannot
- * alter them. A discrepancy between the two is strong evidence of forgery.
+ * Employer match strategy:
+ *   1. Normalise both names (lowercase, collapse whitespace) and check substring.
+ *   2. If exactly one period matches → use it.
+ *   3. If zero periods match → not_assessed (employer name mismatch or unavailable).
+ *   4. If multiple periods match (e.g. dual-employment) → not_assessed to avoid
+ *      selecting an arbitrary contribution. Dual-employment is detected separately
+ *      by the dual-employment rule.
  *
- * Strategy: find the latest contribution month across all periods, compare
- * its employee_share to the payslip pf_deduction.
+ * Contribution month match: exact YYYY-MM from payslip month/year fields.
+ * Falls back to the latest contribution within the matched period if no exact
+ * month is found (e.g. payslip month field is null).
  */
 export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
-  if (!ctx.assembly.has_epfo || !ctx.epfoHistory || !ctx.assembly.has_payslip || !ctx.payslip) {
-    return [
+  const NOT_ASSESSED = (reason: string) =>
+    [
       {
         rule_id: 'pf-matches-epfo',
-        severity: 'high',
-        status: 'not_assessed',
+        severity: 'high' as const,
+        status: 'not_assessed' as const,
         title: 'PF vs EPFO Match Unverified',
-        explanation: 'Requires both EPFO history with contributions and payslip extraction data.',
+        explanation: reason,
         expected: null,
         observed: null,
         source_document_ids: [],
       },
-    ];
+    ] as FindingInput[];
+
+  if (!ctx.assembly.has_epfo || !ctx.epfoHistory || !ctx.assembly.has_payslip || !ctx.payslip) {
+    return NOT_ASSESSED(
+      'Requires both EPFO history with contributions and payslip extraction data.',
+    );
   }
 
   const p = ctx.payslip;
@@ -36,42 +48,44 @@ export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
     return [];
   }
 
-  // Build a flat list of all contributions across all periods
-  const allContributions = ctx.epfoHistory.periods.flatMap((period) =>
-    (period.contributions ?? []).map((c) => ({
-      month: c.month,
-      employee_share: c.employee_share,
-      employerName: period.employerName,
-    })),
-  );
+  // ── Employer match ───────────────────────────────────────────────
+  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+  const payslipEmployer = normalize(p.employer_name ?? '');
 
-  if (allContributions.length === 0) {
-    return [
-      {
-        rule_id: 'pf-matches-epfo',
-        severity: 'high',
-        status: 'not_assessed',
-        title: 'PF vs EPFO Match Unverified',
-        explanation: 'EPFO record contains no monthly contribution data.',
-        expected: null,
-        observed: null,
-        source_document_ids: [],
-      },
-    ];
+  const matchedPeriods = ctx.epfoHistory.periods.filter((period) => {
+    const epfoEmployer = normalize(period.employerName);
+    return epfoEmployer.includes(payslipEmployer) || payslipEmployer.includes(epfoEmployer);
+  });
+
+  if (matchedPeriods.length === 0) {
+    return NOT_ASSESSED(`No EPFO period matches employer name "${p.employer_name ?? 'unknown'}".`);
   }
 
-  // Find the payslip month in YYYY-MM format
+  if (matchedPeriods.length > 1) {
+    return NOT_ASSESSED(
+      `Multiple EPFO periods match employer "${p.employer_name ?? 'unknown'}". Cannot determine which contribution to compare (possible dual employment — see dual-employment rule).`,
+    );
+  }
+
+  const period: EpfoPeriod = matchedPeriods[0]!;
+  const contributions = period.contributions ?? [];
+
+  if (contributions.length === 0) {
+    return NOT_ASSESSED('EPFO record contains no monthly contribution data.');
+  }
+
+  // ── Contribution month match ────────────────────────────────────
   const payslipMonth =
     p.year !== null && p.month !== null
       ? `${p.year}-${String(monthNumber(p.month)).padStart(2, '0')}`
       : null;
 
-  // Use exact month match if available, otherwise latest contribution
   const contribution = payslipMonth
-    ? (allContributions.find((c) => c.month === payslipMonth) ??
-      allContributions.sort((a, b) => b.month.localeCompare(a.month))[0]!)
-    : allContributions.sort((a, b) => b.month.localeCompare(a.month))[0]!;
+    ? (contributions.find((c) => c.month === payslipMonth) ??
+      [...contributions].sort((a, b) => b.month.localeCompare(a.month))[0]!)
+    : [...contributions].sort((a, b) => b.month.localeCompare(a.month))[0]!;
 
+  // ── Compare ─────────────────────────────────────────────────────
   const findings: FindingInput[] = [];
   const diff = Math.abs(contribution.employee_share - p.pf_deduction);
 
@@ -81,7 +95,7 @@ export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
       severity: 'high',
       status: 'open',
       title: 'PF Deduction Does Not Match EPFO Record',
-      explanation: `The payslip PF deduction (Rs. ${p.pf_deduction.toLocaleString('en-IN')}) does not match the employee share filed by ${contribution.employerName} in EPFO for ${contribution.month} (Rs. ${contribution.employee_share.toLocaleString('en-IN')}). The employer files EPFO contributions independently.`,
+      explanation: `The payslip PF deduction (Rs. ${p.pf_deduction.toLocaleString('en-IN')}) does not match the employee share filed by ${period.employerName} in EPFO for ${contribution.month} (Rs. ${contribution.employee_share.toLocaleString('en-IN')}). The employer files EPFO contributions independently.`,
       expected: String(contribution.employee_share),
       observed: String(p.pf_deduction),
       source_document_ids: [],
