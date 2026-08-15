@@ -1,4 +1,4 @@
-import { z } from 'zod';
+
 import crypto from 'node:crypto';
 import type { RequestContext } from '../../observability/request-context.js';
 import type { TokenVerifier } from './token-auth.js';
