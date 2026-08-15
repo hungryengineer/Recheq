@@ -13,6 +13,24 @@ import {
 import type { TokenPurpose } from '@tieout/schema';
 import { AppError, forbiddenError, unauthorizedError } from '../http/errors.js';
 import type { TokenRecord } from '../tokens/verify-token.js';
+import type { ZodSchema } from 'zod';
+import { ZodError } from 'zod';
+
+/**
+ * Validates a request body against a Zod schema.
+ * Throws a 400 AppError with validation details if it fails.
+ */
+export function validateBody<T>(body: unknown, schema: ZodSchema<T>): T {
+  try {
+    return schema.parse(body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const details = error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
+      throw new AppError(400, 'VALIDATION_ERROR', `Validation failed: ${details}`);
+    }
+    throw new AppError(400, 'VALIDATION_ERROR', 'Invalid request body');
+  }
+}
 
 // Secret patterns to filter from responses
 const SECRET_PATTERNS = [

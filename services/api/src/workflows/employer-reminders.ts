@@ -8,7 +8,7 @@ import type { EventInput } from '@tieout/schema';
 
 export interface EmployerRemindersDeps {
   audit: {
-    appendEvent: (tx: unknown, input: EventInput) => Promise<void>;
+    appendEvent: (tx: unknown, input: EventInput) => Promise<unknown>;
   };
 }
 

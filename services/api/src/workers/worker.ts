@@ -40,43 +40,17 @@ async function processCaseJob(jobs: PgBoss.Job[]): Promise<void> {
 }
 
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
-import crypto from 'node:crypto';
-import { events } from '../db/schema/events.js';
-import { desc } from 'drizzle-orm';
+import { AuditService } from '../audit/audit-service.js';
+import { DbAuditRepository } from '../audit/db-audit-repository.js';
 
 async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
   if (!db) db = createDb(process.env.DATABASE_URL!);
 
+  const auditRepo = new DbAuditRepository(db);
+  const auditService = new AuditService(auditRepo);
+
   await processEmployerWorkflowJob(jobs, {
-    audit: {
-      appendEvent: async (tx: unknown, input) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dbtx = tx as any;
-        // Simple inline implementation for worker context
-        const lastEventList = await dbtx
-          .select()
-          .from(events)
-          .where(eq(events.case_id, input.case_id))
-          .orderBy(desc(events.seq))
-          .limit(1);
-
-        const seq = lastEventList.length > 0 ? lastEventList[0].seq + 1 : 1;
-        const prevHash = lastEventList.length > 0 ? lastEventList[0].hash : null;
-        const newHash = crypto.randomBytes(32).toString('hex'); // Placeholder hash for worker
-
-        await dbtx.insert(events).values({
-          id: crypto.randomUUID(),
-          case_id: input.case_id,
-          seq,
-          kind: input.kind,
-          payload: input.payload,
-          hash: newHash,
-          prev_hash: prevHash,
-          actor: input.actor,
-          created_at: new Date(),
-        });
-      },
-    },
+    audit: auditService,
   });
 }
 async function retentionJob(jobs: PgBoss.Job[]): Promise<void> {
