@@ -3,6 +3,8 @@ import './globals.css';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 
+import { Toaster } from 'sonner';
+
 export const metadata: Metadata = {
   title: 'Recheq | Background Verification',
   description: 'Enterprise grade background verification platform',
@@ -24,6 +26,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
