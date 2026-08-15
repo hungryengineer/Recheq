@@ -1,0 +1,11 @@
+{
+  "uan": "100123456789",
+  "periods": [
+    {
+      "employerName": "Acme Technologies Pvt Ltd",
+      "establishmentId": "MH/MUM/12345",
+      "startDate": "2023-04-01",
+      "endDate": null
+    }
+  ]
+}
