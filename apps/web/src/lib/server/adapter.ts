@@ -5,7 +5,9 @@ import { buildDeps } from './deps';
 
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
 
-export function toHandler<TReq = unknown>(fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>) {
+export function toHandler<TReq = unknown>(
+  fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>,
+) {
   return async function (request: Request, _context: unknown) {
     const requestId = crypto.randomUUID();
     try {
@@ -78,7 +80,9 @@ export function toHandler<TReq = unknown>(fn: (req: TReq, deps: CaseProcessingDe
   };
 }
 
-export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>) {
+export function toPublicHandler<TReq = unknown>(
+  fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>,
+) {
   return async function (request: Request, context: { params: Promise<Record<string, string>> }) {
     const requestId = crypto.randomUUID();
     try {

@@ -8,12 +8,12 @@ export async function startProcessing(caseId: string) {
   await repository.updateCaseStatus(caseId, 'processing');
 
   // We intentionally do not await processCase here to run it asynchronously
-  // in the background. Note: in a production Node.js environment, 
+  // in the background. Note: in a production Node.js environment,
   // you should use a job queue like pg-boss to ensure reliability.
   const deps = buildDeps();
   const context = createRequestContext({
     requestId: crypto.randomUUID(),
-    service: 'async-worker'
+    service: 'async-worker',
   });
 
   processCase(caseId, context, deps)
@@ -23,7 +23,7 @@ export async function startProcessing(caseId: string) {
     .catch((err) => {
       console.error(`[Worker] Case ${caseId} processing failed:`, err);
       // Fallback status update on catastrophic unhandled error
-      repository.updateCaseStatus(caseId, 'needs_review').catch(e => {
+      repository.updateCaseStatus(caseId, 'needs_review').catch((e) => {
         console.error(`[Worker] Failed to update fallback status for ${caseId}`, e);
       });
     });

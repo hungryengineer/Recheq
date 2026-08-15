@@ -17,9 +17,7 @@ import { FixtureExtractor } from '@tieout/api/src/extraction/fixture-extractor.j
 
 export function buildDeps(): CaseProcessingDeps {
   if (!globalForDeps.__deps) {
-    const auditService = new AuditService(
-      new DbAuditRepository(db),
-    );
+    const auditService = new AuditService(new DbAuditRepository(db));
 
     const tokenVerifier = {
       verifyAndGetCaseId: async (rawToken: string, _purpose: string) => {
@@ -32,7 +30,7 @@ export function buildDeps(): CaseProcessingDeps {
           throw new Error('No cases found for mock token verification');
         }
         throw new Error('Invalid token');
-      }
+      },
     };
 
     globalForDeps.__deps = {

@@ -34,33 +34,43 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
     const documents = await deps.db.getDocumentsForCase(caseId);
     // Determine extractions count from documents logic if needed
     // In actual implementation we might fetch extractions, but this is a simplified view
-    
+
     // Status steps: payslip, form16, epfo, rules
-    const hasPayslip = documents.some(d => d.kind === 'payslip');
-    const hasForm16 = documents.some(d => d.kind === 'form_16');
+    const hasPayslip = documents.some((d) => d.kind === 'payslip');
+    const hasForm16 = documents.some((d) => d.kind === 'form_16');
     const epfoRecords = await deps.db.getCompletedEpfoRecords(caseId);
-    
+
     const steps = [
       {
         key: 'payslip',
         label: 'Payslip Processing',
-        state: hasPayslip ? 'done' : 'pending'
+        state: hasPayslip ? 'done' : 'pending',
       },
       {
         key: 'form16',
         label: 'Form 16 Analysis',
-        state: hasForm16 ? 'done' : 'pending'
+        state: hasForm16 ? 'done' : 'pending',
       },
       {
         key: 'epfo',
         label: 'EPFO Verification',
-        state: epfoRecords.length > 0 ? 'done' : (caseRecord.status === 'processing' || caseRecord.status === 'complete' ? 'done' : 'pending')
+        state:
+          epfoRecords.length > 0
+            ? 'done'
+            : caseRecord.status === 'processing' || caseRecord.status === 'complete'
+              ? 'done'
+              : 'pending',
       },
       {
         key: 'rules',
         label: 'Rule Evaluation',
-        state: caseRecord.status === 'complete' ? 'done' : (caseRecord.status === 'processing' ? 'active' : 'pending')
-      }
+        state:
+          caseRecord.status === 'complete'
+            ? 'done'
+            : caseRecord.status === 'processing'
+              ? 'active'
+              : 'pending',
+      },
     ];
 
     return {
@@ -69,7 +79,7 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
         status: caseRecord.status,
         documents_total: documents.length,
         documents_extracted: documents.length, // simplify for now
-        steps
+        steps,
       },
     };
   } catch (err) {

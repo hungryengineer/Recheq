@@ -12,9 +12,16 @@ export async function POST(request: Request, context: { params: Promise<{ token:
     const kind = formData.get('kind');
 
     if (!fileNode || typeof fileNode === 'string') {
-      return NextResponse.json({
-        error: { code: 'INVALID_REQUEST', message: 'Missing or invalid file', request_id: requestId }
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_REQUEST',
+            message: 'Missing or invalid file',
+            request_id: requestId,
+          },
+        },
+        { status: 400 },
+      );
     }
 
     // Convert file to Buffer

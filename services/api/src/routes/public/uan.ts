@@ -23,7 +23,7 @@ export interface SubmitUanDeps extends EpfoServiceDeps {
 export async function submitUanHandler(req: SubmitUanRequest, deps: SubmitUanDeps) {
   try {
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
-    
+
     const body = req.body as { uan?: unknown };
     if (!body || typeof body.uan !== 'string' || !/^[0-9]{12}$/.test(body.uan)) {
       throw validationError('Invalid UAN format');
@@ -40,7 +40,7 @@ export async function submitUanHandler(req: SubmitUanRequest, deps: SubmitUanDep
     return {
       status: 200,
       body: {
-        accepted: true
+        accepted: true,
       },
     };
   } catch (err) {
