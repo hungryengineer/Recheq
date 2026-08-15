@@ -85,7 +85,12 @@ export async function processCase(
             ? await deps.extractor.extractPayslip(req)
             : await deps.extractor.extractForm16(req);
 
-        await updateExtractionSuccess(deps.db as unknown as Database, extId, result.data, result.usage);
+        await updateExtractionSuccess(
+          deps.db as unknown as Database,
+          extId,
+          result.data,
+          result.usage,
+        );
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         await updateExtractionFailure(deps.db as unknown as Database, extId, msg);
@@ -112,7 +117,10 @@ export async function processCase(
 
   // 6. Calculate Verdict
   const score = calculateRiskScore(findings as unknown as Parameters<typeof calculateRiskScore>[0]);
-  const verdict = calculateVerdict(findings as unknown as Parameters<typeof calculateVerdict>[0], ctx.assembly.origins.length);
+  const verdict = calculateVerdict(
+    findings as unknown as Parameters<typeof calculateVerdict>[0],
+    ctx.assembly.origins.length,
+  );
 
   // 7. Transactional Commit
   await deps.db.replaceFindings(caseId, findings);
