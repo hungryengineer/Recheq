@@ -4,8 +4,14 @@ import { cases, extractions } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';
 
 export interface ExtractionProvider {
-  extractPayslip: (doc: { id: string; content: string }) => Promise<{ data: unknown; usage: unknown }>;
-  extractForm16: (doc: { id: string; content: string }) => Promise<{ data: unknown; usage: unknown }>;
+  extractPayslip: (doc: {
+    id: string;
+    content: string;
+  }) => Promise<{ data: unknown; usage: unknown }>;
+  extractForm16: (doc: {
+    id: string;
+    content: string;
+  }) => Promise<{ data: unknown; usage: unknown }>;
 }
 
 export interface CaseProcessingDeps {
@@ -46,11 +52,7 @@ export async function updateExtractionFailure(
 export async function processCase(deps: CaseProcessingDeps, caseId: string): Promise<void> {
   const db = deps.db;
 
-  const caseRecord = await db
-    .select()
-    .from(cases)
-    .where(eq(cases.id, caseId))
-    .limit(1);
+  const caseRecord = await db.select().from(cases).where(eq(cases.id, caseId)).limit(1);
 
   if (!caseRecord.length) {
     throw new Error(`Case not found: ${caseId}`);

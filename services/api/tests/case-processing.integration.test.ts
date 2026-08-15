@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { processCase, updateExtractionSuccess, CaseProcessingDeps } from '../src/workflows/case-processing.js';
+import {
+  processCase,
+  updateExtractionSuccess,
+  CaseProcessingDeps,
+} from '../src/workflows/case-processing.js';
 
 describe('Case Processing', () => {
   let mockDb: any;
@@ -85,8 +89,17 @@ describe('Case Processing', () => {
         where: vi.fn().mockReturnValue({
           limit: vi
             .fn()
-            .mockResolvedValueOnce([{ id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' }])
-            .mockResolvedValueOnce([{ id: 'doc-1', case_id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' }]),
+            .mockResolvedValueOnce([
+              { id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' },
+            ])
+            .mockResolvedValueOnce([
+              {
+                id: 'doc-1',
+                case_id: 'case-1',
+                document_type: 'payslip',
+                raw_content: 'payslip data',
+              },
+            ]),
         }),
       }),
     }));
@@ -105,8 +118,17 @@ describe('Case Processing', () => {
         where: vi.fn().mockReturnValue({
           limit: vi
             .fn()
-            .mockResolvedValueOnce([{ id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' }])
-            .mockResolvedValueOnce([{ id: 'doc-1', case_id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' }]),
+            .mockResolvedValueOnce([
+              { id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' },
+            ])
+            .mockResolvedValueOnce([
+              {
+                id: 'doc-1',
+                case_id: 'case-1',
+                document_type: 'payslip',
+                raw_content: 'payslip data',
+              },
+            ]),
         }),
       }),
     }));
