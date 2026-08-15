@@ -1,8 +1,16 @@
+export interface EpfoContribution {
+  /** YYYY-MM */
+  month: string;
+  employee_share: number;
+  employer_share: number;
+}
+
 export interface EpfoPeriod {
   employerName: string;
   establishmentId: string;
   startDate: string;
   endDate: string | null;
+  contributions: EpfoContribution[];
 }
 
 export interface EpfoHistory {
@@ -11,9 +19,5 @@ export interface EpfoHistory {
 }
 
 export interface EpfoProvider {
-  /**
-   * Fetches employment history for a given UAN using the provided consent ID.
-   * Returns null or a typed unavailable result if the UAN is not found/invalid.
-   */
   fetchEmploymentHistory(uan: string, consentId: string): Promise<EpfoHistory | null>;
 }

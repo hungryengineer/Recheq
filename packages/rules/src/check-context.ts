@@ -22,12 +22,20 @@ export interface ForensicsData {
   monetary_anomalies: MonetaryAnomalyAnalysis | null;
 }
 
-// ─── EPFO Data Structures ───────────────────────────────────────
+// ─── EPFO Data Structures ──────────────────────────────────────
+export interface EpfoContribution {
+  /** YYYY-MM */
+  month: string;
+  employee_share: number;
+  employer_share: number;
+}
+
 export interface EpfoPeriod {
   employerName: string;
   establishmentId: string;
   startDate: string;
   endDate: string | null;
+  contributions: EpfoContribution[];
 }
 
 export interface EpfoHistory {
