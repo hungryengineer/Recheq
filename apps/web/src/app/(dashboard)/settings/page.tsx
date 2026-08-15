@@ -388,7 +388,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Get an email when a verification case is fully processed.</p>
                   </div>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle1" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-[var(--color-surface)] border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
+                    <input type="checkbox" name="toggle" id="toggle1" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
                     <label htmlFor="toggle1" className="toggle-label block overflow-hidden h-5 rounded-full bg-[var(--color-accent)] cursor-pointer"></label>
                   </div>
                 </div>
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Get notified when a candidate uploads their forms.</p>
                   </div>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle2" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-[var(--color-surface)] border-4 appearance-none cursor-pointer border-gray-300" />
+                    <input type="checkbox" name="toggle" id="toggle2" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300" />
                     <label htmlFor="toggle2" className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Receive monthly invoices and billing updates.</p>
                   </div>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle3" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-[var(--color-surface)] border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
+                    <input type="checkbox" name="toggle" id="toggle3" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
                     <label htmlFor="toggle3" className="toggle-label block overflow-hidden h-5 rounded-full bg-[var(--color-accent)] cursor-pointer"></label>
                   </div>
                 </div>
