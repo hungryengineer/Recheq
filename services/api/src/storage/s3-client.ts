@@ -119,12 +119,7 @@ function signS3Request(
 
   headers.set(
     'authorization',
-    [
-      'AWS4-HMAC-SHA256',
-      `Credential=${config.accessKeyId}/${credentialScope}`,
-      `SignedHeaders=${signedHeaders}`,
-      `Signature=${signature}`,
-    ].join(', '),
+    `AWS4-HMAC-SHA256 Credential=${config.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
   );
 
   return headers;

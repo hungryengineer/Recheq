@@ -149,12 +149,7 @@ function signObjectRequest(
 
   headers.set(
     'authorization',
-    [
-      'AWS4-HMAC-SHA256',
-      `Credential=${config.accessKeyId}/${credentialScope}`,
-      `SignedHeaders=${signedHeaders}`,
-      `Signature=${signature}`,
-    ].join(', '),
+    `AWS4-HMAC-SHA256 Credential=${config.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
   );
 
   return headers;
@@ -192,7 +187,7 @@ function hmac(key: string | Buffer, value: string, encoding?: 'hex'): Buffer | s
 }
 
 function toAmzDate(date: Date): string {
-  return date.toISOString().replace(/[:-]|\.\\d{3}/g, '');
+  return date.toISOString().replace(/[:-]|\.\d{3}/g, '');
 }
 
 async function defaultTransport(
