@@ -10,6 +10,12 @@ export function SecurityTab() {
   const [isEnabling2FA, setIsEnabling2FA] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const [activeSessions, setActiveSessions] = useState([
+    { id: 'current', device: 'Mac OS • Chrome', location: 'New York, US', isCurrent: true },
+    { id: 'iphone', device: 'iPhone 13 • Safari', location: 'New York, US', isCurrent: false },
+    { id: 'windows', device: 'Windows 11 • Edge', location: 'Boston, US', isCurrent: false }
+  ]);
+
   const handleUpdatePassword = async () => {
     setIsUpdatingPassword(true);
     await new Promise(resolve => setTimeout(resolve, 800));
@@ -34,6 +40,7 @@ export function SecurityTab() {
   const handleSignoutOtherDevices = async () => {
     setIsSigningOut(true);
     await new Promise(resolve => setTimeout(resolve, 600));
+    setActiveSessions(prev => prev.filter(session => session.isCurrent));
     setIsSigningOut(false);
     toast.success('Successfully signed out of all other devices');
   };
@@ -99,21 +106,32 @@ export function SecurityTab() {
             <label className="block text-sm font-medium text-[var(--color-fg)]">Active Sessions</label>
           </div>
           <div className="w-full md:w-2/3">
-            <div className="border border-[var(--color-border)] rounded-[var(--radius-control)] p-3 flex justify-between items-center mb-2">
-              <div>
-                <p className="text-sm font-medium text-[var(--color-fg)]">Mac OS • Chrome</p>
-                <p className="text-xs text-[var(--color-fg-muted)]">New York, US • Current session</p>
-              </div>
-              <span className="text-xs font-medium text-[var(--color-ok)]">Active</span>
+            <div className="space-y-3 mb-4">
+              {activeSessions.map(session => (
+                <div key={session.id} className="border border-[var(--color-border)] rounded-[var(--radius-control)] p-3 flex justify-between items-center bg-[var(--color-surface)]">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-fg)]">{session.device}</p>
+                    <p className="text-xs text-[var(--color-fg-muted)]">{session.location} {session.isCurrent ? '• Current session' : ''}</p>
+                  </div>
+                  {session.isCurrent ? (
+                    <span className="text-xs font-medium text-[var(--color-ok)]">Active</span>
+                  ) : (
+                    <span className="text-xs font-medium text-[var(--color-fg-subtle)]">2 hrs ago</span>
+                  )}
+                </div>
+              ))}
             </div>
-            <button 
-              onClick={handleSignoutOtherDevices}
-              disabled={isSigningOut}
-              className="text-sm text-[var(--color-high)] font-medium hover:underline mt-2 disabled:opacity-70 inline-flex items-center"
-            >
-              {isSigningOut ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
-              Sign out of all other devices
-            </button>
+            
+            {activeSessions.length > 1 && (
+              <button 
+                onClick={handleSignoutOtherDevices}
+                disabled={isSigningOut}
+                className="text-sm text-[var(--color-high)] font-medium hover:underline disabled:opacity-70 inline-flex items-center"
+              >
+                {isSigningOut ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
+                Sign out of all other devices
+              </button>
+            )}
           </div>
         </div>
       </div>
