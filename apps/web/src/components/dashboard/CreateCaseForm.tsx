@@ -1,178 +1,242 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { CaseCreateInput } from '@tieout/schema';
 import { createCase } from '../../lib/api/actions';
 
 export function CreateCaseForm() {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [successLink, setSuccessLink] = useState<string | null>(null);
+
+  const [copied, setCopied] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
+    setFieldErrors({});
+    setGeneralError(null);
+    setSuccessLink(null);
+    setCopied(false);
 
     const formData = new FormData(e.currentTarget);
-
-    const input: CaseCreateInput = {
+    const input = {
       employer_name: formData.get('employer_name') as string,
       candidate_name: formData.get('candidate_name') as string,
       title: formData.get('title') as string,
       claimed_ctc: Number(formData.get('claimed_ctc')),
       employment_start: formData.get('employment_start') as string,
       employment_end: formData.get('employment_end') as string,
-      uan: (formData.get('uan') as string) || null,
+      uan: (formData.get('uan') as string) || undefined,
     };
 
     try {
-      const newCase = await createCase(input);
-      router.push(`/cases/${newCase.id}`);
+      // createCase is a Server Action
+      const result = await createCase(input);
+
+      if (result.error) {
+        if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {
+          const errors: Record<string, string> = {};
+          for (const field of result.error.details.fields) {
+            errors[field.path] = field.message;
+          }
+          setFieldErrors(errors);
+        } else {
+          setGeneralError(result.error.message || 'Failed to create case');
+        }
+      } else {
+        setSuccessLink(result.candidate_link);
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create case');
+      const error = err as Error;
+      setGeneralError(error.message || 'An unexpected error occurred');
+    } finally {
       setIsSubmitting(false);
     }
   }
 
+  const handleCopy = () => {
+    if (successLink) {
+      navigator.clipboard.writeText(successLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6"
-    >
-      <div className="md:grid md:grid-cols-3 md:gap-6">
-        <div className="md:col-span-1">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Case Information</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Provide the details of the background check case you wish to create.
-          </p>
-        </div>
-        <div className="mt-5 space-y-6 md:col-span-2 md:mt-0">
-          <div className="grid grid-cols-6 gap-6">
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="employer_name" className="block text-sm font-medium text-gray-700">
-                Employer Name
-              </label>
-              <input
-                type="text"
-                name="employer_name"
-                id="employer_name"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              />
-            </div>
+    <div className="animate-fade-in">
+      <div className="mb-6 flex items-center">
+        <button
+          onClick={() => window.history.back()}
+          className="text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] mr-2"
+        >
+          ← Cases
+        </button>
+      </div>
+      <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-8">New verification</h1>
 
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="candidate_name" className="block text-sm font-medium text-gray-700">
-                Candidate Name
-              </label>
-              <input
-                type="text"
-                name="candidate_name"
-                id="candidate_name"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              Candidate name
+            </label>
+            <input
+              type="text"
+              name="candidate_name"
+              className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.candidate_name ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
+            />
+            {fieldErrors.candidate_name && (
+              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.candidate_name}</p>
+            )}
+          </div>
 
-            <div className="col-span-6">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Case Title / Description
-              </label>
-              <input
-                type="text"
-                name="title"
-                id="title"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              Candidate email
+            </label>
+            <input
+              type="email"
+              name="candidate_email"
+              className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.candidate_email ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
+            />
+            {fieldErrors.candidate_email && (
+              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.candidate_email}</p>
+            )}
+          </div>
 
-            <div className="col-span-6 sm:col-span-2">
-              <label htmlFor="claimed_ctc" className="block text-sm font-medium text-gray-700">
-                Claimed CTC (INR)
-              </label>
-              <input
-                type="number"
-                name="claimed_ctc"
-                id="claimed_ctc"
-                required
-                min="0"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              Claimed employer
+            </label>
+            <input
+              type="text"
+              name="employer_name"
+              className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employer_name ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
+            />
+            {fieldErrors.employer_name && (
+              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.employer_name}</p>
+            )}
+          </div>
 
-            <div className="col-span-6 sm:col-span-2">
-              <label htmlFor="employment_start" className="block text-sm font-medium text-gray-700">
-                Start Date
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              name="title"
+              className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.title ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
+            />
+            {fieldErrors.title && (
+              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.title}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+                Start date
               </label>
               <input
                 type="date"
                 name="employment_start"
-                id="employment_start"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employment_start ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
+              {fieldErrors.employment_start && (
+                <p className="mt-1 text-sm text-[var(--color-high)]">
+                  {fieldErrors.employment_start}
+                </p>
+              )}
             </div>
-
-            <div className="col-span-6 sm:col-span-2">
-              <label htmlFor="employment_end" className="block text-sm font-medium text-gray-700">
-                End Date
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+                End date
               </label>
               <input
                 type="date"
                 name="employment_end"
-                id="employment_end"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employment_end ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
+              {fieldErrors.employment_end && (
+                <p className="mt-1 text-sm text-[var(--color-high)]">
+                  {fieldErrors.employment_end}
+                </p>
+              )}
             </div>
+          </div>
 
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="uan" className="block text-sm font-medium text-gray-700">
-                UAN (Optional)
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+                Claimed CTC (annual)
+              </label>
+              <input
+                type="number"
+                name="claimed_ctc"
+                className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.claimed_ctc ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
+              />
+              {fieldErrors.claimed_ctc && (
+                <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.claimed_ctc}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+                UAN (optional)
               </label>
               <input
                 type="text"
                 name="uan"
-                id="uan"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.uan ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
+              {fieldErrors.uan && (
+                <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.uan}</p>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {error && (
-        <div className="rounded-md bg-red-50 p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error creating case</h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
+        {generalError && (
+          <div className="rounded-[var(--radius-card)] bg-[var(--color-high-bg)] p-4 border border-[var(--color-high)]">
+            <p className="text-sm text-[var(--color-high)]">{generalError}</p>
+          </div>
+        )}
+
+        <div className="flex justify-end pt-4">
+          <button
+            type="submit"
+            disabled={isSubmitting || !!successLink}
+            className="inline-flex justify-center rounded-[var(--radius-control)] border border-transparent bg-[var(--color-fg)] py-2 px-6 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Creating...' : 'Create and invite'}
+          </button>
+        </div>
+      </form>
+
+      {successLink && (
+        <div className="mt-6 rounded-[var(--radius-card)] bg-[var(--color-ok-bg)] p-4 border border-[var(--color-ok)] flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-[var(--color-ok)] mb-1">
+              Case created — candidate link
+            </p>
+            <p className="font-mono text-sm text-[var(--color-fg)]">{successLink}</p>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleCopy}
+              className="rounded-[var(--radius-control)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-gray-50"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button
+              className="rounded-[var(--radius-control)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-gray-50 disabled:opacity-50"
+              disabled
+            >
+              QR
+            </button>
           </div>
         </div>
       )}
-
-      <div className="flex justify-end pt-5">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-          {isSubmitting ? 'Saving...' : 'Create Case'}
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }

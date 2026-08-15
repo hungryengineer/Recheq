@@ -1,56 +1,24 @@
-import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
-import { mockCases, delay } from './store';
+import { CaseSummary } from '@tieout/schema';
+import { z } from 'zod';
+import { apiClient } from './client';
 
 export async function getCases(): Promise<CaseSummary[]> {
-  await delay(300);
-  return mockCases.map((c) => ({
-    id: c.id,
-    employer_name: c.employer_name,
-    candidate_name: c.candidate_name,
-    title: c.title,
-    status: c.status,
-    verdict: c.verdict,
-    risk_score: c.risk_score,
-    created_at: c.created_at,
-  }));
+  const result = await apiClient<{ items: unknown[] }>('/cases');
+  // Validate with Zod before returning
+  return z.array(CaseSummary).parse(result.items);
 }
 
 export async function getCaseDetails(id: string): Promise<{
-  caseRecord: CaseRecord;
-  findings: FindingRecord[];
+  caseRecord: unknown;
+  findings: unknown[];
   notAssessed: string[];
 }> {
-  await delay(400);
-  const caseRecord = mockCases.find((c) => c.id === id);
-
-  if (!caseRecord) {
-    throw new Error('Case not found');
-  }
-
-  const mockFindings: FindingRecord[] =
-    id === 'case-001'
-      ? [
-          {
-            id: 'finding-1',
-            case_id: 'case-001',
-            rule_id: 'CHK-PAYSLIP-ARITH',
-            severity: 'high',
-            status: 'open',
-            title: 'Payslip Arithmetic Mismatch',
-            explanation:
-              'The sum of all earnings and deductions does not match the stated net pay.',
-            expected: '85000',
-            observed: '92000',
-            source_document_ids: ['doc-1'],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]
-      : [];
+  // Hit Prism mock directly for case detail
+  const result = await apiClient<Record<string, unknown>>(`/cases/${id}`);
 
   return {
-    caseRecord,
-    findings: mockFindings,
-    notAssessed: id === 'case-001' ? ['CHK-PF-IMPLIES-BASIC'] : [],
+    caseRecord: result,
+    findings: (result.findings as unknown[]) || [],
+    notAssessed: (result.not_assessed as string[]) || [],
   };
 }

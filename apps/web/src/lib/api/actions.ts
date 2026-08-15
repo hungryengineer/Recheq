@@ -2,32 +2,30 @@
 
 import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
-import type { CaseRecord } from '@tieout/schema';
-import { mockCases, delay } from './store';
+import { apiClient } from './client';
 
-export async function createCase(rawInput: unknown): Promise<CaseRecord> {
-  await delay(500);
-
+export async function createCase(rawInput: unknown): Promise<unknown> {
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
   const input = CaseCreateInput.parse(rawInput);
 
-  const newCase: CaseRecord = {
-    ...input,
-    id: `case-${Math.random().toString(36).substring(2, 9)}`,
-    org_id: 'org-001',
-    created_by: 'user-001',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    status: 'processing',
-    verdict: null,
-    risk_score: null,
-    uan: input.uan ?? null, // Ensure uan is nullable
-  };
+  try {
+    const result = await apiClient('/cases', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
 
-  mockCases.unshift(newCase);
+    // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
+    revalidatePath('/cases');
 
-  // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
-  revalidatePath('/cases');
-
-  return newCase;
+    return result;
+  } catch (err: unknown) {
+    const error = err as Record<string, unknown>;
+    return {
+      error: {
+        code: error.code || 'VALIDATION_ERROR',
+        message: error.message,
+        details: error.details,
+      },
+    };
+  }
 }

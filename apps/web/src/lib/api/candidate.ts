@@ -1,7 +1,5 @@
 import type { CaseStatus, DocumentKind } from '@tieout/schema';
-
-// We simulate backend latency
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { apiClient } from './client';
 
 export interface PublicCaseContext {
   orgName: string;
@@ -12,72 +10,46 @@ export interface PublicCaseContext {
   documentsProvided: DocumentKind[];
 }
 
-// Temporary in-memory state since we are mocking the backend for the frontend milestones
-const mockState: PublicCaseContext = {
-  orgName: 'Acme Corp',
-  employerName: 'Acme Corp Background Checks',
-  candidateName: 'John Doe',
-  status: 'awaiting_consent',
-  documentsRequired: ['payslip', 'form_16'],
-  documentsProvided: [],
-};
-
 export async function getCaseByToken(token: string): Promise<PublicCaseContext> {
-  await delay(800);
-
-  if (token === 'expired') {
-    throw new Error('TOKEN_EXPIRED');
-  }
-
-  if (token === 'invalid') {
-    throw new Error('TOKEN_INVALID');
-  }
-
-  return { ...mockState };
+  const result = await apiClient<Record<string, unknown>>(`/public/${token}`);
+  return {
+    orgName: String(result.org_name),
+    employerName: String(result.employer_name),
+    candidateName: String(result.candidate_name),
+    status: result.status as CaseStatus,
+    documentsRequired: ['payslip', 'form_16'],
+    documentsProvided: [],
+  };
 }
 
-export async function grantConsent(_token: string, _ip: string, _userAgent: string): Promise<void> {
-  await delay(1000);
-  mockState.status = 'awaiting_documents';
+export async function grantConsent(token: string, _ip: string, _userAgent: string): Promise<void> {
+  await apiClient(`/public/${token}/consent`, { method: 'POST' });
 }
 
-export async function withdrawConsent(_token: string): Promise<void> {
-  await delay(1000);
-  mockState.status = 'withdrawn';
+export async function withdrawConsent(token: string): Promise<void> {
+  await apiClient(`/public/${token}/consent`, { method: 'DELETE' });
 }
 
-export async function uploadDocument(
-  _token: string,
-  kind: DocumentKind,
-  file: File,
-): Promise<void> {
-  await delay(1500);
+export async function uploadDocument(token: string, kind: DocumentKind, file: File): Promise<void> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('kind', kind);
 
-  if (file.size > 10 * 1024 * 1024) {
-    throw new Error('FILE_TOO_LARGE');
-  }
-
-  if (!mockState.documentsProvided.includes(kind)) {
-    mockState.documentsProvided.push(kind);
-  }
+  await apiClient(`/public/${token}/documents`, {
+    method: 'POST',
+    body: formData,
+  });
 }
 
-export async function submitUan(_token: string, _uan: string): Promise<void> {
-  await delay(1000);
-  // Just a simulation, normally the backend stores this and processes EPFO
+export async function submitUan(token: string, uan: string): Promise<void> {
+  await apiClient(`/public/${token}/uan`, {
+    method: 'POST',
+    body: JSON.stringify({ uan }),
+  });
 }
 
-export async function submitDocuments(_token: string): Promise<void> {
-  await delay(1000);
-  // Simulating the transition to processing
-  mockState.status = 'processing';
-
-  // Simulate processing time
-  setTimeout(() => {
-    if (mockState.status === 'processing') {
-      mockState.status = 'complete';
-    }
-  }, 5000);
+export async function submitDocuments(token: string): Promise<void> {
+  await apiClient(`/public/${token}/documents/submit`, { method: 'POST' });
 }
 
 export async function disputeFinding(
@@ -85,27 +57,8 @@ export async function disputeFinding(
   findingId: string,
   reason: string,
 ): Promise<void> {
-  if (reason.trim().length === 0) {
-    throw new Error('Dispute reason is required');
-  }
-
-  try {
-    const response = await fetch(`/api/public/${token}/dispute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ finding_id: findingId, reason }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      throw new Error(data?.message || 'Failed to submit dispute');
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred while submitting the dispute');
-  }
+  await apiClient(`/public/${token}/dispute`, {
+    method: 'POST',
+    body: JSON.stringify({ finding_id: findingId, reason }),
+  });
 }

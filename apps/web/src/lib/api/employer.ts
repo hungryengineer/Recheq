@@ -1,75 +1,65 @@
+// DEMO: not wired, employer path cut
+import type { CaseStatus } from '@tieout/schema';
+
 // We simulate backend latency
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface PublicEmployerContext {
-  candidate_name: string;
-  title: string;
-  claimed_ctc: number;
-  employer_email: string;
-  status: 'pending' | 'submitted';
+  orgName: string;
+  candidateName: string;
+  claimedTitle: string;
+  claimedCtc: number;
+  claimedStart: string;
+  claimedEnd: string;
+  status: CaseStatus;
 }
 
-export interface EmployerResponsePayload {
-  confirmed: boolean;
-  corrected_name?: string;
-  corrected_title?: string;
-  corrected_ctc?: number;
+export interface EmployerConfirmationInput {
+  candidateNameMatches: boolean;
+  actualCandidateName?: string;
+  titleMatches: boolean;
+  actualTitle?: string;
+  ctcMatches: boolean;
+  actualCtc?: number;
+  datesMatch: boolean;
+  actualStart?: string;
+  actualEnd?: string;
   note?: string;
 }
 
 // Temporary in-memory state since we are mocking the backend for the frontend milestones
 const mockState: Record<string, PublicEmployerContext> = {
   'test-token': {
-    candidate_name: 'John Doe',
-    title: 'Senior Software Engineer',
-    claimed_ctc: 150000,
-    employer_email: 'hr@acmecorp.com',
-    status: 'pending',
-  },
-  'submitted-token': {
-    candidate_name: 'Jane Smith',
-    title: 'Product Manager',
-    claimed_ctc: 120000,
-    employer_email: 'hr@acmecorp.com',
-    status: 'submitted',
+    orgName: 'Acme Corp',
+    candidateName: 'John Doe',
+    claimedTitle: 'Senior Engineer',
+    claimedCtc: 4500000,
+    claimedStart: '2021-01-01',
+    claimedEnd: '2023-12-31',
+    status: 'processing',
   },
 };
 
-export async function getEmployerForm(token: string): Promise<PublicEmployerContext> {
+export async function getEmployerContextByToken(token: string): Promise<PublicEmployerContext> {
   await delay(800);
 
-  if (token === 'expired') {
-    throw new Error('TOKEN_EXPIRED');
-  }
-
   if (token === 'invalid') {
     throw new Error('TOKEN_INVALID');
   }
 
-  const data = mockState[token] || mockState['test-token'];
-  return { ...data };
+  const context = mockState[token];
+  if (!context) {
+    // For demo purposes, if it's an unknown token, just return a fake one
+    return mockState['test-token'];
+  }
+
+  return { ...context };
 }
 
-export async function submitEmployerResponse(
-  token: string,
-  _payload: EmployerResponsePayload,
+export async function submitEmployerConfirmation(
+  _token: string,
+  _data: EmployerConfirmationInput,
 ): Promise<void> {
-  await delay(1000);
-
-  if (token === 'expired') {
-    throw new Error('TOKEN_EXPIRED');
-  }
-  if (token === 'invalid') {
-    throw new Error('TOKEN_INVALID');
-  }
-
-  const data = mockState[token];
-  if (data?.status === 'submitted') {
-    throw new Error('REQUEST_ALREADY_RESPONDED');
-  }
-
-  // Update mock state
-  if (data) {
-    data.status = 'submitted';
-  }
+  await delay(1200);
+  // In a real app this would save to the DB and update the case
 }
