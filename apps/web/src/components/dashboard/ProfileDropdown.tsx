@@ -2,14 +2,17 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signoutAction } from '@/lib/api/auth';
 import { User, Settings, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -25,6 +28,12 @@ export function ProfileDropdown() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleSignout = async () => {
+    setIsOpen(false);
+    await signoutAction();
+    router.push('/login');
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -81,7 +90,7 @@ export function ProfileDropdown() {
           
           <div className="border-t border-[var(--color-border)] py-1">
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleSignout}
               className="flex w-full items-center px-4 py-2 text-sm text-[var(--color-high)] hover:bg-[var(--color-high-bg)] transition-colors"
             >
               <LogOut className="mr-3 h-4 w-4" />

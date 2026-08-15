@@ -120,3 +120,8 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
     return { success: false, error: 'An unexpected error occurred. Please try again later.' };
   }
 }
+
+export async function signoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete('recheq_session');
+}
