@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from 'next/link';
-import { getFriendlyRuleTitle } from '@/lib/rule-display';
 import { getCaseDetails } from '@/lib/api/cases';
 import { FindingCard } from '@/components/dashboard/FindingCard';
 

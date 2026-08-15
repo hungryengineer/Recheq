@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { LifeBuoy, Activity, Book, MessageSquare, ChevronUp, ExternalLink } from 'lucide-react';
+import { LifeBuoy, Activity, Book, MessageSquare, ExternalLink } from 'lucide-react';
 
 export function HelpWidget() {
   const [isOpen, setIsOpen] = useState(false);

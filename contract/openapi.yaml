@@ -9,11 +9,46 @@ servers:
   - url: http://localhost:4010
     description: Prism mock - prism mock contract/openapi.yaml --port 4010 --errors
 tags:
+  - name: auth
+    description: Authentication endpoints for logging in to the platform.
   - name: cases
     description: Verifier routes for managing cases. Requires Bearer authentication.
   - name: public-candidate
     description: Public candidate routes using path tokens.
 paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: Login with email and password
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+      responses:
+        '200':
+          description: Successfully logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/auth/sso:
+    post:
+      operationId: ssoLogin
+      summary: Login via Single Sign-On
+      tags: [auth]
+      responses:
+        '200':
+          description: Successfully initiated SSO
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
   /api/cases:
     post:
       operationId: createCase
@@ -546,4 +581,26 @@ components:
           nullable: true
           properties:
             code: { type: string, example: EXTRACTION_UNAVAILABLE }
-            message: { type: string, example: One document could not be read automatically. }
+            message: { type: string, example: The requested resource was not found. }
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: "admin@recheq.com" }
+        password: { type: string, example: "securepassword123" }
+        rememberMe: { type: boolean, example: true }
+
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string, example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+        user:
+          type: object
+          required: [id, email, role]
+          properties:
+            id: { type: string, example: "usr_123" }
+            email: { type: string, format: email, example: "admin@recheq.com" }
+            name: { type: string, example: "Admin User" }
+            role: { type: string, example: "admin" }

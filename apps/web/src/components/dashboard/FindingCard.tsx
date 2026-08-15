@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { getFriendlyRuleTitle } from '@/lib/rule-display';
-import { FileText, X } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { DocumentViewer } from './DocumentViewer';
 
-export function FindingCard({ finding }: { finding: Record<string, any> }) {
+export function FindingCard({ finding }: { finding: Record<string, unknown> }) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const severityColor =

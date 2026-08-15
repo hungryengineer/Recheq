@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Building, Key, CreditCard, Bell, Shield, Settings, Copy, Plus, MoreHorizontal, Check, Download } from 'lucide-react';
+import { User, Building, Key, CreditCard, Bell, Shield, Copy, Plus, MoreHorizontal, Check, Download } from 'lucide-react';
 
 const tabs = [
   { id: 'profile', name: 'Profile', icon: User },
