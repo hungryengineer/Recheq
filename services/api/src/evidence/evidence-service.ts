@@ -1,4 +1,4 @@
-import type { CheckContext, ForensicsData } from './check-context.js';
+import type { CheckContext, ForensicsData } from '@tieout/rules';
 import type {
   EvidenceOrigin,
   EvidenceAssembly,
