@@ -21,6 +21,7 @@ describe('Case Processing Orchestration', () => {
           .mockResolvedValue({ content: 'base64', mimeType: 'application/pdf' }),
         replaceFindings: vi.fn().mockResolvedValue(undefined),
         updateCaseStatusAndVerdict: vi.fn().mockResolvedValue(undefined),
+        transaction: vi.fn(async (cb) => cb({})),
       } as unknown as CaseProcessingDeps['db'],
       audit: {
         appendEvent: vi.fn().mockResolvedValue({}),

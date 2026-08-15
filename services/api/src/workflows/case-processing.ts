@@ -12,6 +12,8 @@ import {
   updateExtractionSuccess,
   updateExtractionFailure,
 } from '../extraction/extraction-service.js';
+import { type ScorableFinding, type EpfoHistory } from '@tieout/rules';
+import { ExtractionFailureType, ExtractionError, ProviderUnavailableError } from '../extraction/llm-document-extractor.js';
 
 export interface CaseProcessingDeps extends EvidenceServiceDeps {
   db: EvidenceServiceDeps['db'] & {
@@ -20,16 +22,18 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
     ) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
     getConsentByCaseId: (caseId: string) => Promise<{ id: string } | null>;
     updateCaseStatusAndVerdict: (
+      tx: unknown,
       caseId: string,
       status: CaseStatus,
       verdict: string,
       riskScore: number,
     ) => Promise<void>;
-    replaceFindings: (caseId: string, findings: unknown[]) => Promise<void>;
+    replaceFindings: (tx: unknown, caseId: string, findings: ScorableFinding[]) => Promise<void>;
     createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
-    updateRecordSuccess: (id: string, history: unknown) => Promise<void>;
+    updateRecordSuccess: (id: string, history: EpfoHistory) => Promise<void>;
     updateRecordFailure: (id: string, error: string) => Promise<void>;
     getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
+    transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
   };
   audit: {
     appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
@@ -92,6 +96,11 @@ export async function processCase(
           result.usage,
         );
       } catch (err) {
+        if (err instanceof ProviderUnavailableError || 
+            (err instanceof ExtractionError && err.failureType === ExtractionFailureType.RATE_LIMITED)) {
+          // Do not swallow transient infrastructure errors - fail job for retry
+          throw err;
+        }
         const msg = err instanceof Error ? err.message : String(err);
         await updateExtractionFailure(deps.db as unknown as Database, extId, msg);
       }
@@ -116,25 +125,27 @@ export async function processCase(
   const findings = runAllChecks(ctx);
 
   // 6. Calculate Verdict
-  const score = calculateRiskScore(findings as unknown as Parameters<typeof calculateRiskScore>[0]);
+  const score = calculateRiskScore(findings as ScorableFinding[]);
   const verdict = calculateVerdict(
-    findings as unknown as Parameters<typeof calculateVerdict>[0],
+    findings as Parameters<typeof calculateVerdict>[0],
     ctx.assembly.origins.length,
   );
 
   // 7. Transactional Commit
-  await deps.db.replaceFindings(caseId, findings);
-  await deps.db.updateCaseStatusAndVerdict(caseId, 'complete', verdict, score);
+  await deps.db.transaction(async (tx) => {
+    await deps.db.replaceFindings(tx, caseId, findings as ScorableFinding[]);
+    await deps.db.updateCaseStatusAndVerdict(tx, caseId, 'complete', verdict, score);
 
-  await deps.audit.appendEvent(null, {
-    case_id: caseId,
-    kind: 'verdict_calculated',
-    payload: {
-      verdict,
-      risk_score: score,
-      finding_count: findings.length,
-      is_reprocess: isReprocess,
-    },
-    actor: 'system',
+    await deps.audit.appendEvent(tx, {
+      case_id: caseId,
+      kind: 'verdict_calculated',
+      payload: {
+        verdict,
+        risk_score: score,
+        finding_count: findings.length,
+        is_reprocess: isReprocess,
+      },
+      actor: 'system',
+    });
   });
 }
