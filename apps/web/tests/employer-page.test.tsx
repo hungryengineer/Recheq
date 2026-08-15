@@ -24,8 +24,8 @@ const mockContext = {
   status: 'pending' as const,
 };
 
-function createResolvedPromise(value: any) {
-  const promise = Promise.resolve(value) as any;
+function createResolvedPromise<T>(value: T) {
+  const promise = Promise.resolve(value) as Promise<T> & { status: string; value: T };
   promise.status = 'fulfilled';
   promise.value = value;
   return promise;
