@@ -7,7 +7,7 @@ import { mockCases, delay } from './store';
 
 export async function createCase(rawInput: unknown): Promise<CaseRecord> {
   await delay(500);
-  
+
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
   const input = CaseCreateInput.parse(rawInput);
 
@@ -25,9 +25,9 @@ export async function createCase(rawInput: unknown): Promise<CaseRecord> {
   };
 
   mockCases.unshift(newCase);
-  
+
   // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
   revalidatePath('/cases');
-  
+
   return newCase;
 }
