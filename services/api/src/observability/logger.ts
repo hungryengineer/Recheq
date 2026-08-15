@@ -13,6 +13,7 @@ export interface Logger {
   info: (event: string, context: RequestContext, fields?: LogFields) => LogRecord;
   warn: (event: string, context: RequestContext, fields?: LogFields) => LogRecord;
   error: (event: string, context: RequestContext, fields?: LogFields) => LogRecord;
+  fatal: (event: string, context: RequestContext, fields?: LogFields) => LogRecord;
   requestCompleted: (
     event: string,
     context: RequestContext,
@@ -59,6 +60,7 @@ export function createLogger(sink: LogSink = writeJsonLog): Logger {
     info: (event, context, fields) => emit('info', event, context, fields),
     warn: (event, context, fields) => emit('warn', event, context, fields),
     error: (event, context, fields) => emit('error', event, context, fields),
+    fatal: (event, context, fields) => emit('fatal', event, context, fields),
     requestCompleted: (event, context, fields, endedAtMs) =>
       emit('info', event, context, fields, getDurationMs(context, endedAtMs)),
   };
