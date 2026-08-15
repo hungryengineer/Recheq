@@ -30,7 +30,11 @@ export async function processEmployerWorkflowJob(
 
     const audit = deps?.audit || new AuditService(new DbAuditRepository(db));
 
-    let publishPayload: any = null;
+    let publishPayload: {
+      queue: string;
+      data: Record<string, unknown>;
+      options: { delaySeconds: number };
+    } | null = null;
     let retries = 0;
     let success = false;
 
@@ -96,8 +100,8 @@ export async function processEmployerWorkflowJob(
           }
         });
         success = true;
-      } catch (e: any) {
-        if (e.code === '23505') {
+      } catch (e) {
+        if (e instanceof Error && 'code' in e && e.code === '23505') {
           retries++;
           console.log(`Concurrent audit append conflict, retrying transaction (${retries}/3)`);
         } else {
