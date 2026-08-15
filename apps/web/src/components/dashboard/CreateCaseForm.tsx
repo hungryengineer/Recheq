@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CaseCreateInput } from '@tieout/schema';
-import { createCase } from '../../lib/api/cases';
+import { createCase } from '../../lib/api/actions';
 
 export function CreateCaseForm() {
   const router = useRouter();

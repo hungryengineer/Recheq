@@ -7,7 +7,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -51,7 +51,7 @@ console.log('🔄 Step 2: Validating extracted data against schema...\n');
 
 try {
   const { PayslipExtractionV1 } = await import(
-    path.join(PROJECT_ROOT, 'packages/schema/src/payslip.js')
+    pathToFileURL(path.join(PROJECT_ROOT, 'packages/schema/src/payslip.js')).href
   );
 
   const validation = PayslipExtractionV1.safeParse(extractedData);

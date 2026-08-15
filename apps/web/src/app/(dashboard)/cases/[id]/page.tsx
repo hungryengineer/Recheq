@@ -1,7 +1,7 @@
 import React from 'react';
 import { getCaseDetails } from '../../../../lib/api/cases';
-import { CaseStatusBadge } from '../../../../components/dashboard/CaseStatusBadge';
-import { DiscrepancyLedger } from '../../../../components/ledger/DiscrepancyLedger';
+import { CaseStatusBadge } from '@/components/dashboard/CaseStatusBadge';
+import { DiscrepancyLedger } from '@/components/ledger/DiscrepancyLedger';
 import Link from 'next/link';
 
 interface PageProps {
