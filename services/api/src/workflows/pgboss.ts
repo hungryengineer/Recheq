@@ -78,14 +78,30 @@ export async function publishJob(
   options?: { delaySeconds?: number; singletonKey?: string },
 ): Promise<string> {
   // SECURITY: Prevent large blobs/PII from being persisted in the plaintext pg-boss queue
-  const forbiddenKeys = ['documentContent', 'rawBase64', 'content', 'pdf_data', 'extractedData'];
-  for (const key of forbiddenKeys) {
-    if (key in data) {
-      throw new Error(
-        `SECURITY: Do not pass '${key}' into publishJob payload. Pass the ID and load it inside the worker.`,
-      );
+  const forbiddenKeys = new Set([
+    'documentContent',
+    'rawBase64',
+    'content',
+    'pdf_data',
+    'extractedData',
+  ]);
+
+  function checkPii(obj: unknown): void {
+    if (Array.isArray(obj)) {
+      obj.forEach(checkPii);
+    } else if (obj !== null && typeof obj === 'object') {
+      for (const [key, value] of Object.entries(obj)) {
+        if (forbiddenKeys.has(key)) {
+          throw new Error(
+            `SECURITY: Do not pass '${key}' into publishJob payload. Pass the ID and load it inside the worker.`,
+          );
+        }
+        checkPii(value);
+      }
     }
   }
+
+  checkPii(data);
 
   const pgBoss = await getPgBoss();
   const config = JOB_CONFIGS[queue] || { retryLimit: 3, retryDelay: 60, expireInSeconds: 300 };

@@ -60,12 +60,16 @@ describe.skipIf(!hasDb)('Worker Safety', () => {
     let concurrent = 0;
     let maxConcurrent = 0;
 
-    await boss.work('case_proc_test', { batchSize: 4 }, async (jobs: PgBoss.Job[]) => {
-      concurrent += jobs.length;
-      maxConcurrent = Math.max(maxConcurrent, concurrent);
-      await new Promise((r) => setTimeout(r, 50));
-      concurrent -= jobs.length;
-    });
+    await Promise.all(
+      Array.from({ length: 4 }).map(() =>
+        boss.work('case_proc_test', async (jobs: PgBoss.Job[]) => {
+          concurrent += jobs.length;
+          maxConcurrent = Math.max(maxConcurrent, concurrent);
+          await new Promise((r) => setTimeout(r, 50));
+          concurrent -= jobs.length;
+        }),
+      ),
+    );
 
     await new Promise((r) => setTimeout(r, 2000));
     expect(maxConcurrent).toBeLessThanOrEqual(4);
