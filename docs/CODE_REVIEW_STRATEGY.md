@@ -79,7 +79,7 @@ CodeRabbit is configured via the `.coderabbit.yaml` file in the repository root.
 
 ## What Not to Ignore
 
-**Never merge with CodeRabbit flagging:**
+**Strongly advised not to merge with CodeRabbit flagging:**
 
 - Secret exposure (API keys, DB passwords, tokens)
 - SQL injection or NoSQL injection risks
