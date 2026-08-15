@@ -7,6 +7,8 @@ import type {
   ExtractionResult,
 } from '../llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import { buildPayslipPrompt } from '../prompts/payslip-v1.js';
+import { buildForm16Prompt } from '../prompts/form16-v1.js';
 
 interface AnthropicConfig {
   apiKey: string;
@@ -80,13 +82,17 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
     let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
     try {
-      const prompt = this.createExtractionPrompt(request, documentType);
+      const prompt =
+        documentType === 'payslip'
+          ? buildPayslipPrompt(request.documentContent, request.retryContext?.validationError)
+          : buildForm16Prompt(request.documentContent, request.retryContext?.validationError);
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: this.createHeaders(),
         body: JSON.stringify({
           model: this.config.model,
+          system: prompt.system,
           max_tokens: this.config.maxTokens,
           temperature: this.config.temperature,
           messages: [
@@ -95,7 +101,7 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
               content: [
                 {
                   type: 'text',
-                  text: prompt,
+                  text: prompt.user,
                 },
                 // Add image or text content based on document content
                 ...this.createContentBlocks(request),
@@ -150,68 +156,6 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
       'x-api-key': this.config.apiKey,
       'anthropic-version': '2023-06-01',
     };
-  }
-
-  private createExtractionPrompt(
-    request: ExtractionRequest,
-    documentType: 'payslip' | 'form16',
-  ): string {
-    const basePrompt = `Extract the following information from the provided ${documentType} document.
-
-CRITICAL RULES:
-1. Return ONLY valid JSON matching the exact schema below
-2. For missing or illegible values, use "null" (not 0, not empty string)
-3. NEVER calculate or infer arithmetic - only extract printed values
-4. Preserve the exact printed label for salary components in the "raw_label" field
-5. Include any extraction difficulties in "extraction_notes"
-
-${this.getSchemaTemplate(documentType)}
-
-${request.retryContext ? `Previous attempt failed validation: ${request.retryContext.validationError}` : ''}
-
-Respond with ONLY the JSON object, no explanations.`;
-
-    return basePrompt;
-  }
-
-  private getSchemaTemplate(documentType: 'payslip' | 'form16'): string {
-    if (documentType === 'payslip') {
-      return `Payslip JSON Schema:
-{
-  "employee_name": "string or null",
-  "employer_name": "string or null",
-  "month": "string or null",
-  "year": "number or null",
-  "basic_raw_label": "string or null",
-  "basic": "number or null",
-  "hra": "number or null",
-  "da": "number or null",
-  "special_allowance": "number or null",
-  "other_allowances": "number or null",
-  "gross_salary": "number or null",
-  "pf_deduction": "number or null",
-  "professional_tax": "number or null",
-  "income_tax": "number or null",
-  "other_deductions": "number or null",
-  "total_deductions": "number or null",
-  "net_salary": "number or null",
-  "extraction_notes": "string or null"
-}`;
-    } else {
-      return `Form 16 JSON Schema:
-{
-  "employee_name": "string or null",
-  "employer_name": "string or null",
-  "pan": "string or null",
-  "tan": "string or null",
-  "financial_year": "string or null",
-  "assessment_year": "string or null",
-  "gross_total_income": "number or null",
-  "total_tax_deducted": "number or null",
-  "total_salary": "number or null",
-  "extraction_notes": "string or null"
-}`;
-    }
   }
 
   private createContentBlocks(request: ExtractionRequest): Array<Record<string, unknown>> {

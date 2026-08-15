@@ -7,7 +7,8 @@ import type {
   ExtractionResult,
 } from '../llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
-
+import { buildPayslipPrompt } from '../prompts/payslip-v1.js';
+import { buildForm16Prompt } from '../prompts/form16-v1.js';
 interface OllamaConfig {
   baseUrl: string;
   model: string;
@@ -89,15 +90,19 @@ export class OllamaExtractor implements LlmDocumentExtractor {
     let rawOutput = '';
 
     try {
-      const prompt = this.createExtractionPrompt(request, documentType);
-      const content = this.createContent(request);
+      const promptObj =
+        documentType === 'payslip'
+          ? buildPayslipPrompt(request.documentContent, request.retryContext?.validationError)
+          : buildForm16Prompt(request.documentContent, request.retryContext?.validationError);
+
+      const fullPrompt = `${promptObj.system}\n\n${promptObj.user}`;
 
       const response = await fetch(`${this.config.baseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: this.config.model,
-          prompt: `${prompt}\n\n${content}`,
+          prompt: fullPrompt,
           stream: false,
           options: {
             temperature: this.config.temperature,
@@ -118,7 +123,7 @@ export class OllamaExtractor implements LlmDocumentExtractor {
 
       // Ollama doesn't provide token usage in standard API
       const usage = {
-        promptTokens: this.estimateTokens(prompt),
+        promptTokens: this.estimateTokens(fullPrompt),
         completionTokens: this.estimateTokens(rawOutput),
         totalTokens: 0,
       };
@@ -147,81 +152,6 @@ export class OllamaExtractor implements LlmDocumentExtractor {
         error: error instanceof Error ? error.message : String(error),
         retryCount: request.retryContext ? 1 : 0,
       };
-    }
-  }
-
-  private createExtractionPrompt(
-    request: ExtractionRequest,
-    documentType: 'payslip' | 'form16',
-  ): string {
-    const schemaTemplate = this.getSchemaTemplate(documentType);
-
-    return `Extract structured data from the ${documentType} document that follows.
-
-CRITICAL RULES:
-1. Return ONLY valid JSON matching the exact schema below
-2. For missing or illegible values, use "null" (not 0, not empty string)
-3. NEVER calculate or infer arithmetic - only extract printed values
-4. Preserve the exact printed label for salary components in the "raw_label" field
-5. Include any extraction difficulties in "extraction_notes"
-
-${schemaTemplate}
-
-${request.retryContext ? `Previous attempt failed validation: ${request.retryContext.validationError}` : ''}
-
-Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
-  }
-
-  private createContent(request: ExtractionRequest): string {
-    if (request.mimeType === 'application/pdf' || request.mimeType === 'text/plain') {
-      // Per the ExtractionRequest contract, PDFs arrive as pre-extracted plain
-      // text (raw Base64 PDF binary is not supported).
-      return `Document content (${request.mimeType}):\n${request.documentContent}`;
-    } else if (request.mimeType.startsWith('image/')) {
-      // Ollama doesn't support vision in standard text models
-      return `[Image content - use text extraction from image first]`;
-    } else {
-      return `Document content:\n${request.documentContent}`;
-    }
-  }
-
-  private getSchemaTemplate(documentType: 'payslip' | 'form16'): string {
-    if (documentType === 'payslip') {
-      return `Payslip JSON Schema:
-{
-  "employee_name": "string or null",
-  "employer_name": "string or null",
-  "month": "string or null",
-  "year": "number or null",
-  "basic_raw_label": "string or null",
-  "basic": "number or null",
-  "hra": "number or null",
-  "da": "number or null",
-  "special_allowance": "number or null",
-  "other_allowances": "number or null",
-  "gross_salary": "number or null",
-  "pf_deduction": "number or null",
-  "professional_tax": "number or null",
-  "income_tax": "number or null",
-  "other_deductions": "number or null",
-  "total_deductions": "number or null",
-  "net_salary": "number or null",
-  "extraction_notes": "string or null"
-}`;
-    } else {
-      return `Form 16 JSON Schema:
-{
-  "employee_name": "string or null",
-  "employer_name": "string or null",
-  "pan": "string or null",
-  "tan": "string or null",
-  "financial_year": "string or null",
-  "assessment_year": "string or null",
-  "gross_total_income": "number or null",
-  "total_tax_deducted": "number or null",
-  "total_salary": "number or null",
-  "extraction_notes": "string or null"
-}`;
     }
   }
 
