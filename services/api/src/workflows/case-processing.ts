@@ -1,115 +1,158 @@
-import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import type { CaseStatus, EventInput, EventRecord } from '@tieout/schema';
+import { calculateVerdict, calculateRiskScore } from '@tieout/rules';
 import type { Database } from '../db/client.js';
-import { cases, documents, extractions } from '../db/schema/index.js';
-import { createLogger } from '../observability/logger.js';
-import type { RequestContext } from '../observability/request-context.js';
+import { checkProcessingIdempotency } from './idempotency.js';
+import { assembleEvidence, type EvidenceServiceDeps } from '../evidence/evidence-service.js';
+import { runAllChecks } from '@tieout/rules';
+import { syncEpfoHistory } from '../epfo/epfo-service.js';
+import type { EpfoProvider } from '../epfo/epfo-provider.js';
+import type { LlmDocumentExtractor } from '../extraction/llm-document-extractor.js';
+import {
+  createExtraction,
+  updateExtractionSuccess,
+  updateExtractionFailure,
+} from '../extraction/extraction-service.js';
+import { type ScorableFinding, type EpfoHistory } from '@tieout/rules';
+import {
+  ExtractionFailureType,
+  ExtractionError,
+  ProviderUnavailableError,
+} from '../extraction/llm-document-extractor.js';
 
-export interface ExtractionProvider {
-  extractPayslip: (doc: {
-    id: string;
-    content: string;
-  }) => Promise<{ data: unknown; usage: unknown }>;
-  extractForm16: (doc: {
-    id: string;
-    content: string;
-  }) => Promise<{ data: unknown; usage: unknown }>;
-}
-
-export interface CaseProcessingDeps {
-  db: Database;
-  extractor: ExtractionProvider;
-  /** Resolves the raw document content for extraction (e.g. read from object storage). */
-  getContent: (documentId: string, storagePath: string) => Promise<string>;
-}
-
-const logger = createLogger();
-
-function context(caseId: string): RequestContext {
-  return {
-    requestId: randomUUID(),
-    service: 'case-processing',
-    startedAtMs: Date.now(),
-    caseId,
+export interface CaseProcessingDeps extends EvidenceServiceDeps {
+  db: Database &
+    EvidenceServiceDeps['db'] & {
+      getCaseById: (
+        caseId: string,
+      ) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
+      getConsentByCaseId: (caseId: string) => Promise<{ id: string } | null>;
+      updateCaseStatusAndVerdict: (
+        tx: unknown,
+        caseId: string,
+        status: CaseStatus,
+        verdict: string,
+        riskScore: number,
+      ) => Promise<void>;
+      replaceFindings: (tx: unknown, caseId: string, findings: ScorableFinding[]) => Promise<void>;
+      createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
+      updateRecordSuccess: (id: string, history: EpfoHistory) => Promise<void>;
+      updateRecordFailure: (id: string, error: string) => Promise<void>;
+      getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
+      transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
+    };
+  audit: {
+    appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
   };
+  epfoProvider: EpfoProvider;
+  extractor: LlmDocumentExtractor;
 }
 
-export async function updateExtractionSuccess(
-  db: CaseProcessingDeps['db'],
-  extId: string,
-  data: unknown,
+export async function processCase(
+  caseId: string,
+  isReprocess: boolean,
+  deps: CaseProcessingDeps,
 ): Promise<void> {
-  await db
-    .update(extractions)
-    .set({
-      extracted_data: data,
-      status: 'completed',
-      completed_at: new Date(),
-    })
-    .where(eq(extractions.id, extId));
-}
-
-export async function updateExtractionFailure(
-  db: CaseProcessingDeps['db'],
-  extId: string,
-  error: string,
-): Promise<void> {
-  await db
-    .update(extractions)
-    .set({
-      status: 'failed',
-      error_message: error,
-      completed_at: new Date(),
-    })
-    .where(eq(extractions.id, extId));
-}
-
-export async function processCase(deps: CaseProcessingDeps, caseId: string): Promise<void> {
-  const db = deps.db;
-
-  const caseRecord = await db.select().from(cases).where(eq(cases.id, caseId)).limit(1);
-
-  if (!caseRecord.length) {
-    throw new Error(`Case not found: ${caseId}`);
+  const caseRecord = await deps.db.getCaseById(caseId);
+  if (!caseRecord) {
+    throw new Error(`Case ${caseId} not found`);
   }
 
-  const docs = await db.select().from(documents).where(eq(documents.case_id, caseId));
+  // 1. Check idempotency and state
+  checkProcessingIdempotency(caseRecord.status, isReprocess);
 
-  await Promise.all(
-    docs.map(async (doc) => {
+  // 2. Extractions and Forensics
+  const documents = await deps.db.getDocumentsForCase(caseId);
+
+  // Find which documents don't have extractions yet
+  const docIds = documents.map((d) => d.id);
+  const existingExtractions =
+    docIds.length > 0 ? await deps.db.getSuccessfulExtractions(docIds) : [];
+  const extractedDocIds = new Set(existingExtractions.map((e) => e.document_id));
+
+  const extractionPromises = documents
+    .filter((doc) => !extractedDocIds.has(doc.id))
+    .map(async (doc) => {
+      // Create pending extraction
+      const extId = await createExtraction(deps.db, doc.id, {
+        modelId: 'default',
+        schemaVersion: doc.kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
+      });
+
       try {
-        const content = await deps.getContent(doc.id, doc.storage_path);
-        let result;
-        if (doc.kind === 'payslip') {
-          result = await deps.extractor.extractPayslip({
-            id: doc.id,
-            content,
-          });
-        } else if (doc.kind === 'form16') {
-          result = await deps.extractor.extractForm16({
-            id: doc.id,
-            content,
-          });
-        } else {
-          throw new Error(`Unknown document type: ${doc.kind}`);
-        }
+        const docContent = await deps.db.getDocumentContent(doc.id);
 
-        await updateExtractionSuccess(db, doc.id, result.data);
-        logger.info('extraction succeeded', context(caseId), { docId: doc.id });
+        const req = {
+          documentId: doc.id,
+          documentKind: doc.kind as 'payslip' | 'form_16',
+          documentContent: docContent.content,
+          mimeType: docContent.mimeType,
+          schemaVersion: doc.kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
+        };
+
+        const result =
+          doc.kind === 'payslip'
+            ? await deps.extractor.extractPayslip(req)
+            : await deps.extractor.extractForm16(req);
+
+        await updateExtractionSuccess(deps.db, extId, result.data, result.usage);
       } catch (err) {
+        if (
+          err instanceof ProviderUnavailableError ||
+          (err instanceof ExtractionError && err.failureType === ExtractionFailureType.RATE_LIMITED)
+        ) {
+          // Do not swallow transient infrastructure errors - fail job for retry
+          throw err;
+        }
         const msg = err instanceof Error ? err.message : String(err);
         try {
-          await updateExtractionFailure(db, doc.id, msg);
-          logger.warn('extraction failed', context(caseId), { docId: doc.id, error: msg });
+          await updateExtractionFailure(deps.db, extId, msg);
         } catch (dbErr) {
-          logger.fatal('failed to record extraction failure', context(caseId), {
-            docId: doc.id,
-            error: dbErr instanceof Error ? dbErr.message : String(dbErr),
-          });
+          console.error(`Failed to record extraction failure for doc ${doc.id}:`, dbErr);
         }
       }
-    }),
+    });
+
+  // 3. EPFO
+  let epfoPromise: Promise<string | null> = Promise.resolve(null);
+  if (caseRecord.uan) {
+    const consent = await deps.db.getConsentByCaseId(caseId);
+    if (consent) {
+      epfoPromise = syncEpfoHistory(deps, caseId, consent.id, caseRecord.uan);
+    }
+  }
+
+  // Wait for all async dependencies
+  await Promise.all([Promise.all(extractionPromises), epfoPromise]);
+
+  // 4. Assemble Evidence
+  const ctx = await assembleEvidence(deps, caseId);
+
+  // 5. Run Rules
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const findings = runAllChecks(ctx) as any[];
+
+  // 6. Calculate Verdict
+  const score = calculateRiskScore(findings as ScorableFinding[]);
+  const verdict = calculateVerdict(
+    findings as Parameters<typeof calculateVerdict>[0],
+    ctx.assembly.origins.length,
   );
 
-  logger.info('case processing completed', context(caseId));
+  // 7. Transactional Commit
+  await deps.db.transaction(async (tx) => {
+    await deps.db.replaceFindings(tx, caseId, findings as ScorableFinding[]);
+    await deps.db.updateCaseStatusAndVerdict(tx, caseId, 'complete', verdict, score);
+
+    await deps.audit.appendEvent(tx, {
+      case_id: caseId,
+      kind: 'verdict_calculated',
+      payload: {
+        verdict,
+        risk_score: score,
+        finding_count: findings.length,
+        is_reprocess: isReprocess,
+      },
+      actor: 'system',
+    });
+  });
 }
