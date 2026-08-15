@@ -1,0 +1,48 @@
+language: 'en-US'
+
+reviews:
+  # Review strictness profile (chill, assertive, or strict)
+  profile: 'assertive'
+
+  # Automatically review new PRs and updates (skip drafts by default)
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - 'master'
+
+  # Wait for your CI pipeline stages to complete before posting reviews
+  tools:
+    github-checks:
+      enabled: true
+      timeout_ms: 900000 # 15 minutes to allow for your test suite & build
+
+  # Provide high-level summarize release notes in PRs
+  high_level_summary: true
+
+  # Paths to exclude from AI code review
+  path_filters:
+    - '!**/node_modules/**'
+    - '!dist/**'
+    - '!build/**'
+    - '!coverage/**'
+    - '!pnpm-lock.yaml'
+    - '!**/fixtures/**'
+    - '!scripts/ci-fixtures.sh'
+
+  # Targeted guidelines for your specific stack
+  path_instructions:
+    - path: '**/*.ts'
+      instructions: |
+        - Enforce strict TypeScript type safety; avoid using `any` or explicit type casting (`as any`).
+        - Ensure proper error handling in async/await workflows with structural try/catch blocks.
+    - path: '**/db/**'
+      instructions: |
+        - Verify PostgreSQL queries and migrations are safe and properly parameterized to prevent SQL injection.
+    - path: '**/*.test.ts'
+      instructions: |
+        - Focus reviews on assertion quality and edge cases rather than stylistic formatting.
+
+chat:
+  # Allows team members to respond to CodeRabbit comments to ask questions or request code changes
+  auto_reply: true

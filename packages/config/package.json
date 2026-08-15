@@ -1,0 +1,9 @@
+{
+  "name": "@tieout/config",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/env.ts",
+  "dependencies": {
+    "zod": "^3.24.0"
+  }
+}

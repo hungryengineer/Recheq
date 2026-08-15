@@ -40,7 +40,6 @@ async function processCaseJob(jobs: PgBoss.Job[]): Promise<void> {
 }
 
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
-
 async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
   await processEmployerWorkflowJob(jobs);
 }

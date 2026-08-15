@@ -117,3 +117,8 @@ coverage/
 *.temp
 *.bak
 *.swp
+
+# Agent rules
+AGENTS.md
+GEMINI.md
+.agents/
