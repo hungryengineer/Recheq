@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getFriendlyRuleTitle } from '@/lib/rule-display';
 import { getCaseDetails } from '@/lib/api/cases';
+import { FindingCard } from '@/components/dashboard/FindingCard';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -195,79 +196,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
           <div className="text-sm text-[var(--color-fg-muted)] py-4">No findings.</div>
         ) : (
           <div className="space-y-4 mb-6">
-            {findings.map((f: Record<string, unknown>, i: number) => {
-              const severityColor =
-                f.severity === 'high'
-                  ? 'var(--color-high)'
-                  : f.severity === 'medium'
-                    ? 'var(--color-medium)'
-                    : 'var(--color-fg-muted)';
-              const severityBg =
-                f.severity === 'high'
-                  ? 'var(--color-high-bg)'
-                  : f.severity === 'medium'
-                    ? 'var(--color-medium-bg)'
-                    : 'var(--color-page)';
-
-              return (
-                <div
-                  key={i}
-                  className="bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-sm border overflow-hidden"
-                  style={{ borderColor: severityColor }}
-                >
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center space-x-3">
-                        <span
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                          style={{ backgroundColor: severityBg, color: severityColor }}
-                        >
-                          {f.severity}
-                        </span>
-                        <h3 className="text-[14px] font-medium text-[var(--color-fg)]">
-                          {getFriendlyRuleTitle(f.rule_id)}
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-mono text-[var(--color-fg-subtle)]">
-                        {f.rule_id}
-                      </span>
-                    </div>
-
-                    <p className="text-[12px] text-[var(--color-fg-muted)] mb-4">{f.explanation}</p>
-
-                    <div className="flex justify-between items-end">
-                      <div className="flex space-x-8">
-                        <div>
-                          <div className="text-[10px] font-semibold tracking-wider text-[var(--color-fg-subtle)] mb-1 uppercase">
-                            Expected
-                          </div>
-                          <div className="font-mono text-[13px] text-[var(--color-fg)]">
-                            {f.expected}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-semibold tracking-wider text-[var(--color-fg-subtle)] mb-1 uppercase">
-                            Observed
-                          </div>
-                          <div
-                            className="font-mono text-[13px] font-medium"
-                            style={{ color: severityColor }}
-                          >
-                            {f.observed}
-                          </div>
-                        </div>
-                      </div>
-
-                      {f.source_label && (
-                        <div className="text-xs font-medium text-[var(--color-accent)] hover:underline cursor-pointer">
-                          {f.source_label} &rarr;
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {findings.map((f: Record<string, unknown>, i: number) => (
+              <FindingCard key={i} finding={f} />
+            ))}
           </div>
         )}
 
