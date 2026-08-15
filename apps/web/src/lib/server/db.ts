@@ -1,18 +1,22 @@
 import { createDb, type Database } from '@tieout/api/src/db/client.js';
 
-const globalForDb = globalThis as unknown as {
-  db: Database | undefined;
+declare global {
+  var __db: Database | undefined;
+}
+
+const globalForDb = globalThis as {
+  __db: Database | undefined;
 };
 
 export function getDb(): Database {
-  if (!globalForDb.db) {
+  if (!globalForDb.__db) {
     const url = process.env.DATABASE_URL;
     if (!url) {
       throw new Error('DATABASE_URL is missing in environment variables');
     }
-    globalForDb.db = createDb(url);
+    globalForDb.__db = createDb(url);
   }
-  return globalForDb.db;
+  return globalForDb.__db;
 }
 
 export const db = getDb();

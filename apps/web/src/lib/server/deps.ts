@@ -1,7 +1,11 @@
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
 
-const globalForDeps = globalThis as unknown as {
-  deps: CaseProcessingDeps | undefined;
+declare global {
+  var __deps: CaseProcessingDeps | undefined;
+}
+
+const globalForDeps = globalThis as {
+  __deps: CaseProcessingDeps | undefined;
 };
 
 import { repository } from './repository';
@@ -11,11 +15,10 @@ import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js'
 import { FixtureEpfoProvider } from '@tieout/api/src/epfo/fixture-epfo-provider.js';
 import { FixtureExtractor } from '@tieout/api/src/extraction/fixture-extractor.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildDeps(): any {
-  if (!globalForDeps.deps) {
+export function buildDeps(): CaseProcessingDeps {
+  if (!globalForDeps.__deps) {
     const auditService = new AuditService(
-      new DbAuditRepository(db as unknown as ConstructorParameters<typeof DbAuditRepository>[0]),
+      new DbAuditRepository(db),
     );
 
     const tokenVerifier = {
@@ -32,14 +35,13 @@ export function buildDeps(): any {
       }
     };
 
-    globalForDeps.deps = {
-      db: repository as unknown as CaseProcessingDeps['db'],
-      audit: auditService as unknown as CaseProcessingDeps['audit'],
+    globalForDeps.__deps = {
+      db: repository,
+      audit: auditService,
       epfoProvider: new FixtureEpfoProvider(),
       extractor: new FixtureExtractor(),
       tokenVerifier,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+    } as CaseProcessingDeps;
   }
-  return globalForDeps.deps;
+  return globalForDeps.__deps;
 }

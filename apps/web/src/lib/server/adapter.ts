@@ -3,7 +3,9 @@ import { createRequestContext } from '@tieout/api/src/observability/request-cont
 import { toErrorResponse } from '@tieout/api/src/http/errors.js';
 import { buildDeps } from './deps';
 
-export function toHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>) {
+import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
+
+export function toHandler<TReq = unknown>(fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>) {
   return async function (request: Request, _context: unknown) {
     const requestId = crypto.randomUUID();
     try {
@@ -57,7 +59,7 @@ export function toHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>)
       };
 
       const deps = buildDeps();
-      const result = await fn(handlerReq, deps);
+      const result = await fn(handlerReq as TReq, deps);
 
       if (result.status >= 400 && result.body && result.body.error) {
         result.body.error.request_id = requestId;
@@ -76,7 +78,7 @@ export function toHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>)
   };
 }
 
-export function toPublicHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>) {
+export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>) {
   return async function (request: Request, context: { params: Promise<Record<string, string>> }) {
     const requestId = crypto.randomUUID();
     try {
@@ -112,7 +114,7 @@ export function toPublicHandler(fn: (req: unknown, deps: unknown) => Promise<unk
       };
 
       const deps = buildDeps();
-      const result = await fn(handlerReq, deps);
+      const result = await fn(handlerReq as TReq, deps);
 
       if (result.status >= 400 && result.body && result.body.error) {
         result.body.error.request_id = requestId;

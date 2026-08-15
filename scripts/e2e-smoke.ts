@@ -1,4 +1,4 @@
-import fs from 'fs';
+// e2e-smoke.ts
 
 async function run() {
   console.log('--- CP3 Verification ---');
