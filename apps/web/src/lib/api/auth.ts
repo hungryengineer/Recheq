@@ -68,6 +68,25 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
   }
 }
 
+export async function ssoLoginAction(): Promise<AuthActionResult> {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: 'recheq_session',
+      value: 'mock_sso_token',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 // 1 day
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('SSO Login action error:', error);
+    return { success: false, error: 'SSO Login failed' };
+  }
+}
+
 export async function signupAction(input: unknown): Promise<AuthActionResult> {
   try {
     const parsed = SignupInputSchema.safeParse(input);

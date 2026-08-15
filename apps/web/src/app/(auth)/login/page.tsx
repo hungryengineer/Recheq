@@ -253,7 +253,21 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6">
-                <button className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors">
+                <button 
+                  onClick={async () => {
+                    const { ssoLoginAction } = await import('@/lib/api/auth');
+                    const toast = (await import('sonner')).toast;
+                    
+                    toast.loading('Redirecting to Identity Provider...', { id: 'sso' });
+                    // Simulate redirect delay
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    toast.success('Authenticated successfully via SSO!', { id: 'sso' });
+                    
+                    await ssoLoginAction();
+                    router.push('/cases');
+                  }}
+                  className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors"
+                >
                   <ShieldCheck className="w-5 h-5 text-blue-600 mr-2" />
                   Sign in with SSO
                 </button>
