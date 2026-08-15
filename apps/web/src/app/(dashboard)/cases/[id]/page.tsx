@@ -72,7 +72,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
 
   let caseRecord: Record<string, unknown> = {};
   let findings: Record<string, unknown>[] = [];
-  let notAssessed: string[] = [];
+  let notAssessed: Array<{ rule_id: string; title: string; reason: string }> = [];
 
   try {
     const data = await getCaseDetails(id);
@@ -277,8 +277,8 @@ export default async function CaseDetailsPage({ params }: PageProps) {
               Not assessed — {notAssessed.length} rules
             </span>
             <div className="flex flex-wrap gap-2 text-[11px] font-mono text-[var(--color-fg-subtle)]">
-              {notAssessed.map((ruleId: string) => (
-                <span key={ruleId}>· {ruleId}</span>
+              {notAssessed.map((rule: { rule_id: string; title: string; reason: string }) => (
+                <span key={rule.rule_id} title={rule.reason}>· {rule.title}</span>
               ))}
             </div>
           </div>
