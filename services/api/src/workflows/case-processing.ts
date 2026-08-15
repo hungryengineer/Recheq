@@ -14,23 +14,24 @@ import {
 } from '../extraction/extraction-service.js';
 
 export interface CaseProcessingDeps extends EvidenceServiceDeps {
-  db: Database & EvidenceServiceDeps['db'] & {
-    getCaseById: (
-      caseId: string,
-    ) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
-    getConsentByCaseId: (caseId: string) => Promise<{ id: string } | null>;
-    updateCaseStatusAndVerdict: (
-      caseId: string,
-      status: CaseStatus,
-      verdict: string,
-      riskScore: number,
-    ) => Promise<void>;
-    replaceFindings: (caseId: string, findings: unknown[]) => Promise<void>;
-    createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
-    updateRecordSuccess: (id: string, history: unknown) => Promise<void>;
-    updateRecordFailure: (id: string, error: string) => Promise<void>;
-    getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
-  };
+  db: Database &
+    EvidenceServiceDeps['db'] & {
+      getCaseById: (
+        caseId: string,
+      ) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
+      getConsentByCaseId: (caseId: string) => Promise<{ id: string } | null>;
+      updateCaseStatusAndVerdict: (
+        caseId: string,
+        status: CaseStatus,
+        verdict: string,
+        riskScore: number,
+      ) => Promise<void>;
+      replaceFindings: (caseId: string, findings: unknown[]) => Promise<void>;
+      createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
+      updateRecordSuccess: (id: string, history: unknown) => Promise<void>;
+      updateRecordFailure: (id: string, error: string) => Promise<void>;
+      getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
+    };
   audit: {
     appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
   };

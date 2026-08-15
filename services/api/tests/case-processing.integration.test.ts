@@ -46,11 +46,19 @@ describe('Case Processing Orchestration', () => {
 
     // Verify evidence assembly and rules were run (findings saved and verdict calculated)
     expect(_deps.db.replaceFindings).toHaveBeenCalledWith('case-1', expect.any(Array));
-    expect(_deps.db.updateCaseStatusAndVerdict).toHaveBeenCalledWith('case-1', 'complete', expect.any(String), expect.any(Number));
-    expect(_deps.audit.appendEvent).toHaveBeenCalledWith(null, expect.objectContaining({
-      kind: 'verdict_calculated',
-      case_id: 'case-1'
-    }));
+    expect(_deps.db.updateCaseStatusAndVerdict).toHaveBeenCalledWith(
+      'case-1',
+      'complete',
+      expect.any(String),
+      expect.any(Number),
+    );
+    expect(_deps.audit.appendEvent).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({
+        kind: 'verdict_calculated',
+        case_id: 'case-1',
+      }),
+    );
   });
 
   it('aborts on withdrawn cases', async () => {
