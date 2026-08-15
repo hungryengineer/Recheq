@@ -43,7 +43,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function getCases(): Promise<CaseSummary[]> {
   await delay(300);
-  return mockCases.map(c => ({
+  return mockCases.map((c) => ({
     id: c.id,
     employer_name: c.employer_name,
     candidate_name: c.candidate_name,
