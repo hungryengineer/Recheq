@@ -1,7 +1,9 @@
-import type { getDbConnection } from '../db/client.js';
-import { logger } from '../observability/logger.js';
-import { cases, extractions } from '../db/schema/index.js';
+import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
+import type { Database } from '../db/client.js';
+import { cases, documents, extractions } from '../db/schema/index.js';
+import { createLogger } from '../observability/logger.js';
+import type { RequestContext } from '../observability/request-context.js';
 
 export interface ExtractionProvider {
   extractPayslip: (doc: {
@@ -15,8 +17,21 @@ export interface ExtractionProvider {
 }
 
 export interface CaseProcessingDeps {
-  db: Awaited<ReturnType<typeof getDbConnection>>;
+  db: Database;
   extractor: ExtractionProvider;
+  /** Resolves the raw document content for extraction (e.g. read from object storage). */
+  getContent: (documentId: string, storagePath: string) => Promise<string>;
+}
+
+const logger = createLogger();
+
+function context(caseId: string): RequestContext {
+  return {
+    requestId: randomUUID(),
+    service: 'case-processing',
+    startedAtMs: Date.now(),
+    caseId,
+  };
 }
 
 export async function updateExtractionSuccess(
@@ -27,9 +42,9 @@ export async function updateExtractionSuccess(
   await db
     .update(extractions)
     .set({
-      data,
-      status: 'success',
-      updated_at: new Date(),
+      extracted_data: data,
+      status: 'completed',
+      completed_at: new Date(),
     })
     .where(eq(extractions.id, extId));
 }
@@ -43,8 +58,8 @@ export async function updateExtractionFailure(
     .update(extractions)
     .set({
       status: 'failed',
-      error,
-      updated_at: new Date(),
+      error_message: error,
+      completed_at: new Date(),
     })
     .where(eq(extractions.id, extId));
 }
@@ -58,36 +73,36 @@ export async function processCase(deps: CaseProcessingDeps, caseId: string): Pro
     throw new Error(`Case not found: ${caseId}`);
   }
 
-  const docs = await db.select().from(extractions).where(eq(extractions.case_id, caseId));
+  const docs = await db.select().from(documents).where(eq(documents.case_id, caseId));
 
   await Promise.all(
     docs.map(async (doc) => {
       try {
+        const content = await deps.getContent(doc.id, doc.storage_path);
         let result;
-        if (doc.document_type === 'payslip') {
+        if (doc.kind === 'payslip') {
           result = await deps.extractor.extractPayslip({
             id: doc.id,
-            content: doc.raw_content || '',
+            content,
           });
-        } else if (doc.document_type === 'form16') {
+        } else if (doc.kind === 'form16') {
           result = await deps.extractor.extractForm16({
             id: doc.id,
-            content: doc.raw_content || '',
+            content,
           });
         } else {
-          throw new Error(`Unknown document type: ${doc.document_type}`);
+          throw new Error(`Unknown document type: ${doc.kind}`);
         }
 
         await updateExtractionSuccess(db, doc.id, result.data);
-        logger.info('extraction succeeded', { caseId, docId: doc.id });
+        logger.info('extraction succeeded', context(caseId), { docId: doc.id });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         try {
           await updateExtractionFailure(db, doc.id, msg);
-          logger.warn('extraction failed', { caseId, docId: doc.id, error: msg });
+          logger.warn('extraction failed', context(caseId), { docId: doc.id, error: msg });
         } catch (dbErr) {
-          logger.fatal('failed to record extraction failure', {
-            caseId,
+          logger.fatal('failed to record extraction failure', context(caseId), {
             docId: doc.id,
             error: dbErr instanceof Error ? dbErr.message : String(dbErr),
           });
@@ -96,5 +111,5 @@ export async function processCase(deps: CaseProcessingDeps, caseId: string): Pro
     }),
   );
 
-  logger.info('case processing completed', { caseId });
+  logger.info('case processing completed', context(caseId));
 }
