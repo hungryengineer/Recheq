@@ -14,12 +14,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Recheq
             </Link>
             <nav className="flex space-x-6 text-sm">
-              <Link href="/cases" className="font-medium text-[var(--color-fg)]">
+              <Link href="/cases" className="font-medium text-[var(--color-fg)] hover:text-blue-600 transition-colors">
                 Cases
               </Link>
-              <span className="cursor-not-allowed font-medium text-[var(--color-fg-muted)]">
+              <Link href="/settings" className="font-medium text-[var(--color-fg-muted)] hover:text-blue-600 transition-colors">
                 Settings
-              </span>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center">

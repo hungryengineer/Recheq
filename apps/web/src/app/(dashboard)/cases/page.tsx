@@ -74,7 +74,7 @@ export default async function CasesPage() {
         <h1 className="text-2xl font-semibold text-[var(--color-fg)]">Cases</h1>
         <Link
           href="/cases/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-white bg-[var(--color-fg)] hover:opacity-90"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-white bg-[var(--color-fg)] hover:opacity-90 active:scale-95 transition-all"
         >
           + New case
         </Link>
@@ -85,7 +85,7 @@ export default async function CasesPage() {
           <p className="text-sm text-[var(--color-fg-muted)] mb-4">No cases yet</p>
           <Link
             href="/cases/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-white bg-[var(--color-fg)] hover:opacity-90"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-white bg-[var(--color-fg)] hover:opacity-90 active:scale-95 transition-all"
           >
             + New case
           </Link>
@@ -123,12 +123,13 @@ export default async function CasesPage() {
             </thead>
             <tbody className="bg-white divide-y divide-[var(--color-border)]">
               {cases.map((c: CaseSummary) => (
-                <tr key={c.id} className="hover:bg-[var(--color-page)] transition-colors">
+                <tr key={c.id} className="hover:bg-[var(--color-page)] transition-colors relative group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       href={`/cases/${c.id}`}
-                      className="text-sm font-medium text-[var(--color-fg)] hover:underline"
+                      className="text-sm font-medium text-[var(--color-fg)] hover:text-blue-600 focus:outline-none"
                     >
+                      <span className="absolute inset-0 z-10" aria-hidden="true" />
                       {c.candidate_name}
                     </Link>
                   </td>
@@ -138,7 +139,7 @@ export default async function CasesPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge status={c.status} />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap relative z-20">
                     {c.verdict ? (
                       <Badge verdict={c.verdict} />
                     ) : (
