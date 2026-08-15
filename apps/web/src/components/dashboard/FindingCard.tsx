@@ -5,7 +5,16 @@ import { getFriendlyRuleTitle } from '@/lib/rule-display';
 import { FileText } from 'lucide-react';
 import { DocumentViewer } from './DocumentViewer';
 
-export function FindingCard({ finding }: { finding: Record<string, unknown> }) {
+export interface UI_Finding {
+  rule_id: string;
+  severity: string;
+  explanation: string;
+  expected: string | number;
+  observed: string | number;
+  source_label?: string;
+}
+
+export function FindingCard({ finding }: { finding: UI_Finding }) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const severityColor =

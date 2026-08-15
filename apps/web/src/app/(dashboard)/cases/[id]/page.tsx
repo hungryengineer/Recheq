@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getCaseDetails } from '@/lib/api/cases';
 import { FindingCard } from '@/components/dashboard/FindingCard';
+import type { UI_Finding } from '@/components/dashboard/FindingCard';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -71,7 +72,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
   const { id } = await params;
 
   let caseRecord: Record<string, unknown> = {};
-  let findings: Record<string, unknown>[] = [];
+  let findings: UI_Finding[] = [];
   let notAssessed: Array<{ rule_id: string; title: string; reason: string }> = [];
 
   try {
@@ -92,9 +93,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
 
   const origins = caseRecord.origins || [];
 
-  const highCount = findings.filter((f: Record<string, unknown>) => f.severity === 'high').length;
+  const highCount = findings.filter((f: UI_Finding) => f.severity === 'high').length;
   const mediumCount = findings.filter(
-    (f: Record<string, unknown>) => f.severity === 'medium',
+    (f: UI_Finding) => f.severity === 'medium',
   ).length;
 
   return (
@@ -195,7 +196,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
           <div className="text-sm text-[var(--color-fg-muted)] py-4">No findings.</div>
         ) : (
           <div className="space-y-4 mb-6">
-            {findings.map((f: Record<string, unknown>, i: number) => (
+            {findings.map((f: UI_Finding, i: number) => (
               <FindingCard key={i} finding={f} />
             ))}
           </div>
