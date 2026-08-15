@@ -1,15 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 export function ProfileTab() {
   const [isSaving, setIsSaving] = useState(false);
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: 'Arun Kumar',
     email: 'admin@recheq.com'
   });
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image must be less than 2MB');
+        return;
+      }
+      const objectUrl = URL.createObjectURL(file);
+      setAvatar(objectUrl);
+      toast.success('Avatar updated! Don\'t forget to save changes.');
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -36,10 +52,24 @@ export function ProfileTab() {
             <p className="text-xs text-[var(--color-fg-muted)] mt-1">This will be displayed on your profile.</p>
           </div>
           <div className="w-full md:w-2/3 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xl font-semibold text-white shadow-sm">
-              AK
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xl font-semibold text-white shadow-sm overflow-hidden border border-[var(--color-border)]">
+              {avatar ? (
+                <Image src={avatar} alt="Avatar" fill className="object-cover" />
+              ) : (
+                'AK'
+              )}
             </div>
-            <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden" 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all"
+            >
               Change avatar
             </button>
           </div>
