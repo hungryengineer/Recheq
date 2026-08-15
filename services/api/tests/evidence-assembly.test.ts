@@ -11,6 +11,7 @@ describe('Evidence Assembly Service with Dependencies', () => {
       getDocumentsForCase: vi.fn().mockResolvedValue([]),
       getSuccessfulExtractions: vi.fn().mockResolvedValue([]),
       getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+      getCompletedForensics: vi.fn().mockResolvedValue([]),
     };
 
     const deps: EvidenceServiceDeps = { db: dbMock };
@@ -44,6 +45,7 @@ describe('Evidence Assembly Service with Dependencies', () => {
         { document_id: 'doc-form16', extracted_data: { tax: 200 } },
       ]),
       getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+      getCompletedForensics: vi.fn().mockResolvedValue([]),
     };
 
     const deps: EvidenceServiceDeps = { db: dbMock };
@@ -72,6 +74,7 @@ describe('Evidence Assembly Service with Dependencies', () => {
         { document_id: 'doc-old-payslip', extracted_data: { basic: 1000 } },
       ]),
       getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+      getCompletedForensics: vi.fn().mockResolvedValue([]),
     };
 
     const deps: EvidenceServiceDeps = { db: dbMock };

@@ -1,4 +1,4 @@
-import type { CheckContext } from './check-context.js';
+import type { CheckContext, ForensicsData } from '@tieout/rules';
 import type {
   EvidenceOrigin,
   EvidenceAssembly,
@@ -16,6 +16,7 @@ export interface EvidenceServiceDeps {
       documentIds: string[],
     ) => Promise<Array<{ document_id: string; extracted_data: unknown }>>;
     getCompletedEpfoRecords: (caseId: string) => Promise<Array<{ employment_history: unknown }>>;
+    getCompletedForensics: (caseId: string) => Promise<Array<ForensicsData>>;
   };
 }
 
@@ -60,12 +61,16 @@ export async function assembleEvidence(
     ? (epfoRecord.employment_history as EpfoHistory)
     : null;
 
-  // 4. Assemble the context
+  // 4. Fetch Forensics records
+  const forensicsRecords = await deps.db.getCompletedForensics(caseId);
+
+  // 5. Assemble the context
   const origins: EvidenceOrigin[] = [];
   if (payslip) origins.push('payslip');
   if (form16) origins.push('form_16');
   if (epfoHistory) origins.push('epfo');
-  // forensics and employer not yet implemented
+  if (forensicsRecords.length > 0) origins.push('forensics');
+  // employer not yet implemented
 
   const assembly: EvidenceAssembly = {
     case_id: caseId,
@@ -74,7 +79,7 @@ export async function assembleEvidence(
     has_form16: !!form16,
     has_epfo: !!epfoHistory,
     has_employer: false,
-    has_forensics: false,
+    has_forensics: forensicsRecords.length > 0,
   };
 
   return {
@@ -82,5 +87,6 @@ export async function assembleEvidence(
     payslip,
     form16,
     epfoHistory,
+    forensics: forensicsRecords.length > 0 ? forensicsRecords : null,
   };
 }

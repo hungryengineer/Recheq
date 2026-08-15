@@ -7,7 +7,8 @@ import type {
   ExtractionResult,
 } from '../llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
-
+import { buildPayslipPrompt } from '../prompts/payslip-v1.js';
+import { buildForm16Prompt } from '../prompts/form16-v1.js';
 interface OpenAiCompatibleConfig {
   apiKey: string;
   model: string;
@@ -147,19 +148,25 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
     request: ExtractionRequest,
     documentType: 'payslip' | 'form16',
   ): Array<Record<string, unknown>> {
-    const systemPrompt = this.createSystemPrompt(documentType, request);
+    const isImage = request.mimeType.startsWith('image/');
+    const docTextForPrompt = isImage ? '' : request.documentContent;
 
-    if (this.config.useVision && request.mimeType.startsWith('image/')) {
+    const prompt =
+      documentType === 'payslip'
+        ? buildPayslipPrompt(docTextForPrompt, request.retryContext?.validationError)
+        : buildForm16Prompt(docTextForPrompt, request.retryContext?.validationError);
+
+    if (this.config.useVision && isImage) {
       // Vision API format for images
       return [
         {
           role: 'system',
-          content: systemPrompt,
+          content: prompt.system,
         },
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Extract information from this document:' },
+            { type: 'text', text: prompt.user },
             {
               type: 'image_url',
               image_url: {
@@ -176,75 +183,13 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
       return [
         {
           role: 'system',
-          content: systemPrompt,
+          content: prompt.system,
         },
         {
           role: 'user',
-          content: `Document content (${request.mimeType}):\n${request.documentContent}`,
+          content: prompt.user,
         },
       ];
-    }
-  }
-
-  private createSystemPrompt(
-    documentType: 'payslip' | 'form16',
-    request: ExtractionRequest,
-  ): string {
-    const schemaTemplate = this.getSchemaTemplate(documentType);
-
-    return `You are a document extraction assistant. Extract structured data from ${documentType} documents.
-
-CRITICAL RULES:
-1. Return ONLY valid JSON matching the exact schema below
-2. For missing or illegible values, use "null" (not 0, not empty string)
-3. NEVER calculate or infer arithmetic - only extract printed values
-4. Preserve the exact printed label for salary components in the "raw_label" field
-5. Include any extraction difficulties in "extraction_notes"
-
-${schemaTemplate}
-
-${request.retryContext ? `Previous attempt failed validation: ${request.retryContext.validationError}` : ''}
-
-IMPORTANT: Respond with ONLY the JSON object, no explanations, no markdown formatting.`;
-  }
-
-  private getSchemaTemplate(documentType: 'payslip' | 'form16'): string {
-    if (documentType === 'payslip') {
-      return `Payslip JSON Schema:
-{
-  "employee_name": "string or null",
-  "employer_name": "string or null",
-  "month": "string or null",
-  "year": "number or null",
-  "basic_raw_label": "string or null",
-  "basic": "number or null",
-  "hra": "number or null",
-  "da": "number or null",
-  "special_allowance": "number or null",
-  "other_allowances": "number or null",
-  "gross_salary": "number or null",
-  "pf_deduction": "number or null",
-  "professional_tax": "number or null",
-  "income_tax": "number or null",
-  "other_deductions": "number or null",
-  "total_deductions": "number or null",
-  "net_salary": "number or null",
-  "extraction_notes": "string or null"
-}`;
-    } else {
-      return `Form 16 JSON Schema:
-{
-  "employee_name": "string or null",
-  "employer_name": "string or null",
-  "pan": "string or null",
-  "tan": "string or null",
-  "financial_year": "string or null",
-  "assessment_year": "string or null",
-  "gross_total_income": "number or null",
-  "total_tax_deducted": "number or null",
-  "total_salary": "number or null",
-  "extraction_notes": "string or null"
-}`;
     }
   }
 
