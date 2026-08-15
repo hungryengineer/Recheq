@@ -387,10 +387,10 @@ export default function SettingsPage() {
                     <h3 className="text-sm font-medium text-[var(--color-fg)]">Case Completions</h3>
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Get an email when a verification case is fully processed.</p>
                   </div>
-                  <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle1" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
-                    <label htmlFor="toggle1" className="toggle-label block overflow-hidden h-5 rounded-full bg-[var(--color-accent)] cursor-pointer"></label>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer mr-2">
+                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-2 peer-focus:ring-[var(--color-accent)] peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent)]"></div>
+                  </label>
                 </div>
                 <hr className="border-[var(--color-border)]" />
                 <div className="flex items-start justify-between">
@@ -398,10 +398,10 @@ export default function SettingsPage() {
                     <h3 className="text-sm font-medium text-[var(--color-fg)]">Candidate Document Uploads</h3>
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Get notified when a candidate uploads their forms.</p>
                   </div>
-                  <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle2" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300" />
-                    <label htmlFor="toggle2" className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer mr-2">
+                    <input type="checkbox" className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-2 peer-focus:ring-[var(--color-accent)] peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent)]"></div>
+                  </label>
                 </div>
                 <hr className="border-[var(--color-border)]" />
                 <div className="flex items-start justify-between">
@@ -409,10 +409,10 @@ export default function SettingsPage() {
                     <h3 className="text-sm font-medium text-[var(--color-fg)]">Billing Receipts</h3>
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Receive monthly invoices and billing updates.</p>
                   </div>
-                  <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle3" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
-                    <label htmlFor="toggle3" className="toggle-label block overflow-hidden h-5 rounded-full bg-[var(--color-accent)] cursor-pointer"></label>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer mr-2">
+                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-2 peer-focus:ring-[var(--color-accent)] peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent)]"></div>
+                  </label>
                 </div>
               </div>
             </div>
@@ -483,15 +483,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <style jsx global>{`
-        .toggle-checkbox:checked {
-          right: 0;
-          border-color: var(--color-accent);
-        }
-        .toggle-checkbox:checked + .toggle-label {
-          background-color: var(--color-accent);
-        }
-      `}</style>
     </div>
   );
 }
