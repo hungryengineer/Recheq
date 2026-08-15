@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { getFriendlyRuleTitle } from '../../../../../lib/rule-display';
-import { getCaseDetails } from '../../../../../lib/api/cases';
+import { getFriendlyRuleTitle } from '@/lib/rule-display';
+import { getCaseDetails } from '@/lib/api/cases';
 
 interface PageProps {
   params: Promise<{ id: string }>;
