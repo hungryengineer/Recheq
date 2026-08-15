@@ -12,14 +12,16 @@ import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js'
 
 export function buildDeps(): CaseProcessingDeps {
   if (!globalForDeps.deps) {
-    const auditService = new AuditService(new DbAuditRepository(db as any));
+    const auditService = new AuditService(
+      new DbAuditRepository(db as unknown as ConstructorParameters<typeof DbAuditRepository>[0]),
+    );
 
     globalForDeps.deps = {
-      db: repository as any,
-      audit: auditService as any,
-      epfoProvider: {} as any, // To be implemented if needed
-      extractor: {} as any, // To be implemented if needed
-    } as any;
+      db: repository as unknown as CaseProcessingDeps['db'],
+      audit: auditService as unknown as CaseProcessingDeps['audit'],
+      epfoProvider: {} as unknown as CaseProcessingDeps['epfoProvider'], // To be implemented if needed
+      extractor: {} as unknown as CaseProcessingDeps['extractor'], // To be implemented if needed
+    };
   }
   return globalForDeps.deps;
 }

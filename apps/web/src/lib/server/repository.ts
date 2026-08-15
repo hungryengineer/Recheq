@@ -44,19 +44,19 @@ export const repository = {
     await db.update(schema.cases).set({ status }).where(eq(schema.cases.id, caseId));
   },
   updateCaseStatusAndVerdict: async (
-    tx: any,
+    tx: unknown,
     caseId: string,
     status: CaseStatus,
     verdict: string,
     riskScore: number,
   ) => {
-    await (tx || db)
+    await (tx ? (tx as Parameters<typeof db.update>[0]) : db)
       .update(schema.cases)
       .set({ status, verdict, risk_score: riskScore })
       .where(eq(schema.cases.id, caseId));
   },
-  replaceFindings: async (tx: any, caseId: string, findings: ScorableFinding[]) => {
-    const trx = tx || db;
+  replaceFindings: async (tx: unknown, caseId: string, findings: ScorableFinding[]) => {
+    const trx = tx ? (tx as Parameters<typeof db.delete>[0]) : db;
     await trx.delete(schema.findings).where(eq(schema.findings.case_id, caseId));
     if (findings.length > 0) {
       const records = findings.map((f) => ({
@@ -74,7 +74,7 @@ export const repository = {
       await trx.insert(schema.findings).values(records);
     }
   },
-  createConsent: async (input: any) => {
+  createConsent: async (input: typeof schema.consents.$inferInsert) => {
     const [result] = await db.insert(schema.consents).values(input).returning();
     return result;
   },
@@ -108,7 +108,7 @@ export const repository = {
     const buffer = await storage.getObject(doc.storage_path);
     return { content: buffer.toString('utf8'), mimeType: doc.mime_type };
   },
-  createExtraction: async (docId: string, args: any) => {
+  createExtraction: async (docId: string, args: { modelId: string; schemaVersion: string }) => {
     const [result] = await db
       .insert(schema.extractions)
       .values({
@@ -120,7 +120,7 @@ export const repository = {
       .returning({ id: schema.extractions.id });
     return result.id;
   },
-  updateExtractionSuccess: async (id: string, data: any, usage: any) => {
+  updateExtractionSuccess: async (id: string, data: unknown, usage: unknown) => {
     await db
       .update(schema.extractions)
       .set({
@@ -168,7 +168,7 @@ export const repository = {
       .update(schema.epfoRecords)
       .set({
         status: 'success',
-        raw_data: history as any,
+        raw_data: history as unknown as object,
       })
       .where(eq(schema.epfoRecords.id, id));
   },
@@ -184,7 +184,7 @@ export const repository = {
   getFindingsForCase: async (caseId: string) => {
     return await db.select().from(schema.findings).where(eq(schema.findings.case_id, caseId));
   },
-  transaction: async <T>(cb: (tx: any) => Promise<T>) => {
+  transaction: async (cb: Parameters<typeof db.transaction>[0]) => {
     return await db.transaction(cb);
   },
 };

@@ -3,8 +3,8 @@ import { createRequestContext } from '@tieout/api/src/observability/request-cont
 import { toErrorResponse } from '@tieout/api/src/http/errors.js';
 import { buildDeps } from './deps';
 
-export function toHandler(fn: any) {
-  return async function (request: Request, context: any) {
+export function toHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>) {
+  return async function (request: Request, _context: unknown) {
     const requestId = crypto.randomUUID();
     try {
       let body: unknown = {};
@@ -19,7 +19,7 @@ export function toHandler(fn: any) {
               body = JSON.parse(text);
             }
           }
-        } catch (e) {
+        } catch {
           // ignore empty body parse errors
         }
       }
@@ -54,7 +54,7 @@ export function toHandler(fn: any) {
       const errorResponse = toErrorResponse(err);
 
       // Attach request_id to match OpenAPI contract
-      (errorResponse.body.error as any).request_id = requestId;
+      (errorResponse.body.error as Record<string, unknown>).request_id = requestId;
 
       return NextResponse.json(errorResponse.body, { status: errorResponse.status });
     }
