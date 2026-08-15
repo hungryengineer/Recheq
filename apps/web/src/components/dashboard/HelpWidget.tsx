@@ -52,14 +52,20 @@ export function HelpWidget() {
               </span>
             </div>
             
-            <Link 
-              href="#" 
-              onClick={(e) => { e.preventDefault(); setIsOpen(false); }}
-              className="flex items-center px-4 py-2.5 text-sm text-[var(--color-fg)] hover:bg-[var(--color-page)] transition-colors group"
+            <button 
+              onClick={(e) => { 
+                e.preventDefault(); 
+                alert("Hold tight! 🚧 We're currently crafting an ultra-premium support experience for you. Our engineers are hard at work, so please check back soon!");
+                setIsOpen(false); 
+              }}
+              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--color-fg)] hover:bg-[var(--color-page)] transition-colors group"
             >
-              <MessageSquare className="mr-3 h-4 w-4 text-[var(--color-fg-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
-              <span>Contact Support</span>
-            </Link>
+              <MessageSquare className="mr-3 h-4 w-4 text-[var(--color-fg-muted)] group-hover:text-amber-500 transition-colors" />
+              <span className="flex-1 text-left">Contact Support</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-1.5 py-0.5 rounded-full ml-2 group-hover:bg-amber-200 transition-colors">
+                WIP
+              </span>
+            </button>
           </div>
         </div>
       )}
