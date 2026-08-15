@@ -47,3 +47,73 @@ Thumbs.db
 .netlify/
 tmp/
 temp/
+
+# Sensitive files and secrets (defensive patterns)
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+*.jks
+*.keystore
+*.p8
+!example.pem
+!example.key
+
+# API keys, tokens, credentials
+.env.production.local
+.env.test.local
+.env.development.local
+.npmrc
+.yarnrc
+.netrc
+
+# AWS, GCP, Azure credentials
+aws-credentials
+azure-credentials
+gcp-credentials
+credentials.json
+service-account-key.json
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ecdsa
+id_ecdsa.pub
+id_ed25519
+id_ed25519.pub
+known_hosts
+
+# Database dumps and backups
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
+
+# Docker secrets
+.dockerignore
+docker-compose.override.yml
+
+# IDE and local files
+.env.local.php
+.env.vault
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.#*
+
+# Test coverage and reports
+.nyc_output/
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
