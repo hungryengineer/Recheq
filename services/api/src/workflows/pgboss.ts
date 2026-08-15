@@ -1,6 +1,4 @@
 import PgBoss from 'pg-boss';
-import { getDbConnection } from '../db/client.js';
-import { logger } from '../observability/logger.js';
 
 export interface JobConfig {
   retryLimit: number;
@@ -36,7 +34,6 @@ let boss: PgBoss | null = null;
 export async function initPgBoss(): Promise<PgBoss> {
   if (boss) return boss;
 
-  await getDbConnection();
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
@@ -46,11 +43,16 @@ export async function initPgBoss(): Promise<PgBoss> {
   boss = new PgBoss(connectionString);
 
   boss.on('error', (error) => {
-    logger.error('pg-boss error', { error: error.message });
+    console.error('pg-boss error', { error: error.message });
   });
 
-  await boss.start();
-  logger.info('pg-boss initialized');
+  try {
+    await boss.start();
+    console.log('pg-boss initialized');
+  } catch (error) {
+    console.error('failed to initialize pg-boss', { error: (error as Error).message });
+    throw error;
+  }
 
   // Create queues
   await Promise.all([
@@ -86,26 +88,30 @@ export async function publishJob(
   }
 
   const pgBoss = await getPgBoss();
-  const config = JOB_CONFIGS[queue];
+  const config = JOB_CONFIGS[queue] || { retryLimit: 3, retryDelay: 60, expireInSeconds: 300 };
 
-  const jobId = await pgBoss.publish(queue, data, {
+  const publishOptions: PgBoss.SendOptions = {
     retryLimit: config.retryLimit,
     retryDelay: config.retryDelay,
     expireInSeconds: config.expireInSeconds,
-    singletonKey: options?.singletonKey,
-    startAfter: options?.delaySeconds
-      ? new Date(Date.now() + options.delaySeconds * 1000)
-      : undefined,
-  });
+  };
 
-  logger.info('job published', { queue, jobId, caseId: data.case_id });
-  return jobId;
+  if (options?.singletonKey) {
+    publishOptions.singletonKey = options.singletonKey;
+  }
+  if (options?.delaySeconds) {
+    publishOptions.startAfter = options.delaySeconds;
+  }
+
+  const jobId = await pgBoss.send(queue, data as any, publishOptions);
+  console.log('job published', { queue, jobId, caseId: data.case_id });
+  return String(jobId || '');
 }
 
 export async function closePgBoss(): Promise<void> {
   if (boss) {
     await boss.stop();
     boss = null;
-    logger.info('pg-boss stopped');
+    console.log('pg-boss stopped');
   }
 }
