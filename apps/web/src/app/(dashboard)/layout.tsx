@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
+import { ProfileDropdown } from '@/components/dashboard/ProfileDropdown';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,9 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
           <div className="flex items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent-bg)] text-sm font-medium text-[var(--color-accent)]">
-              PR
-            </div>
+            <ProfileDropdown />
           </div>
         </div>
       </header>
