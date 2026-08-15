@@ -1,0 +1,549 @@
+openapi: 3.0.3
+info:
+  title: Recheq API
+  version: 0.2.0
+  description: API specification for the Recheq platform, including verifier case management and public candidate submission endpoints.
+servers:
+  - url: http://localhost:3000
+    description: Local Environment
+  - url: http://localhost:4010
+    description: Prism mock - prism mock contract/openapi.yaml --port 4010 --errors
+tags:
+  - name: cases
+    description: Verifier routes for managing cases. Requires Bearer authentication.
+  - name: public-candidate
+    description: Public candidate routes using path tokens.
+paths:
+  /api/cases:
+    post:
+      operationId: createCase
+      summary: Create a new case
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaseCreateInput' }
+      responses:
+        '201':
+          description: Case created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaseCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    get:
+      operationId: listCases
+      summary: List cases
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: A list of cases
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/CaseSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/cases/{id}:
+    get:
+      operationId: getCase
+      summary: Get case details
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Case details retrieved successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaseDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/public/{token}:
+    get:
+      operationId: getPublicCase
+      summary: Get candidate context
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      responses:
+        '200':
+          description: Candidate context retrieved successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicCaseContext' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/public/{token}/consent:
+    post:
+      operationId: grantConsent
+      summary: Update candidate consent
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [granted]
+              properties:
+                granted: { type: boolean, example: true }
+      responses:
+        '200':
+          description: Consent status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [awaiting_documents, withdrawn]
+                    example: awaiting_documents
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/public/{token}/documents:
+    post:
+      operationId: uploadDocument
+      summary: Upload a candidate document
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, kind]
+              properties:
+                file: { type: string, format: binary }
+                kind: { type: string, enum: [payslip, form_16] }
+      responses:
+        '200':
+          description: Document uploaded successfully (or exists)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentUploaded' }
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentUploaded' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/public/{token}/uan:
+    post:
+      operationId: submitUan
+      summary: Submit UAN
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [uan]
+              properties:
+                uan:
+                  type: string
+                  pattern: '^[0-9]{12}$'
+                  example: '100123456789'
+      responses:
+        '200':
+          description: UAN accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: { type: boolean, example: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/public/{token}/submit:
+    post:
+      operationId: submitCase
+      summary: Submit case for processing
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      responses:
+        '202':
+          description: Case processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: processing }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/public/{token}/status:
+    get:
+      operationId: getStatus
+      summary: Get case processing status
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      responses:
+        '200':
+          description: Processing status retrieved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    Token:
+      name: token
+      in: path
+      required: true
+      schema: { type: string }
+      description: Candidate access token
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Gone:
+      description: Gone
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    PayloadTooLarge:
+      description: Payload Too Large
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    UnsupportedMediaType:
+      description: Unsupported Media Type
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    ValidationError:
+      description: Validation Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    TooManyRequests:
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    ServiceUnavailable:
+      description: Service Unavailable
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: INVALID_REQUEST
+            message:
+              type: string
+              example: The request was invalid.
+            details:
+              type: object
+              nullable: true
+            request_id:
+              type: string
+              nullable: true
+              example: req_123456789
+
+    CaseCreateInput:
+      type: object
+      required:
+        [
+          candidate_name,
+          candidate_email,
+          employer_name,
+          title,
+          claimed_ctc,
+          employment_start,
+          employment_end,
+        ]
+      properties:
+        candidate_name: { type: string, minLength: 1, maxLength: 500, example: Arun Kumar }
+        candidate_email: { type: string, format: email, example: arun@example.com }
+        employer_name:
+          { type: string, minLength: 1, maxLength: 500, example: Acme Technologies Pvt Ltd }
+        title: { type: string, minLength: 1, maxLength: 1000, example: Senior Analyst }
+        claimed_ctc: { type: number, minimum: 1, example: 1800000 }
+        employment_start: { type: string, format: date, example: '2023-04-01' }
+        employment_end: { type: string, format: date, example: '2026-03-31' }
+        uan: { type: string, nullable: true, pattern: '^[0-9]{12}$', example: '100123456789' }
+
+    CaseCreated:
+      type: object
+      required: [id, status, candidate_link, created_at]
+      properties:
+        id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
+        status: { type: string, example: awaiting_consent }
+        candidate_link: { type: string, example: http://localhost:3000/c/8f3a2b }
+        created_at: { type: string, format: date-time, example: '2026-08-15T10:00:00Z' }
+
+    CaseSummary:
+      type: object
+      required: [id, candidate_name, employer_name, title, status, created_at]
+      properties:
+        id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
+        candidate_name: { type: string, example: Arun Kumar }
+        employer_name: { type: string, example: Acme Technologies Pvt Ltd }
+        title: { type: string, example: Senior Analyst }
+        status:
+          type: string
+          enum: [draft, awaiting_consent, awaiting_documents, processing, complete, withdrawn]
+          example: complete
+        verdict:
+          type: string
+          enum: [verified, verified_with_notes, needs_review, insufficient_evidence]
+          nullable: true
+          example: needs_review
+        risk_score: { type: integer, minimum: 0, maximum: 100, nullable: true, example: 80 }
+        high_count: { type: integer, nullable: true, example: 2 }
+        created_at: { type: string, format: date-time, example: '2026-08-15T10:00:00Z' }
+
+    CaseDetail:
+      type: object
+      required: [id, candidate_name, employer_name, title, status, findings, not_assessed, origins]
+      properties:
+        id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
+        candidate_name: { type: string, example: Arun Kumar }
+        employer_name: { type: string, example: Acme Technologies Pvt Ltd }
+        title: { type: string, example: Senior Analyst }
+        claimed_ctc: { type: number, example: 1800000 }
+        employment_start: { type: string, example: '2023-04-01' }
+        employment_end: { type: string, example: '2026-03-31' }
+        uan: { type: string, nullable: true, example: '100123456789' }
+        status: { type: string, example: complete }
+        verdict: { type: string, nullable: true, example: needs_review }
+        risk_score: { type: integer, nullable: true, example: 80 }
+        origins:
+          type: array
+          items: { type: string, enum: [payslip, form_16, epfo, employer] }
+          example: [payslip, form_16, epfo]
+        findings:
+          type: array
+          items: { $ref: '#/components/schemas/Finding' }
+        not_assessed:
+          type: array
+          items: { $ref: '#/components/schemas/NotAssessed' }
+        consent:
+          type: object
+          nullable: true
+          properties:
+            granted_at: { type: string, format: date-time }
+            withdrawn_at: { type: string, format: date-time, nullable: true }
+            version: { type: string }
+        documents:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              kind: { type: string }
+              uploaded_at: { type: string, format: date-time }
+              extraction_status: { type: string, enum: [ok, failed, pending] }
+
+    Finding:
+      type: object
+      required: [id, rule_id, severity, status, title, explanation, source_document_ids]
+      properties:
+        id: { type: string, example: f1 }
+        rule_id: { type: string, example: pf-implies-basic }
+        severity: { type: string, enum: [high, medium, low], example: high }
+        status: { type: string, enum: [open, disputed, resolved], example: open }
+        title: { type: string, example: PF deduction inconsistent with declared basic }
+        explanation:
+          {
+            type: string,
+            example: PF employee share of Rs 3,
+            600 implies a basic of Rs 30,
+            000 at the statutory 12% rate.,
+          }
+        expected: { type: string, nullable: true, example: 'Rs 30,000' }
+        observed: { type: string, nullable: true, example: 'Rs 52,000' }
+        source_document_ids:
+          type: array
+          items: { type: string }
+          example: [d1]
+        source_label: { type: string, nullable: true, example: Payslip - Mar 2026 }
+
+    NotAssessed:
+      type: object
+      required: [rule_id, title, reason]
+      properties:
+        rule_id: { type: string, example: dual-employment }
+        title: { type: string, example: Dual employment }
+        reason: { type: string, example: No EPFO history available }
+
+    PublicCaseContext:
+      type: object
+      required:
+        [
+          candidate_name,
+          employer_name,
+          status,
+          documents_required,
+          documents_provided,
+          consent_text,
+          consent_version,
+          retention_days,
+        ]
+      properties:
+        case_id: { type: string }
+        candidate_name: { type: string, example: Arun Kumar }
+        org_name: { type: string, example: Acme Corp }
+        employer_name: { type: string, example: Acme Technologies Pvt Ltd }
+        status:
+          type: string
+          enum: [awaiting_consent, awaiting_documents, processing, complete, withdrawn]
+          example: awaiting_consent
+        consent_required: { type: boolean, example: true }
+        consent_text:
+          {
+            type: string,
+            example: Acme Corp has asked us to verify your employment at Acme Technologies.,
+          }
+        consent_version: { type: string, example: '1.0' }
+        retention_days: { type: integer, example: 180 }
+        documents_required:
+          type: array
+          items: { type: string, enum: [payslip, form_16] }
+          example: [payslip, form_16]
+        documents_provided:
+          type: array
+          items: { type: string, enum: [payslip, form_16] }
+          example: []
+
+    DocumentUploaded:
+      type: object
+      required: [document_id, kind, filename]
+      properties:
+        document_id: { type: string, example: d1 }
+        kind: { type: string, enum: [payslip, form_16], example: payslip }
+        filename: { type: string, example: payslip-mar-2026.pdf }
+        sha256: { type: string }
+        duplicate: { type: boolean, example: false }
+
+    StatusResponse:
+      type: object
+      required: [status, documents_total, documents_extracted, steps]
+      properties:
+        status:
+          type: string
+          enum: [awaiting_documents, processing, complete, withdrawn]
+          example: processing
+        documents_total: { type: integer, example: 2 }
+        documents_extracted: { type: integer, example: 1 }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [key, label, state]
+            properties:
+              key: { type: string, enum: [payslip, form16, epfo, rules], example: payslip }
+              label: { type: string, example: Payslip read }
+              state: { type: string, enum: [done, active, pending, failed], example: done }
+        error:
+          type: object
+          nullable: true
+          properties:
+            code: { type: string, example: EXTRACTION_UNAVAILABLE }
+            message: { type: string, example: One document could not be read automatically. }
