@@ -40,7 +40,7 @@ export async function processEmployerWorkflowJob(
 
     while (!success && retries < 3) {
       try {
-        await db.transaction(async (tx) => {
+        publishPayload = await db.transaction(async (tx) => {
           const requests = await tx
             .select()
             .from(employerRequests)
@@ -51,17 +51,17 @@ export async function processEmployerWorkflowJob(
             console.warn('Employer request not found, skipping job', {
               employerRequestId: data.employerRequestId,
             });
-            return;
+            return null;
           }
 
           const request = requests[0];
-          if (!request) return;
+          if (!request) return null;
 
           if (request.status !== 'pending') {
             console.log('Employer request already responded, short-circuiting reminders', {
               employerRequestId: data.employerRequestId,
             });
-            return;
+            return null;
           }
 
           console.log(
@@ -88,7 +88,7 @@ export async function processEmployerWorkflowJob(
             const isDemo = process.env.DEMO_MODE === 'true';
             const delaySeconds = isDemo ? 3 : 24 * 3600;
 
-            publishPayload = {
+            return {
               queue: 'employer_workflow',
               data: {
                 caseId: data.caseId,
@@ -98,6 +98,8 @@ export async function processEmployerWorkflowJob(
               options: { delaySeconds },
             };
           }
+
+          return null;
         });
         success = true;
       } catch (e) {
