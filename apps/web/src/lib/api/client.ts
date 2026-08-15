@@ -18,11 +18,12 @@ export class ApiError extends Error {
 }
 
 export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  // Use absolute URL for SSR and Server Actions
-  const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+  // Hit Prism mock server directly on port 4010 for backend integration (FE-6)
+  const baseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4010';
   const url = `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-
+  
   const headers: Record<string, string> = {
+    'Authorization': 'Bearer mock-token',
     ...((options.headers as Record<string, string>) || {}),
   };
 
