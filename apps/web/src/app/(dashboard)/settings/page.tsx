@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Building, Key, CreditCard, Bell, Shield } from 'lucide-react';
+import { User, Building, Key, CreditCard, Bell, Shield, Settings } from 'lucide-react';
 
 const tabs = [
   { id: 'profile', name: 'Profile', icon: User },
