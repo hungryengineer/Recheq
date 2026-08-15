@@ -209,7 +209,7 @@ Do not modify anything under `services/api/src/routes/`.
 
 ```bash
 curl -s -XPOST localhost:3000/api/cases -H 'content-type: application/json' \
-  -H 'authorization: Bearer dev-token' \
+  -H "authorization: Bearer \$DEV_TOKEN" \
   -d '{"candidate_name":"Test","candidate_email":"t@e.com","employer_name":"Acme","title":"Analyst","claimed_ctc":1200000,"employment_start":"2023-04-01","employment_end":"2026-03-31"}' -i | head -1
 ```
 
