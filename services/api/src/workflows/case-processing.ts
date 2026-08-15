@@ -1,4 +1,4 @@
-import { getDbConnection } from '../db/client.js';
+import type { getDbConnection } from '../db/client.js';
 import { logger } from '../observability/logger.js';
 import { cases, extractions } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';

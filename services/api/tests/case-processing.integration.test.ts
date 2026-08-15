@@ -1,13 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  processCase,
-  updateExtractionSuccess,
-  CaseProcessingDeps,
-} from '../src/workflows/case-processing.js';
+import type { CaseProcessingDeps } from '../src/workflows/case-processing.js';
+import { processCase } from '../src/workflows/case-processing.js';
 
 describe('Case Processing', () => {
-  let mockDb: any;
-  let mockExtractor: any;
+  let mockDb: {
+    select: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
+  let mockExtractor: {
+    extractPayslip: ReturnType<typeof vi.fn>;
+    extractForm16: ReturnType<typeof vi.fn>;
+  };
   let deps: CaseProcessingDeps;
 
   beforeEach(() => {
@@ -34,18 +37,21 @@ describe('Case Processing', () => {
     };
 
     mockExtractor = {
-      extractPayslip: vi.fn().mockResolvedValue({ data: { basic: 50000 }, usage: { tokens: 100 } }),
-      extractForm16: vi.fn().mockResolvedValue({ data: { tds: 5000 }, usage: { tokens: 150 } }),
+      extractPayslip: vi
+        .fn()
+        .mockResolvedValue({ data: { basic: 50000 }, usage: { tokens: 100 } }),
+      extractForm16: vi
+        .fn()
+        .mockResolvedValue({ data: { tds: 5000 }, usage: { tokens: 150 } }),
     };
 
     deps = {
-      db: mockDb,
+      db: mockDb as unknown as CaseProcessingDeps['db'],
       extractor: mockExtractor,
     };
   });
 
   it('should extract payslip with correct methods', async () => {
-    let selectCallCount = 0;
     mockDb.select.mockImplementation(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
@@ -83,14 +89,17 @@ describe('Case Processing', () => {
       set: setSpy,
     });
 
-    let selectCallCount = 0;
     mockDb.select.mockImplementation(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi
             .fn()
             .mockResolvedValueOnce([
-              { id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' },
+              {
+                id: 'case-1',
+                document_type: 'payslip',
+                raw_content: 'payslip data',
+              },
             ])
             .mockResolvedValueOnce([
               {
@@ -106,20 +115,27 @@ describe('Case Processing', () => {
 
     await processCase(deps, 'case-1');
 
-    expect(setSpy).toHaveBeenCalledWith(expect.objectContaining({ status: 'success' }));
+    expect(setSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'success' }),
+    );
   });
 
   it('should handle extraction errors gracefully', async () => {
-    mockExtractor.extractPayslip.mockRejectedValueOnce(new Error('Extraction failed'));
+    mockExtractor.extractPayslip.mockRejectedValueOnce(
+      new Error('Extraction failed'),
+    );
 
-    let selectCallCount = 0;
     mockDb.select.mockImplementation(() => ({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi
             .fn()
             .mockResolvedValueOnce([
-              { id: 'case-1', document_type: 'payslip', raw_content: 'payslip data' },
+              {
+                id: 'case-1',
+                document_type: 'payslip',
+                raw_content: 'payslip data',
+              },
             ])
             .mockResolvedValueOnce([
               {
@@ -135,7 +151,6 @@ describe('Case Processing', () => {
 
     await processCase(deps, 'case-1');
 
-    // Should not throw - error is caught and logged
     expect(mockDb.update).toHaveBeenCalled();
   });
 });
