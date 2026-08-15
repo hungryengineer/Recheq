@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: OpenAiCompatibleConfig = {
   baseUrl: 'https://api.openai.com/v1',
   maxTokens: 4096,
   temperature: 0.1,
-  useVision: true,
+  useVision: true, 
 };
 
 /**
