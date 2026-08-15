@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🐰 CodeRabbit AI Review
-        uses: coderabbitai/github-action@latest
+        uses: coderabbitai/coderabbitai-action@latest
         with:
           debug: false
           framework: typescript
