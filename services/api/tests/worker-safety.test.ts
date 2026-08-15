@@ -60,7 +60,7 @@ describe.skipIf(!hasDb)('Worker Safety', () => {
     let concurrent = 0;
     let maxConcurrent = 0;
 
-    await boss.work('case_proc_test', { batchSize: 4 }, async (jobs: any[]) => {
+    await boss.work('case_proc_test', { batchSize: 4 }, async (jobs: PgBoss.Job[]) => {
       concurrent += jobs.length;
       maxConcurrent = Math.max(maxConcurrent, concurrent);
       await new Promise((r) => setTimeout(r, 50));
@@ -79,7 +79,7 @@ describe.skipIf(!hasDb)('Worker Safety', () => {
       // No raw document data
     });
 
-    await boss.work('safe_log_test', async (jobs: any) => {
+    await boss.work('safe_log_test', async (jobs: PgBoss.Job[]) => {
       const job = Array.isArray(jobs) ? jobs[0] : jobs;
       // Job processing should not expose document content
       expect(JSON.stringify(job)).not.toContain('document_content');

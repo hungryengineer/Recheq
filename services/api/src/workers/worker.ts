@@ -1,3 +1,4 @@
+import type PgBoss from 'pg-boss';
 import { getPgBoss } from '../workflows/pgboss.js';
 import { createDb } from '../db/client.js';
 import { eq } from 'drizzle-orm';
@@ -10,10 +11,10 @@ export interface JobContext {
   [key: string]: unknown;
 }
 
-async function processCaseJob(jobs: any[]): Promise<void> {
+async function processCaseJob(jobs: PgBoss.Job[]): Promise<void> {
   await Promise.all(
     jobs.map(async (job) => {
-      const { case_id, org_id } = job.data as any;
+      const { case_id, org_id } = job.data as unknown as JobContext;
       console.log('case processing started', { case_id, org_id });
 
       const db = createDb(process.env.DATABASE_URL!);
@@ -38,13 +39,13 @@ async function processCaseJob(jobs: any[]): Promise<void> {
   );
 }
 
-async function processEmployerJob(jobs: any[]): Promise<void> {
+async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
   await Promise.all(jobs.map(async (job) => console.log('employer job', { id: job.id })));
 }
-async function retentionJob(jobs: any[]): Promise<void> {
+async function retentionJob(jobs: PgBoss.Job[]): Promise<void> {
   await Promise.all(jobs.map(async (job) => console.log('retention cleanup', { id: job.id })));
 }
-async function webhookJob(jobs: any[]): Promise<void> {
+async function webhookJob(jobs: PgBoss.Job[]): Promise<void> {
   await Promise.all(jobs.map(async (job) => console.log('webhook delivery', { id: job.id })));
 }
 

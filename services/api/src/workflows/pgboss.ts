@@ -103,7 +103,7 @@ export async function publishJob(
     publishOptions.startAfter = options.delaySeconds;
   }
 
-  const jobId = await pgBoss.send(queue, data as any, publishOptions);
+  const jobId = await pgBoss.send(queue, data as object, publishOptions);
   console.log('job published', { queue, jobId, caseId: data.case_id });
   return String(jobId || '');
 }
