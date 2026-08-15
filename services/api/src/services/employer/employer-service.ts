@@ -14,7 +14,13 @@ export interface EmployerServiceDeps {
     getEmployerRequestByToken: (
       tx: unknown,
       tokenHash: string,
-    ) => Promise<{ id: string; case_id: string; employer_email: string; status: string } | null>;
+    ) => Promise<{
+      id: string;
+      case_id: string;
+      employer_email: string;
+      status: string;
+      expires_at: Date;
+    } | null>;
     updateEmployerRequestResponse: (
       tx: unknown,
       requestId: string,
@@ -23,6 +29,12 @@ export interface EmployerServiceDeps {
   };
   audit: {
     appendEvent: (tx: unknown, input: EventInput) => Promise<unknown>;
+  };
+  tokens: {
+    saveToken: (
+      tx: unknown,
+      record: { hash: string; case_id: string; purpose: string; expires_at: string },
+    ) => Promise<void>;
   };
   worker: {
     enqueueReprocess: (caseId: string) => Promise<void>;
@@ -34,7 +46,7 @@ export async function createEmployerRequest(
   employerEmail: string,
   deps: EmployerServiceDeps,
 ): Promise<{ rawToken: string }> {
-  return deps.db.transaction(async (tx) => {
+  const result = await deps.db.transaction(async (tx) => {
     const caseRecord = await deps.db.getCaseById(tx, caseId);
     if (!caseRecord) {
       throw new AppError(404, 'CASE_NOT_FOUND', 'Case not found');
@@ -61,21 +73,30 @@ export async function createEmployerRequest(
       actor: 'verifier',
     });
 
+    await deps.tokens.saveToken(tx, {
+      hash: tokenHash,
+      case_id: caseId,
+      purpose: 'employer',
+      expires_at: expiresAt.toISOString(),
+    });
+
     const isDemo = process.env.DEMO_MODE === 'true';
     const delaySeconds = isDemo ? 3 : 48 * 3600;
 
-    await publishJob(
-      'EMPLOYER_WORKFLOW',
-      {
-        caseId,
-        employerRequestId: request.id,
-        reminderIndex: 1,
-      },
-      { delaySeconds },
-    );
-
-    return { rawToken };
+    return { rawToken, jobId: request.id, caseId, delaySeconds };
   });
+
+  await publishJob(
+    'EMPLOYER_WORKFLOW',
+    {
+      caseId: result.caseId,
+      employerRequestId: result.jobId,
+      reminderIndex: 1,
+    },
+    { delaySeconds: result.delaySeconds },
+  );
+
+  return { rawToken: result.rawToken };
 }
 
 export async function getEmployerForm(tokenHash: string, deps: EmployerServiceDeps) {
@@ -83,6 +104,10 @@ export async function getEmployerForm(tokenHash: string, deps: EmployerServiceDe
     const request = await deps.db.getEmployerRequestByToken(tx, tokenHash);
     if (!request) {
       throw new AppError(404, 'REQUEST_NOT_FOUND', 'Employer request not found');
+    }
+
+    if (request.expires_at <= new Date()) {
+      throw new AppError(403, 'TOKEN_EXPIRED', 'Employer request link has expired');
     }
 
     const caseRecord = await deps.db.getCaseById(tx, request.case_id);
@@ -113,10 +138,14 @@ export async function submitEmployerResponse(
   payload: EmployerResponsePayload,
   deps: EmployerServiceDeps,
 ): Promise<void> {
-  await deps.db.transaction(async (tx) => {
+  const caseId = await deps.db.transaction(async (tx) => {
     const request = await deps.db.getEmployerRequestByToken(tx, tokenHash);
     if (!request) {
       throw new AppError(404, 'REQUEST_NOT_FOUND', 'Employer request not found');
+    }
+
+    if (request.expires_at <= new Date()) {
+      throw new AppError(403, 'TOKEN_EXPIRED', 'Employer request link has expired');
     }
 
     if (request.status !== 'pending') {
@@ -132,6 +161,8 @@ export async function submitEmployerResponse(
       actor: 'employer',
     });
 
-    await deps.worker.enqueueReprocess(request.case_id);
+    return request.case_id;
   });
+
+  await deps.worker.enqueueReprocess(caseId);
 }

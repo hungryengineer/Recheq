@@ -53,12 +53,13 @@ describe('disputeFinding', () => {
   it('throws 404 if finding is not found', async () => {
     vi.mocked(deps.db.getFindingById).mockResolvedValue(null);
 
-    await expect(disputeFinding('case-1', 'finding-1', 'reason', deps)).rejects.toThrowError(
-      AppError,
-    );
-    await expect(disputeFinding('case-1', 'finding-1', 'reason', deps)).rejects.toThrow(
-      /not found/i,
-    );
+    const promise = disputeFinding('case-1', 'finding-1', 'reason', deps);
+    await expect(promise).rejects.toThrowError(AppError);
+    await expect(promise).rejects.toThrow(/not found/i);
+    await expect(promise).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'FINDING_NOT_FOUND',
+    });
   });
 
   it('throws 403 if finding belongs to a different case', async () => {
@@ -68,12 +69,13 @@ describe('disputeFinding', () => {
       status: 'open',
     });
 
-    await expect(disputeFinding('case-1', 'finding-1', 'reason', deps)).rejects.toThrowError(
-      AppError,
-    );
-    await expect(disputeFinding('case-1', 'finding-1', 'reason', deps)).rejects.toThrow(
-      /does not belong/i,
-    );
+    const promise = disputeFinding('case-1', 'finding-1', 'reason', deps);
+    await expect(promise).rejects.toThrowError(AppError);
+    await expect(promise).rejects.toThrow(/does not belong/i);
+    await expect(promise).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
   });
 
   it('throws 400 if finding is not in open status', async () => {
@@ -83,11 +85,12 @@ describe('disputeFinding', () => {
       status: 'resolved',
     });
 
-    await expect(disputeFinding('case-1', 'finding-1', 'reason', deps)).rejects.toThrowError(
-      AppError,
-    );
-    await expect(disputeFinding('case-1', 'finding-1', 'reason', deps)).rejects.toThrow(
-      /Cannot dispute/i,
-    );
+    const promise = disputeFinding('case-1', 'finding-1', 'reason', deps);
+    await expect(promise).rejects.toThrowError(AppError);
+    await expect(promise).rejects.toThrow(/Cannot dispute/i);
+    await expect(promise).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_FINDING_STATUS',
+    });
   });
 });

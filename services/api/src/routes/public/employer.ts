@@ -29,7 +29,7 @@ const EmployerResponsePayload = z.object({
   confirmed: z.boolean(),
   corrected_name: z.string().optional(),
   corrected_title: z.string().optional(),
-  corrected_ctc: z.number().optional(),
+  corrected_ctc: z.number().finite().optional(),
   note: z.string().optional(),
 });
 

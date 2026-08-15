@@ -33,6 +33,9 @@ describe('Employer Workflow', () => {
       audit: {
         appendEvent: vi.fn().mockResolvedValue(undefined),
       },
+      tokens: {
+        saveToken: vi.fn().mockResolvedValue(undefined),
+      },
       worker: {
         enqueueReprocess: vi.fn().mockResolvedValue(undefined),
       },
@@ -80,6 +83,7 @@ describe('Employer Workflow', () => {
         case_id: 'case-1',
         employer_email: 'hr@acme.com',
         status: 'pending',
+        expires_at: new Date(Date.now() + 86400000),
       });
 
       const form = await getEmployerForm('hash-123', deps);
@@ -104,6 +108,7 @@ describe('Employer Workflow', () => {
         case_id: 'case-1',
         employer_email: 'hr@acme.com',
         status: 'pending',
+        expires_at: new Date(Date.now() + 86400000),
       });
 
       const payload = {
@@ -134,8 +139,9 @@ describe('Employer Workflow', () => {
       vi.mocked(deps.db.getEmployerRequestByToken).mockResolvedValueOnce({
         id: 'req-1',
         case_id: 'case-1',
-        employer_email: 'hr@acme.com',
+        employer_email: 'hr@hooli.com',
         status: 'responded', // Already responded
+        expires_at: new Date(Date.now() + 86400000),
       });
 
       await expect(

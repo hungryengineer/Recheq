@@ -33,9 +33,7 @@ export async function createEmployerRequestHandler(
       body: {
         success: true,
         message: 'Employer request created and sent',
-        // In a real system, the token wouldn't be returned but sent via email.
-        // Returning it here for testing/demo purposes.
-        token: result.rawToken,
+        ...(process.env.DEMO_MODE === 'true' && { token: result.rawToken }),
       },
     };
   } catch (err) {

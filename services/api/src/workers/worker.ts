@@ -40,18 +40,9 @@ async function processCaseJob(jobs: PgBoss.Job[]): Promise<void> {
 }
 
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
-import { AuditService } from '../audit/audit-service.js';
-import { DbAuditRepository } from '../audit/db-audit-repository.js';
 
 async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
-  if (!db) db = createDb(process.env.DATABASE_URL!);
-
-  const auditRepo = new DbAuditRepository(db);
-  const auditService = new AuditService(auditRepo);
-
-  await processEmployerWorkflowJob(jobs, {
-    audit: auditService,
-  });
+  await processEmployerWorkflowJob(jobs);
 }
 async function retentionJob(jobs: PgBoss.Job[]): Promise<void> {
   for (const job of jobs) console.log('retention cleanup', { id: job.id });

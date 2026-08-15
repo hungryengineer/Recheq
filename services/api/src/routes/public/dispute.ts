@@ -20,7 +20,7 @@ export interface DisputeRouteDeps extends DisputeServiceDeps {
 }
 
 const DisputePayload = z.object({
-  finding_id: z.string().uuid(),
+  finding_id: z.string().trim().min(1).uuid(),
   reason: z.string().min(1).max(2000),
 });
 
