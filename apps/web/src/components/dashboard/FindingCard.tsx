@@ -103,9 +103,9 @@ export function FindingCard({ finding }: { finding: Record<string, any> }) {
               </button>
             </div>
             
-            <div className="flex-1 bg-[var(--color-page)] p-8 overflow-auto flex items-center justify-center min-h-[500px]">
+            <div className="flex-1 bg-[#323639] p-8 md:p-12 overflow-auto flex items-start justify-center min-h-[500px]">
               {/* Mock PDF rendering */}
-              <div className="bg-white w-full max-w-2xl min-h-[800px] shadow-sm rounded border border-gray-200 p-12 mx-auto flex flex-col relative">
+              <div className="bg-white w-full max-w-2xl shrink-0 min-h-[800px] shadow-2xl rounded-sm p-12 mx-auto flex flex-col relative">
                 <div className="absolute top-0 right-0 p-8 text-4xl text-gray-100 font-bold rotate-12 opacity-50 select-none">
                   MOCK DOCUMENT
                 </div>
@@ -153,8 +153,14 @@ export function FindingCard({ finding }: { finding: Record<string, any> }) {
                     <tr className="border-b border-gray-100">
                       <td className="py-3">Basic Salary</td>
                       <td className="py-3 text-right">₹ 52,000</td>
-                      <td className="py-3 pl-8 font-semibold text-red-600 bg-red-50">Provident Fund (PF)</td>
-                      <td className="py-3 text-right font-semibold text-red-600 bg-red-50">₹ 3,600</td>
+                      <td className="py-3 pl-8 relative">
+                        <span className="relative z-10 text-gray-800">Provident Fund (PF)</span>
+                        <div className="absolute inset-y-1 left-6 right-0 bg-red-500/10 border-2 border-red-500/40 rounded-sm pointer-events-none"></div>
+                      </td>
+                      <td className="py-3 text-right relative">
+                        <span className="relative z-10 text-gray-800">₹ 3,600</span>
+                        <div className="absolute inset-y-1 left-0 right-0 bg-red-500/10 border-2 border-red-500/40 rounded-sm pointer-events-none"></div>
+                      </td>
                     </tr>
                     <tr className="border-b border-gray-100">
                       <td className="py-3">House Rent Allowance</td>
