@@ -31,8 +31,8 @@ export function HelpWidget() {
           
           <div className="py-2">
             <Link 
-              href="#" 
-              onClick={(e) => { e.preventDefault(); setIsOpen(false); }}
+              href="/docs" 
+              onClick={() => setIsOpen(false)}
               className="flex items-center px-4 py-2.5 text-sm text-[var(--color-fg)] hover:bg-[var(--color-page)] transition-colors group"
             >
               <Book className="mr-3 h-4 w-4 text-[var(--color-fg-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
