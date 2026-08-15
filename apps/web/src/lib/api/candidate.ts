@@ -79,3 +79,18 @@ export async function submitDocuments(_token: string): Promise<void> {
     }
   }, 5000);
 }
+
+export async function disputeFinding(
+  _token: string,
+  _findingId: string,
+  reason: string,
+): Promise<void> {
+  await delay(1000);
+
+  if (reason.trim().length === 0) {
+    throw new Error('Dispute reason is required');
+  }
+
+  // Simulate API call to backend dispute endpoint
+}
+

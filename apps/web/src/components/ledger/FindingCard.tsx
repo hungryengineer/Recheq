@@ -1,12 +1,15 @@
 import React from 'react';
 import type { FindingRecord } from '@tieout/schema';
 import { SourceBadge } from './SourceBadge';
+import { DisputeStatus } from './DisputeStatus';
+import { DisputeForm } from '../candidate/DisputeForm';
 
 interface FindingCardProps {
   finding: FindingRecord;
+  candidateToken?: string;
 }
 
-export function FindingCard({ finding }: FindingCardProps) {
+export function FindingCard({ finding, candidateToken }: FindingCardProps) {
   const borderColors = {
     high: 'border-red-500',
     medium: 'border-yellow-500',
@@ -43,7 +46,7 @@ export function FindingCard({ finding }: FindingCardProps) {
         <p className="mb-4">{finding.explanation}</p>
 
         {(finding.expected || finding.observed) && (
-          <div className="bg-gray-50 p-4 rounded-md font-mono text-xs border border-gray-200 grid grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded-md font-mono text-xs border border-gray-200 grid grid-cols-2 gap-4 mb-4">
             <div>
               <span className="block text-gray-500 mb-1 font-sans font-medium uppercase tracking-wider text-[10px]">
                 Expected
@@ -57,6 +60,12 @@ export function FindingCard({ finding }: FindingCardProps) {
               {finding.observed || <span className="text-gray-400 italic">null</span>}
             </div>
           </div>
+        )}
+
+        <DisputeStatus finding={finding} />
+
+        {candidateToken && finding.status === 'open' && (
+          <DisputeForm token={candidateToken} findingId={finding.id} />
         )}
       </div>
     </div>
