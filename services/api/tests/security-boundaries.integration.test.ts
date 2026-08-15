@@ -33,7 +33,7 @@ function makeRecord(
   };
 }
 
-const mockCtx = { service: 'api', requestId: 'req-1' };
+const mockCtx = { service: 'api', requestId: 'req-1', startedAtMs: Date.now() };
 
 // ─── 1. Wrong Token ─────────────────────────────────────────────
 
@@ -68,7 +68,13 @@ describe('wrong token cannot access a case', () => {
       { params: { token: 'bad' }, context: mockCtx },
       {
         tokenVerifier: verifier,
-        db: { getCaseById: vi.fn(), getConsentByCaseId: vi.fn() },
+        db: {
+          getCaseById: vi.fn(),
+          updateCaseStatus: vi.fn(),
+          createConsent: vi.fn(),
+          getConsentByCaseId: vi.fn(),
+          updateConsentStatus: vi.fn(),
+        },
         audit: { appendEvent: vi.fn() },
       },
     );
@@ -108,10 +114,15 @@ describe('consent token cannot call employer routes', () => {
       {
         tokenVerifier: verifier,
         db: {
-          getEmployerRequestByHash: vi.fn(),
+          transaction: vi.fn(),
           getCaseById: vi.fn(),
-          updateEmployerRequest: vi.fn(),
+          createEmployerRequest: vi.fn(),
+          getEmployerRequestByToken: vi.fn(),
+          updateEmployerRequestResponse: vi.fn(),
         },
+        audit: { appendEvent: vi.fn() },
+        tokens: { saveToken: vi.fn() },
+        worker: { enqueueReprocess: vi.fn() },
       },
     );
     expect(result.status).toBe(403);
@@ -167,7 +178,13 @@ describe('expired token returns correct error', () => {
       { params: { token: rawToken }, context: mockCtx },
       {
         tokenVerifier: verifier,
-        db: { getCaseById: vi.fn(), getConsentByCaseId: vi.fn() },
+        db: {
+          getCaseById: vi.fn(),
+          updateCaseStatus: vi.fn(),
+          createConsent: vi.fn(),
+          getConsentByCaseId: vi.fn(),
+          updateConsentStatus: vi.fn(),
+        },
         audit: { appendEvent: vi.fn() },
       },
     );
