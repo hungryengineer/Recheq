@@ -51,13 +51,21 @@ echo ""
 echo -e "${BLUE}Running fixture validation...${NC}"
 echo ""
 
-# Run the actual fixture tests
-# Note: run-fixtures.ts handles all validation logic and comparison
+# Use npm/pnpm to run the fixtures script
+# The script handles all output sanitization internally
 cd "$PROJECT_ROOT"
 
-# Use pnpm to run the fixtures script
-# The script handles all output sanitization internally
-if pnpm fixtures; then
+# Try pnpm first, fall back to npm
+if command -v pnpm &> /dev/null; then
+  FIXTURES_CMD="pnpm fixtures"
+elif command -v npm &> /dev/null; then
+  FIXTURES_CMD="npm run fixtures"
+else
+  echo -e "${RED}❌ Neither pnpm nor npm found in PATH${NC}"
+  exit 1
+fi
+
+if $FIXTURES_CMD; then
   echo ""
   echo -e "${BLUE}════════════════════════════════════════${NC}"
   echo -e "${GREEN}✅ All fixture validations passed!${NC}"

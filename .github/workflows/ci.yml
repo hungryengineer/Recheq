@@ -119,8 +119,5 @@ jobs:
       - name: 📦 Build packages
         run: pnpm build
 
-      # OPS-05 reservation: turn this into a required gate after the fixture
-      # runner and committed expected outputs are implemented.
-      - name: 🧩 Fixture validation (reserved for OPS-05)
-        if: ${{ false }}
-        run: pnpm fixtures
+      - name: 🧩 Fixture Validation (OPS-05 Gate)
+        run: bash scripts/ci-fixtures.sh
