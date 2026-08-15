@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     };
     mockCases.unshift(newCase);
     return NextResponse.json(newCase, { status: 201 });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 }

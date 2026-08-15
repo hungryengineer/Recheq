@@ -1,5 +1,5 @@
 import type { CaseServiceDeps } from '@tieout/api';
-import type { CaseRecord, CaseSummary } from '@tieout/schema';
+import type { CaseRecord } from '@tieout/schema';
 
 // Shared mock state
 const mockCases: CaseRecord[] = [
