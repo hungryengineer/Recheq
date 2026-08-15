@@ -106,7 +106,7 @@ export async function getEmployerForm(tokenHash: string, deps: EmployerServiceDe
       throw new AppError(404, 'REQUEST_NOT_FOUND', 'Employer request not found');
     }
 
-    if (request.expires_at <= new Date()) {
+    if (new Date() >= request.expires_at) {
       throw new AppError(403, 'TOKEN_EXPIRED', 'Employer request link has expired');
     }
 
@@ -144,7 +144,7 @@ export async function submitEmployerResponse(
       throw new AppError(404, 'REQUEST_NOT_FOUND', 'Employer request not found');
     }
 
-    if (request.expires_at <= new Date()) {
+    if (new Date() >= request.expires_at) {
       throw new AppError(403, 'TOKEN_EXPIRED', 'Employer request link has expired');
     }
 

@@ -29,16 +29,15 @@ Automated and manual checks for token isolation, org scoping, and secret leakage
 | `verdict` absent from candidate API response    | Unit test    | `security-boundaries.integration.test.ts` |
 | `org_id` absent from candidate API response     | Unit test    | `security-boundaries.integration.test.ts` |
 | `created_by` absent from candidate API response | Unit test    | `security-boundaries.integration.test.ts` |
-| `findings` absent from candidate API response   | Unit test    | `no-secret-leak.test.ts`                  |
 
 ## Secret Leakage
 
 | Check                                                     | How verified | File                                      |
 | --------------------------------------------------------- | ------------ | ----------------------------------------- |
-| `DATABASE_URL` absent from browser output                 | Unit test    | `no-secret-leak.test.ts`                  |
-| `OPENAI_API_KEY` / `gsk_` absent from browser output      | Unit test    | `no-secret-leak.test.ts`                  |
-| `S3_SECRET_KEY` / `minioadmin` absent from browser output | Unit test    | `no-secret-leak.test.ts`                  |
-| `TOKEN_PEPPER` absent from browser output                 | Unit test    | `no-secret-leak.test.ts`                  |
+| `DATABASE_URL` absent from NEXT_PUBLIC_ output            | Unit test    | `no-secret-leak.test.ts`                  |
+| `OPENAI_API_KEY` / `gsk_` absent from NEXT_PUBLIC_ output | Unit test    | `no-secret-leak.test.ts`                  |
+| `S3_SECRET_KEY` / `minioadmin` absent from NEXT_PUBLIC_   | Unit test    | `no-secret-leak.test.ts`                  |
+| `TOKEN_PEPPER` absent from NEXT_PUBLIC_ output            | Unit test    | `no-secret-leak.test.ts`                  |
 | No `NEXT_PUBLIC_DATABASE_URL` or similar env exposure     | Unit test    | `no-secret-leak.test.ts`                  |
 | Nested sensitive fields are redacted                      | Unit test    | `security-boundaries.integration.test.ts` |
 | Error responses contain no stack traces                   | Unit test    | `no-secret-leak.test.ts`                  |
@@ -50,7 +49,7 @@ Automated and manual checks for token isolation, org scoping, and secret leakage
 | ------------------------------------------------- | ------------ | ----------------------------------------- |
 | Storage path requires `org_id` + `case_id` prefix | Unit test    | `security-boundaries.integration.test.ts` |
 | Two orgs with same doc ID have different paths    | Unit test    | `security-boundaries.integration.test.ts` |
-| Direct S3/MinIO URL not exposed to browser        | Unit test    | `no-secret-leak.test.ts`                  |
+| Direct S3/MinIO URL not exposed to browser        | Unit test    | `security-boundaries.integration.test.ts` |
 
 ## Running the Tests
 

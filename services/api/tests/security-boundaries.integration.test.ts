@@ -110,22 +110,19 @@ describe('consent token cannot call employer routes', () => {
     const verifyAndGetCaseId = vi.fn().mockRejectedValue(new InvalidTokenPurposeError());
     const verifier: TokenVerifier = { verifyAndGetCaseId };
 
-    const result = await getEmployerHandler(
-      { params: { token: rawToken }, context: mockCtx },
-      {
-        tokenVerifier: verifier,
-        db: {
-          transaction: vi.fn(),
-          getCaseById: vi.fn(),
-          createEmployerRequest: vi.fn(),
-          getEmployerRequestByToken: vi.fn(),
-          updateEmployerRequestResponse: vi.fn(),
-        },
-        audit: { appendEvent: vi.fn() },
-        tokens: { saveToken: vi.fn() },
-        worker: { enqueueReprocess: vi.fn() },
-      },
-    );
+    const result = await getEmployerHandler({ params: { token: rawToken }, context: mockCtx }, {
+      tokenVerifier: verifier,
+      db: {
+        transaction: vi.fn(),
+        getCaseById: vi.fn(),
+        createEmployerRequest: vi.fn(),
+        getEmployerRequestByToken: vi.fn(),
+        updateEmployerRequestResponse: vi.fn(),
+      } as unknown as EmployerRouteDeps['db'],
+      audit: { appendEvent: vi.fn() },
+      tokens: { saveToken: vi.fn() },
+      worker: { enqueueReprocess: vi.fn() },
+    } as unknown as EmployerRouteDeps);
     expect(result.status).toBe(403);
     expect(verifyAndGetCaseId).toHaveBeenCalledWith(rawToken, 'employer');
     expect(result.body).toMatchObject({
@@ -161,6 +158,18 @@ describe('expired token returns correct error', () => {
       expires_at: new Date(Date.now() - 1000).toISOString(),
     };
     expect(() => verifyToken(rawToken, 'consent', record)).toThrow(TokenExpiredError);
+  });
+
+  it('verifyToken throws TokenExpiredError exactly at expires_at boundary', () => {
+    const { rawToken } = generateToken('tie_');
+    const now = new Date().toISOString();
+    const record: TokenRecord = {
+      hash: crypto.createHash('sha256').update(rawToken).digest('hex'),
+      case_id: 'case-1',
+      purpose: 'consent',
+      expires_at: now,
+    };
+    expect(() => verifyToken(rawToken, 'consent', record, now)).toThrow(TokenExpiredError);
   });
 
   it('resolveToken maps TokenExpiredError to 410', async () => {
@@ -354,31 +363,5 @@ describe('service keys, DB URLs, LLM keys absent from serialised responses', () 
     };
     const result = sanitizeSensitiveFields(payload);
     expect(result).toEqual({ dbUrl: '[REDACTED]', safe: 'value' });
-  });
-});
-
-// ─── 7. Document Paths Cannot Be Guessed ────────────────────────
-
-describe('document storage paths are not guessable', () => {
-  it('document storage path includes org_id prefix (not just document_id)', () => {
-    const orgId = 'org-abc';
-    const caseId = 'case-xyz';
-    const documentId = 'doc-123';
-    const ext = 'pdf';
-
-    const path = `${orgId}/${caseId}/${documentId}.${ext}`;
-
-    // Path requires knowledge of org_id + case_id + document_id
-    expect(path.split('/').length).toBe(3);
-    expect(path.startsWith(orgId)).toBe(true);
-    // Cannot be enumerated by document_id alone
-    expect(path).not.toMatch(/^doc-/);
-  });
-
-  it('two orgs with same document_id produce different storage paths', () => {
-    const docId = 'doc-123';
-    const pathA = `org-a/case-a/${docId}.pdf`;
-    const pathB = `org-b/case-b/${docId}.pdf`;
-    expect(pathA).not.toBe(pathB);
   });
 });

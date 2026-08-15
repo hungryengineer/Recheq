@@ -23,95 +23,21 @@ const SECRET_PATTERNS = [
   /token_pepper/i,
 ];
 
-// ─── Candidate-safe view shape from API ─────────────────────────
-
-interface CandidateSafeView {
-  employer_name: string;
-  candidate_name: string;
-  title: string;
-  status: string;
-  consent_status: string | null;
-}
-
-// What the real API returns for GET /api/public/:token
-const mockCandidateSafeView: CandidateSafeView = {
-  employer_name: 'Acme Ltd',
-  candidate_name: 'Jane Doe',
-  title: 'Software Engineer',
-  status: 'awaiting_documents',
-  consent_status: 'granted',
-};
-
-// ─── 1. Candidate API response shape ────────────────────────────
-
-describe('candidate API response does not leak verifier data', () => {
-  it('CandidateSafeView does not contain risk_score', () => {
-    const json = JSON.stringify(mockCandidateSafeView);
-    expect(json).not.toContain('risk_score');
-  });
-
-  it('CandidateSafeView does not contain verdict', () => {
-    const json = JSON.stringify(mockCandidateSafeView);
-    expect(json).not.toContain('verdict');
-  });
-
-  it('CandidateSafeView does not contain org_id', () => {
-    const json = JSON.stringify(mockCandidateSafeView);
-    expect(json).not.toContain('org_id');
-  });
-
-  it('CandidateSafeView does not contain created_by', () => {
-    const json = JSON.stringify(mockCandidateSafeView);
-    expect(json).not.toContain('created_by');
-  });
-
-  it('CandidateSafeView does not contain findings array', () => {
-    const json = JSON.stringify(mockCandidateSafeView);
-    expect(json).not.toContain('findings');
-  });
-
-  it('CandidateSafeView does not contain claimed_ctc', () => {
-    const json = JSON.stringify(mockCandidateSafeView);
-    expect(json).not.toContain('claimed_ctc');
-  });
-
-  it('CandidateSafeView required fields are present', () => {
-    expect(mockCandidateSafeView).toHaveProperty('employer_name');
-    expect(mockCandidateSafeView).toHaveProperty('candidate_name');
-    expect(mockCandidateSafeView).toHaveProperty('status');
-    expect(mockCandidateSafeView).toHaveProperty('consent_status');
-  });
-});
-
-// ─── 2. Secret patterns absent from serialised responses ────────
-
-describe('secret patterns absent from browser-visible response bodies', () => {
-  it.each(SECRET_PATTERNS)('response body does not match pattern %s', (pattern) => {
-    const serialised = JSON.stringify(mockCandidateSafeView);
-    expect(serialised).not.toMatch(pattern);
-  });
-
-  it('response body containing a mocked DATABASE_URL is detected', () => {
-    const leakyResponse = {
-      ...mockCandidateSafeView,
-      debug: 'postgresql://postgres:postgres@localhost:5432/tieout',
-    };
-    const serialised = JSON.stringify(leakyResponse);
-    // This SHOULD match — proving detection works
-    expect(serialised).toMatch(/postgresql:\/\//i);
-  });
-});
+// Removed useless fixture-only tests.
+// In a real environment, we'd test the browser output or API integration directly.
 
 // ─── 3. Next.js environment variable exposure ────────────────────
 
 describe('NEXT_PUBLIC env vars do not include secrets', () => {
-  it('DATABASE_URL is not NEXT_PUBLIC_ prefixed', () => {
+  it('NEXT_PUBLIC env vars values do not contain secrets', () => {
     // Only NEXT_PUBLIC_ vars are exposed to the browser by Next.js
     const publicVars = Object.keys(process.env).filter((k) => k.startsWith('NEXT_PUBLIC_'));
-    const dangerousVars = publicVars.filter((k) =>
-      /database|secret|password|api_key|pepper|token/i.test(k),
-    );
-    expect(dangerousVars).toHaveLength(0);
+    for (const key of publicVars) {
+      const value = process.env[key] || '';
+      for (const pattern of SECRET_PATTERNS) {
+        expect(value).not.toMatch(pattern);
+      }
+    }
   });
 
   it('no service credentials are in NEXT_PUBLIC_ namespace', () => {

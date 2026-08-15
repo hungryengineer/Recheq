@@ -26,7 +26,7 @@ export interface EmployerRouteDeps extends EmployerServiceDeps {
   tokenVerifier: TokenVerifier;
 }
 
-const EmployerResponsePayload = z.object({
+const EmployerResponsePayload: z.ZodType<EmployerResponsePayloadType> = z.object({
   confirmed: z.boolean(),
   corrected_name: z.string().optional(),
   corrected_title: z.string().optional(),
@@ -59,7 +59,7 @@ export async function submitEmployerHandler(req: EmployerRouteRequest, deps: Emp
     const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
     const payload = validateBody(req.body, EmployerResponsePayload);
 
-    await submitEmployerResponse(tokenHash, payload as EmployerResponsePayloadType, deps);
+    await submitEmployerResponse(tokenHash, payload, deps);
 
     return {
       status: 200,
