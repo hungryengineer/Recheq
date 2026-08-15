@@ -22,7 +22,12 @@ export async function disputeHandler(req: DisputeRouteRequest, deps: DisputeRout
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
     const body = req.body as { finding_id?: string; reason?: string };
 
-    if (!body || typeof body.finding_id !== 'string' || typeof body.reason !== 'string' || body.reason.trim().length === 0) {
+    if (
+      !body ||
+      typeof body.finding_id !== 'string' ||
+      typeof body.reason !== 'string' ||
+      body.reason.trim().length === 0
+    ) {
       throw new AppError(400, 'VALIDATION_ERROR', 'Invalid payload');
     }
 
