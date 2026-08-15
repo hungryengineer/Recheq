@@ -16,6 +16,25 @@ tags:
   - name: public-candidate
     description: Public candidate routes using path tokens.
 paths:
+  /api/auth/signup:
+    post:
+      operationId: signup
+      summary: Register a new account
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SignupInput' }
+      responses:
+        '200':
+          description: Successfully registered and logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
   /api/auth/login:
     post:
       operationId: login
@@ -582,6 +601,15 @@ components:
           properties:
             code: { type: string, example: EXTRACTION_UNAVAILABLE }
             message: { type: string, example: The requested resource was not found. }
+
+    SignupInput:
+      type: object
+      required: [fullName, email, company, password]
+      properties:
+        fullName: { type: string, example: "John Doe" }
+        email: { type: string, format: email, example: "john@acme.com" }
+        company: { type: string, example: "Acme Corp" }
+        password: { type: string, example: "securepassword123" }
 
     LoginInput:
       type: object

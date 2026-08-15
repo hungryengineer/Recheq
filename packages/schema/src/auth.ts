@@ -19,3 +19,12 @@ export const LoginResponseSchema = z.object({
 });
 
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+
+export const SignupInputSchema = z.object({
+  fullName: z.string().min(2, 'Full name is required'),
+  email: z.string().email('Please enter a valid email address'),
+  company: z.string().min(2, 'Company name is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters long'),
+});
+
+export type SignupInput = z.infer<typeof SignupInputSchema>;

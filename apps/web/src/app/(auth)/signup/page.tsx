@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, ShieldCheck, Zap, Server, Shield } from 'lucide-react';
+import { Eye, EyeOff, Zap, Server, Shield, User, Building } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { loginAction } from '@/lib/api/auth';
+import { signupAction } from '@/lib/api/auth';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,9 +20,10 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const rememberMe = formData.get('rememberMe') === 'on';
+    const fullName = formData.get('fullName') as string;
+    const company = formData.get('company') as string;
     
-    const result = await loginAction({ email, password, rememberMe });
+    const result = await signupAction({ email, password, fullName, company });
     
     if (!result.success) {
       if (result.errors) {
@@ -56,13 +57,13 @@ export default function LoginPage() {
           </div>
           
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
-            Welcome to <span className="text-blue-500">Recheq</span>
+            Join <span className="text-blue-500">Recheq</span> today
           </h1>
           <p className="text-2xl text-gray-300 font-medium tracking-wide flex items-center gap-3 mb-6">
             Secure <span className="text-blue-500">•</span> Simple <span className="text-blue-500">•</span> Smart
           </p>
           <p className="text-gray-400 text-lg max-w-md leading-relaxed">
-            Recheq helps you manage and verify your documents with ease and confidence.
+            Create an account to start verifying candidates instantly with enterprise-grade accuracy.
           </p>
         </div>
         
@@ -70,16 +71,13 @@ export default function LoginPage() {
         <div className="relative z-10 my-auto h-80 flex items-center justify-center">
           <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full"></div>
           
-          {/* Floating UI Elements */}
-          <div className="relative transform rotate-[-5deg] hover:rotate-0 transition-transform duration-700">
+          <div className="relative transform rotate-[5deg] hover:rotate-0 transition-transform duration-700">
             <div className="w-80 h-48 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl p-4 flex flex-col relative z-20">
-              {/* Fake Window Controls */}
               <div className="flex gap-1.5 mb-4">
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-300"></div>
               </div>
-              {/* Fake UI bars */}
               <div className="flex gap-4 mb-4">
                 <div className="w-12 h-10 rounded-lg bg-blue-600/50 backdrop-blur-md"></div>
                 <div className="flex-1 space-y-2">
@@ -99,15 +97,13 @@ export default function LoginPage() {
               </div>
             </div>
             
-            {/* Floating Shield */}
-            <div className="absolute -right-8 -bottom-8 bg-green-500 p-4 rounded-2xl shadow-2xl transform rotate-12 z-30 flex items-center justify-center">
-              <ShieldCheck className="w-12 h-12 text-white" strokeWidth={2.5} />
+            <div className="absolute -left-8 -bottom-8 bg-blue-500 p-4 rounded-2xl shadow-2xl transform -rotate-12 z-30 flex items-center justify-center">
+              <User className="w-12 h-12 text-white" strokeWidth={2.5} />
             </div>
             
-            {/* Floating Particles */}
-            <div className="absolute -top-12 left-12 w-3 h-3 rounded-full border border-blue-400/50 animate-pulse"></div>
-            <div className="absolute top-24 -right-16 w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-            <div className="absolute -bottom-16 left-32 w-4 h-4 rounded border border-green-500/50 rotate-45"></div>
+            <div className="absolute -top-12 right-12 w-3 h-3 rounded-full border border-green-400/50 animate-pulse"></div>
+            <div className="absolute top-24 -left-16 w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+            <div className="absolute -bottom-16 right-32 w-4 h-4 rounded border border-blue-500/50 rotate-45"></div>
           </div>
         </div>
         
@@ -143,16 +139,16 @@ export default function LoginPage() {
         </div>
       </div>
       
-      {/* Right Split - Login Form (Light Theme) */}
-      <div className="flex-1 bg-gray-50 flex flex-col justify-between p-8 relative">
+      {/* Right Split - Signup Form (Light Theme) */}
+      <div className="flex-1 bg-gray-50 flex flex-col justify-between p-8 relative h-screen overflow-y-auto">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxjaXJjbGUgY3g9IjIiIGN5PSIyIiByPSIxIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMDQpIj48L2NpcmNsZT4KPC9zdmc+')] pointer-events-none opacity-50 mask-image:linear-gradient(to_bottom_left,white,transparent)"></div>
         
-        <div className="flex-1 flex flex-col justify-center items-center">
+        <div className="flex-1 flex flex-col justify-center items-center py-10">
           <div className="w-full max-w-[440px] bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-10 relative z-10">
             
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to your account</h2>
-              <p className="text-sm text-gray-500">Enter your credentials to access Recheq</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Create an account</h2>
+              <p className="text-sm text-gray-500">Sign up to get started with Recheq</p>
             </div>
             
             {errors.form && (
@@ -160,18 +156,50 @@ export default function LoginPage() {
                 {errors.form}
               </div>
             )}
-
-            {/* Dev Hint */}
-            <div className="mb-6 p-3 bg-blue-50/50 text-blue-800 text-xs rounded-lg border border-blue-100/50 flex flex-col gap-1 text-center">
-              <span className="font-semibold text-blue-900">Development Credentials</span>
-              <span>Email: <span className="font-mono font-bold">admin@gmail.com</span></span>
-              <span>Password: <span className="font-mono font-bold">Admin123</span></span>
-            </div>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               
+              {/* Full Name */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700" htmlFor="email">Email address</label>
+                <label className="text-sm font-semibold text-gray-700" htmlFor="fullName">Full Name</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Enter your full name"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
+                  />
+                </div>
+                {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
+              </div>
+
+              {/* Company */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700" htmlFor="company">Company</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="company"
+                    name="company"
+                    type="text"
+                    autoComplete="organization"
+                    placeholder="Company name"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
+                  />
+                </div>
+                {errors.company && <p className="text-xs text-red-500 mt-1">{errors.company}</p>}
+              </div>
+              
+              {/* Email */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700" htmlFor="email">Work Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -184,18 +212,16 @@ export default function LoginPage() {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    placeholder="Enter your email"
+                    placeholder="you@company.com"
                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
                   />
                 </div>
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-gray-700" htmlFor="password">Password</label>
-                  <Link href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</Link>
-                </div>
+                <label className="text-sm font-semibold text-gray-700" htmlFor="password">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -206,8 +232,8 @@ export default function LoginPage() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
+                    autoComplete="new-password"
+                    placeholder="Create a strong password"
                     className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
                   />
                   <button
@@ -219,50 +245,21 @@ export default function LoginPage() {
                   </button>
                 </div>
                 {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500"
-                />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 cursor-pointer select-none">
-                  Remember me
-                </label>
+                <p className="text-[10px] text-gray-500 mt-1">Must be at least 8 characters long.</p>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors mt-2"
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>
-
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-400 text-xs uppercase tracking-wider">or continue with</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors">
-                  <ShieldCheck className="w-5 h-5 text-blue-600 mr-2" />
-                  Sign in with SSO
-                </button>
-              </div>
-            </div>
             
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account? <Link href="/signup" className="font-semibold text-blue-600 hover:text-blue-500">Sign up</Link>
+                Already have an account? <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500">Sign in</Link>
               </p>
             </div>
             
@@ -270,7 +267,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right Split Footer */}
-        <div className="relative z-10 flex justify-between items-center text-xs text-gray-500 px-4">
+        <div className="relative z-10 flex justify-between items-center text-xs text-gray-500 px-4 mt-auto">
           <p>© 2026 Recheq Technologies Pvt Ltd. All rights reserved.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
