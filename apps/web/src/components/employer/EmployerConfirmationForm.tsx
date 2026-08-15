@@ -94,7 +94,7 @@ export function EmployerConfirmationForm({ token, context, onSuccess }: Props) {
           <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-100">
             {context.candidate_name}
           </p>
-          
+
           <div className="mt-3 flex items-center space-x-4">
             <label className="inline-flex items-center">
               <input
@@ -115,10 +115,12 @@ export function EmployerConfirmationForm({ token, context, onSuccess }: Props) {
               <span className="ml-2 text-sm text-gray-700">Needs correction</span>
             </label>
           </div>
-          
+
           {!nameMatches && (
             <div className="mt-3">
-              <label htmlFor="correctedName" className="sr-only">Corrected Name</label>
+              <label htmlFor="correctedName" className="sr-only">
+                Corrected Name
+              </label>
               <input
                 type="text"
                 id="correctedName"
@@ -137,7 +139,7 @@ export function EmployerConfirmationForm({ token, context, onSuccess }: Props) {
           <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-100">
             {context.title}
           </p>
-          
+
           <div className="mt-3 flex items-center space-x-4">
             <label className="inline-flex items-center">
               <input
@@ -158,10 +160,12 @@ export function EmployerConfirmationForm({ token, context, onSuccess }: Props) {
               <span className="ml-2 text-sm text-gray-700">Needs correction</span>
             </label>
           </div>
-          
+
           {!titleMatches && (
             <div className="mt-3">
-              <label htmlFor="correctedTitle" className="sr-only">Corrected Title</label>
+              <label htmlFor="correctedTitle" className="sr-only">
+                Corrected Title
+              </label>
               <input
                 type="text"
                 id="correctedTitle"
@@ -180,7 +184,7 @@ export function EmployerConfirmationForm({ token, context, onSuccess }: Props) {
           <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-100">
             {formatCurrency(context.claimed_ctc)}
           </p>
-          
+
           <div className="mt-3 flex items-center space-x-4">
             <label className="inline-flex items-center">
               <input
@@ -201,10 +205,12 @@ export function EmployerConfirmationForm({ token, context, onSuccess }: Props) {
               <span className="ml-2 text-sm text-gray-700">Needs correction</span>
             </label>
           </div>
-          
+
           {!ctcMatches && (
             <div className="mt-3">
-              <label htmlFor="correctedCtc" className="sr-only">Corrected CTC</label>
+              <label htmlFor="correctedCtc" className="sr-only">
+                Corrected CTC
+              </label>
               <input
                 type="number"
                 id="correctedCtc"

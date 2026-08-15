@@ -40,7 +40,7 @@ describe('Employer Page UI', () => {
       render(
         <React.Suspense fallback={<div>Loading...</div>}>
           <EmployerVerificationPage params={params} />
-        </React.Suspense>
+        </React.Suspense>,
       );
     });
 
@@ -57,7 +57,7 @@ describe('Employer Page UI', () => {
       render(
         <React.Suspense fallback={<div>Loading...</div>}>
           <EmployerVerificationPage params={params} />
-        </React.Suspense>
+        </React.Suspense>,
       );
     });
 
@@ -77,13 +77,15 @@ describe('Employer Page UI', () => {
       render(
         <React.Suspense fallback={<div>Loading...</div>}>
           <EmployerVerificationPage params={params} />
-        </React.Suspense>
+        </React.Suspense>,
       );
     });
 
     await waitFor(() => {
       expect(screen.getByText(/Response Recorded/i)).toBeInTheDocument();
-      expect(screen.getByText(/Thank you for verifying employment details for John Doe/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Thank you for verifying employment details for John Doe/i),
+      ).toBeInTheDocument();
     });
   });
 
