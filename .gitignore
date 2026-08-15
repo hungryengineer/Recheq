@@ -122,3 +122,5 @@ coverage/
 AGENTS.md
 GEMINI.md
 .agents/
+
+local_reference/
