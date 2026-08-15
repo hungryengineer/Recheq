@@ -149,8 +149,13 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
     documentType: 'payslip' | 'form16',
   ): Array<Record<string, unknown>> {
     const isImage = request.mimeType.startsWith('image/');
-    const docTextForPrompt = isImage ? '' : request.documentContent;
-
+    // Fallback if vision is disabled for images
+    const docTextForPrompt =
+      isImage && !this.config.useVision
+        ? '[Image content - use text extraction from image first]'
+        : isImage
+          ? ''
+          : request.documentContent;
     const prompt =
       documentType === 'payslip'
         ? buildPayslipPrompt(docTextForPrompt, request.retryContext?.validationError)
