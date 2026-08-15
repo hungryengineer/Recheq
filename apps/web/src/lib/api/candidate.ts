@@ -79,3 +79,33 @@ export async function submitDocuments(_token: string): Promise<void> {
     }
   }, 5000);
 }
+
+export async function disputeFinding(
+  token: string,
+  findingId: string,
+  reason: string,
+): Promise<void> {
+  if (reason.trim().length === 0) {
+    throw new Error('Dispute reason is required');
+  }
+
+  try {
+    const response = await fetch(`/api/public/${token}/dispute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ finding_id: findingId, reason }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.message || 'Failed to submit dispute');
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while submitting the dispute');
+  }
+}
