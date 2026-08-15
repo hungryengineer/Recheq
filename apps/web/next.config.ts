@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   transpilePackages: ['@tieout/schema', '@tieout/api', '@tieout/rules'],
   turbopack: {},
   serverExternalPackages: ['postgres', 'drizzle-orm', 'pdfjs-dist'],
