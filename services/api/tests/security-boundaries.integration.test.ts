@@ -344,7 +344,7 @@ describe('service keys, DB URLs, LLM keys absent from serialised responses', () 
     const result = sanitizeSensitiveFields(payload) as Array<Record<string, unknown>>;
     expect(result[0]!['apiKey']).toBe('[REDACTED]');
     expect(result[1]!['name']).toBe('safe');
-  }); 
+  });
 
   it('does not expose DATABASE_URL-style values in response body', () => {
     const payload = {
