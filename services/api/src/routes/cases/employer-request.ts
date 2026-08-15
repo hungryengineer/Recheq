@@ -1,7 +1,5 @@
-import { z } from 'zod';
+import { toErrorResponse, AppError } from '../../http/errors.js';
 import type { RequestContext } from '../../observability/request-context.js';
-import { validateBody } from '../../security/request-validation.js';
-import { toErrorResponse } from '../../http/errors.js';
 import type { EmployerServiceDeps } from '../../services/employer/employer-service.js';
 import { createEmployerRequest } from '../../services/employer/employer-service.js';
 
@@ -15,18 +13,17 @@ export interface EmployerRequestRouteRequest {
 
 export type EmployerRequestRouteDeps = EmployerServiceDeps;
 
-const EmployerRequestPayload = z.object({
-  employer_email: z.string().email(),
-});
-
 export async function createEmployerRequestHandler(
   req: EmployerRequestRouteRequest,
   deps: EmployerRequestRouteDeps,
 ) {
   try {
-    const payload = validateBody(req.body, EmployerRequestPayload);
+    const body = req.body as { employer_email?: string };
+    if (!body || typeof body.employer_email !== 'string') {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid payload');
+    }
 
-    const result = await createEmployerRequest(req.params.id, payload.employer_email, deps);
+    const result = await createEmployerRequest(req.params.id, body.employer_email, deps);
 
     return {
       status: 201,

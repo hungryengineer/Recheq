@@ -102,6 +102,7 @@ describe('Employer Workflow', () => {
       vi.mocked(deps.db.getEmployerRequestByToken).mockResolvedValueOnce({
         id: 'req-1',
         case_id: 'case-1',
+        employer_email: 'hr@acme.com',
         status: 'pending',
       });
 
@@ -133,6 +134,7 @@ describe('Employer Workflow', () => {
       vi.mocked(deps.db.getEmployerRequestByToken).mockResolvedValueOnce({
         id: 'req-1',
         case_id: 'case-1',
+        employer_email: 'hr@acme.com',
         status: 'responded', // Already responded
       });
 

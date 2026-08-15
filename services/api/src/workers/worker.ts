@@ -50,8 +50,10 @@ async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
   await processEmployerWorkflowJob(jobs, {
     audit: {
       appendEvent: async (tx: unknown, input) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dbtx = tx as any;
         // Simple inline implementation for worker context
-        const lastEventList = await tx
+        const lastEventList = await dbtx
           .select()
           .from(events)
           .where(eq(events.case_id, input.case_id))
@@ -62,7 +64,7 @@ async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
         const prevHash = lastEventList.length > 0 ? lastEventList[0].hash : null;
         const newHash = crypto.randomBytes(32).toString('hex'); // Placeholder hash for worker
 
-        await tx.insert(events).values({
+        await dbtx.insert(events).values({
           id: crypto.randomUUID(),
           case_id: input.case_id,
           seq,

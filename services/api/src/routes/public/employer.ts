@@ -1,8 +1,6 @@
-import { z } from 'zod';
 import type { RequestContext } from '../../observability/request-context.js';
 import type { TokenVerifier } from './token-auth.js';
-import { validateBody } from '../../security/request-validation.js';
-import { toErrorResponse } from '../../http/errors.js';
+import { toErrorResponse, AppError } from '../../http/errors.js';
 import type { EmployerServiceDeps } from '../../services/employer/employer-service.js';
 import {
   getEmployerForm,
@@ -22,13 +20,13 @@ export interface EmployerRouteDeps extends EmployerServiceDeps {
   tokenVerifier: TokenVerifier;
 }
 
-const EmployerResponsePayload = z.object({
-  confirmed: z.boolean(),
-  corrected_name: z.string().optional(),
-  corrected_title: z.string().optional(),
-  corrected_ctc: z.number().optional(),
-  note: z.string().optional(),
-});
+type EmployerResponsePayloadType = {
+  confirmed: boolean;
+  corrected_name?: string;
+  corrected_title?: string;
+  corrected_ctc?: number;
+  note?: string;
+};
 
 export async function getEmployerHandler(req: EmployerRouteRequest, deps: EmployerRouteDeps) {
   try {
@@ -59,9 +57,12 @@ export async function submitEmployerHandler(req: EmployerRouteRequest, deps: Emp
     // Hash token to look up request
     const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
 
-    const payload = validateBody(req.body, EmployerResponsePayload);
+    const body = req.body as EmployerResponsePayloadType;
+    if (!body || typeof body.confirmed !== 'boolean') {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid payload');
+    }
 
-    await submitEmployerResponse(tokenHash, payload, deps);
+    await submitEmployerResponse(tokenHash, body, deps);
 
     return {
       status: 200,

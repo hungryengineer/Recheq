@@ -11,7 +11,10 @@ export interface EmployerServiceDeps {
       tx: unknown,
       req: { case_id: string; token_hash: string; employer_email: string; expires_at: Date },
     ) => Promise<{ id: string }>;
-    getEmployerRequestByToken: (tx: unknown, tokenHash: string) => Promise<unknown | null>;
+    getEmployerRequestByToken: (
+      tx: unknown,
+      tokenHash: string,
+    ) => Promise<{ id: string; case_id: string; employer_email: string; status: string } | null>;
     updateEmployerRequestResponse: (
       tx: unknown,
       requestId: string,
@@ -97,7 +100,7 @@ export async function getEmployerForm(tokenHash: string, deps: EmployerServiceDe
   });
 }
 
-export interface EmployerResponsePayload {
+export interface EmployerResponsePayload extends Record<string, unknown> {
   confirmed: boolean;
   corrected_name?: string;
   corrected_title?: string;

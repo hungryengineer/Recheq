@@ -1,9 +1,7 @@
-import { z } from 'zod';
+import { toErrorResponse, AppError } from '../../http/errors.js';
 import type { RequestContext } from '../../observability/request-context.js';
 import type { TokenVerifier } from './token-auth.js';
 import { resolveToken } from './token-auth.js';
-import { validateBody } from '../../security/request-validation.js';
-import { toErrorResponse } from '../../http/errors.js';
 import type { DisputeServiceDeps } from '../../services/findings/dispute-service.js';
 import { disputeFinding } from '../../services/findings/dispute-service.js';
 
@@ -19,17 +17,16 @@ export interface DisputeRouteDeps extends DisputeServiceDeps {
   tokenVerifier: TokenVerifier;
 }
 
-const DisputePayload = z.object({
-  finding_id: z.string().uuid(),
-  reason: z.string().min(1).max(2000),
-});
-
 export async function disputeHandler(req: DisputeRouteRequest, deps: DisputeRouteDeps) {
   try {
     const caseId = await resolveToken(req.params.token, 'consent', deps.tokenVerifier);
-    const payload = validateBody(req.body, DisputePayload);
+    const body = req.body as { finding_id?: string; reason?: string };
 
-    await disputeFinding(caseId, payload.finding_id, payload.reason, deps);
+    if (!body || typeof body.finding_id !== 'string' || typeof body.reason !== 'string' || body.reason.trim().length === 0) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid payload');
+    }
+
+    await disputeFinding(caseId, body.finding_id, body.reason, deps);
 
     return {
       status: 200,

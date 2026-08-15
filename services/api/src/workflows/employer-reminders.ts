@@ -40,6 +40,7 @@ export async function processEmployerWorkflowJob(
       }
 
       const request = requests[0];
+      if (!request) return;
 
       // Short-circuit if already responded or no longer pending
       if (request.status !== 'pending') {
