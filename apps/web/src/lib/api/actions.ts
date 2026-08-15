@@ -6,7 +6,23 @@ import { apiClient } from './client';
 
 export async function createCase(rawInput: unknown): Promise<unknown> {
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
-  const input = CaseCreateInput.parse(rawInput);
+  const parsed = CaseCreateInput.safeParse(rawInput);
+  
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map(issue => ({
+            path: issue.path[0]?.toString() || 'unknown',
+            message: issue.message
+          }))
+        }
+      }
+    };
+  }
+
+  const input = parsed.data;
 
   try {
     const result = await apiClient('/cases', {
