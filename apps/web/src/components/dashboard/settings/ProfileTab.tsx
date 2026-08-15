@@ -4,10 +4,11 @@ import React, { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useUser } from '@/contexts/UserContext';
 
 export function ProfileTab() {
   const [isSaving, setIsSaving] = useState(false);
-  const [avatar, setAvatar] = useState<string | null>(null);
+  const { avatar, setAvatar } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: 'Arun Kumar',

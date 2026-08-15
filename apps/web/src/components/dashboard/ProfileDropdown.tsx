@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { signoutAction } from '@/lib/api/auth';
 import { User, Settings, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useUser } from '@/contexts/UserContext';
+import Image from 'next/image';
 
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +15,7 @@ export function ProfileDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
+  const { avatar } = useUser();
 
   useEffect(() => {
     setMounted(true);
@@ -41,8 +44,12 @@ export function ProfileDropdown() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 rounded-full pl-2 pr-3 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-page)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1"
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white shadow-sm">
-          AK
+        <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white shadow-sm overflow-hidden border border-[var(--color-border)]">
+          {avatar ? (
+            <Image src={avatar} alt="Avatar" fill className="object-cover" />
+          ) : (
+            'AK'
+          )}
         </div>
         <span className="text-sm font-medium text-[var(--color-fg)]">Admin</span>
         <ChevronDown className={`w-4 h-4 text-[var(--color-fg-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
