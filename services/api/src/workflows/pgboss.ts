@@ -36,7 +36,7 @@ let boss: PgBoss | null = null;
 export async function initPgBoss(): Promise<PgBoss> {
   if (boss) return boss;
 
-  const dbConn = await getDbConnection();
+  await getDbConnection();
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
@@ -75,6 +75,16 @@ export async function publishJob(
   data: Record<string, unknown>,
   options?: { delaySeconds?: number; singletonKey?: string },
 ): Promise<string> {
+  // SECURITY: Prevent large blobs/PII from being persisted in the plaintext pg-boss queue
+  const forbiddenKeys = ['documentContent', 'rawBase64', 'content', 'pdf_data', 'extractedData'];
+  for (const key of forbiddenKeys) {
+    if (key in data) {
+      throw new Error(
+        `SECURITY: Do not pass '${key}' into publishJob payload. Pass the ID and load it inside the worker.`,
+      );
+    }
+  }
+
   const pgBoss = await getPgBoss();
   const config = JOB_CONFIGS[queue];
 
@@ -83,7 +93,9 @@ export async function publishJob(
     retryDelay: config.retryDelay,
     expireInSeconds: config.expireInSeconds,
     singletonKey: options?.singletonKey,
-    startAfter: options?.delaySeconds ? new Date(Date.now() + options.delaySeconds * 1000) : undefined,
+    startAfter: options?.delaySeconds
+      ? new Date(Date.now() + options.delaySeconds * 1000)
+      : undefined,
   });
 
   logger.info('job published', { queue, jobId, caseId: data.case_id });

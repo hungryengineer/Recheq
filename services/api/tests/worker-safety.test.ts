@@ -1,14 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import PgBoss from 'pg-boss';
 
-describe('Worker Safety', () => {
+const hasDb = !!process.env.DATABASE_URL;
+
+describe.skipIf(!hasDb)('Worker Safety', () => {
   let boss: PgBoss;
 
   beforeEach(async () => {
     const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL not set for tests');
-    }
     boss = new PgBoss(dbUrl);
     await boss.start();
   });
@@ -21,15 +20,12 @@ describe('Worker Safety', () => {
     await boss.createQueue('retry_test');
 
     let attempts = 0;
-    await boss.subscribe(
-      'retry_test',
-      async () => {
-        attempts++;
-        if (attempts < 2) throw new Error('First attempt fails');
-      },
-    );
+    await boss.subscribe('retry_test', async () => {
+      attempts++;
+      if (attempts < 2) throw new Error('First attempt fails');
+    });
 
-    const jobId = await boss.publish('retry_test', { test: true }, { retryLimit: 2 });
+    await boss.publish('retry_test', { test: true }, { retryLimit: 2 });
     await new Promise((r) => setTimeout(r, 1000));
 
     expect(attempts).toBeGreaterThanOrEqual(1);
@@ -37,7 +33,7 @@ describe('Worker Safety', () => {
 
   it('should maintain job queue across restarts', async () => {
     await boss.createQueue('persist_test');
-    const jobId = await boss.publish('persist_test', { case_id: 'test-123' });
+    await boss.publish('persist_test', { case_id: 'test-123' });
 
     const state = await boss.getQueueSize('persist_test');
     expect(state.created).toBeGreaterThan(0);
@@ -75,8 +71,6 @@ describe('Worker Safety', () => {
   });
 
   it('should not log personal document data', async () => {
-    const logSpy = vi.spyOn(console, 'log');
-
     await boss.createQueue('safe_log_test');
     await boss.subscribe('safe_log_test', async (job) => {
       // Job processing should not expose document content
@@ -111,7 +105,7 @@ describe('Worker Safety', () => {
   it('should handle job expiration', async () => {
     await boss.createQueue('expire_test');
 
-    const jobId = await boss.publish('expire_test', { test: true }, { expireInSeconds: 1 });
+    await boss.publish('expire_test', { test: true }, { expireInSeconds: 1 });
 
     // Wait for expiration
     await new Promise((r) => setTimeout(r, 2000));

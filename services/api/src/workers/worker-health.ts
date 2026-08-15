@@ -40,7 +40,6 @@ export async function getWorkerHealth(): Promise<WorkerHealth> {
       }),
     );
 
-    const totalActive = queueStates.reduce((sum, q) => sum + q.active, 0);
     const totalFailed = queueStates.reduce((sum, q) => sum + q.failed, 0);
 
     const status = totalFailed > 100 ? 'degraded' : 'healthy';

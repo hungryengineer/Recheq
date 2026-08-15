@@ -69,6 +69,20 @@ jobs:
     needs: static-analysis
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: tieout
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: tieout_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: ⬇️ Check out repository
         uses: actions/checkout@v4
@@ -89,6 +103,8 @@ jobs:
 
       - name: 🃏 Run unit tests
         run: pnpm test
+        env:
+          DATABASE_URL: postgres://tieout:password@localhost:5432/tieout_test
 
   build-artifacts:
     name: 🏗️ Stage 4 - Typecheck & Build

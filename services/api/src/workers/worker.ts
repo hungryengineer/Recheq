@@ -16,11 +16,7 @@ async function processCaseJob(ctx: JobContext): Promise<void> {
   logger.info('case processing started', { case_id, org_id });
 
   const db = await getDbConnection();
-  const caseRecord = await db
-    .select()
-    .from(cases)
-    .where(eq(cases.id, case_id))
-    .limit(1);
+  const caseRecord = await db.select().from(cases).where(eq(cases.id, case_id)).limit(1);
 
   if (!caseRecord.length) {
     throw new Error(`Case not found: ${case_id}`);
