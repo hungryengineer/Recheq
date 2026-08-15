@@ -50,7 +50,7 @@ This document outlines the security measures in place to prevent sensitive data 
 - `.yarnrc` ✅ IGNORED (yarn auth tokens)
 - `.netrc` ✅ IGNORED (network auth)
 
-### Database & Backups
+### Database & Backups 
 - `*.sql` (data only) ✅ IGNORED
 - `*.sqlite` ✅ IGNORED
 - `*.sqlite3` ✅ IGNORED
