@@ -2,11 +2,18 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -56,6 +63,20 @@ export function ProfileDropdown() {
               <Settings className="mr-3 h-4 w-4 text-[var(--color-fg-muted)]" />
               Settings
             </Link>
+          </div>
+          
+          <div className="py-1 border-t border-[var(--color-border)]">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="flex w-full items-center px-4 py-2 text-sm text-[var(--color-fg)] hover:bg-[var(--color-page)] transition-colors"
+            >
+              {mounted && theme === 'dark' ? (
+                <Sun className="mr-3 h-4 w-4 text-[var(--color-fg-muted)]" />
+              ) : (
+                <Moon className="mr-3 h-4 w-4 text-[var(--color-fg-muted)]" />
+              )}
+              {mounted && theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            </button>
           </div>
           
           <div className="border-t border-[var(--color-border)] py-1">

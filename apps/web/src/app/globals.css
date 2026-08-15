@@ -1,32 +1,68 @@
 @import "tailwindcss";
 
 @theme {
-  --color-page: #f8fafc;
-  --color-surface: #ffffff;
-  --color-fg: #0f172a;
-  --color-fg-muted: #475569;
-  --color-fg-subtle: #94a3b8;
+  --color-page: var(--bg-page);
+  --color-surface: var(--bg-surface);
+  --color-fg: var(--fg-primary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
   
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
+  --color-border: var(--border-primary);
+  --color-border-subtle: var(--border-subtle);
 
-  --color-accent: #3b82f6;
-  --color-accent-bg: #eff6ff;
+  --color-accent: var(--accent);
+  --color-accent-bg: var(--accent-bg);
 
-  --color-ok: #10b981;
-  --color-ok-bg: #ecfdf5;
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
 
-  --color-medium: #f59e0b;
-  --color-medium-bg: #fffbeb;
+  --color-medium: var(--medium);
+  --color-medium-bg: var(--medium-bg);
 
-  --color-high: #ef4444;
-  --color-high-bg: #fef2f2;
+  --color-high: var(--high);
+  --color-high-bg: var(--high-bg);
   
   --radius-card: 16px;
   --radius-control: 8px;
   
   --shadow-premium: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-glass: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+}
+
+:root {
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --fg-primary: #0f172a;
+  --fg-muted: #475569;
+  --fg-subtle: #94a3b8;
+  --border-primary: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --accent: #3b82f6;
+  --accent-bg: #eff6ff;
+  --ok: #10b981;
+  --ok-bg: #ecfdf5;
+  --medium: #f59e0b;
+  --medium-bg: #fffbeb;
+  --high: #ef4444;
+  --high-bg: #fef2f2;
+}
+
+.dark {
+  --bg-page: #020617; 
+  --bg-surface: #0f172a; 
+  --fg-primary: #f8fafc; 
+  --fg-muted: #94a3b8; 
+  --fg-subtle: #475569; 
+  --border-primary: #1e293b; 
+  --border-subtle: #0f172a;
+  --accent: #60a5fa; 
+  --accent-bg: #1e3a8a; 
+  --ok: #34d399; 
+  --ok-bg: #064e3b; 
+  --medium: #fbbf24; 
+  --medium-bg: #78350f; 
+  --high: #f87171; 
+  --high-bg: #7f1d1d; 
 }
 
 @layer utilities {

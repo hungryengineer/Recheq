@@ -1,15 +1,30 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+import { ThemeProvider } from '@/components/ThemeProvider';
+
 export const metadata: Metadata = {
-  title: 'Tieout - Background Verification',
-  description: 'Automated background verification for modern teams.',
+  title: 'Recheq | Background Verification',
+  description: 'Enterprise grade background verification platform',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
