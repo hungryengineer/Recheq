@@ -34,11 +34,11 @@ docker compose down -v
 
 ## Access
 
-| Service | URL |
-|---------|-----|
-| PostgreSQL | localhost:5432 (psql postgres://postgres:postgres@localhost:5432/tieout) |
-| MinIO Console | http://localhost:9001 (user: minioadmin / pass: minioadmin) |
-| Mailpit Web UI | http://localhost:8025 |
+| Service        | URL                                                                      |
+| -------------- | ------------------------------------------------------------------------ |
+| PostgreSQL     | localhost:5432 (psql postgres://postgres:postgres@localhost:5432/tieout) |
+| MinIO Console  | http://localhost:9001 (user: minioadmin / pass: minioadmin)              |
+| Mailpit Web UI | http://localhost:8025                                                    |
 
 ## Environment Variables
 

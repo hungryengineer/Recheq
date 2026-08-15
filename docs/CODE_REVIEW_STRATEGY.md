@@ -36,6 +36,7 @@ CodeRabbit is an AI code reviewer that scans PRs for:
 ### For Fintech/Compliance Context
 
 CodeRabbit understands:
+
 - **Authentication/authorization** patterns
 - **Data sensitivity** (PII, financial data)
 - **Audit logging** requirements
@@ -79,6 +80,7 @@ CodeRabbit is configured via GitHub App (no config file needed). Findings are tu
 ## What Not to Ignore
 
 **Never merge with CodeRabbit flagging:**
+
 - Secret exposure (API keys, DB passwords, tokens)
 - SQL injection or NoSQL injection risks
 - Missing authentication on sensitive endpoints
@@ -88,6 +90,7 @@ CodeRabbit is configured via GitHub App (no config file needed). Findings are tu
 - Unencrypted sensitive data in transit
 
 **Can merge if reviewed and accepted:**
+
 - Code style inconsistencies (handled by ESLint/Prettier anyway)
 - Performance suggestions for non-critical paths
 - Refactoring recommendations
@@ -96,6 +99,7 @@ CodeRabbit is configured via GitHub App (no config file needed). Findings are tu
 ## Escalation
 
 If CodeRabbit flags something you believe is:
+
 - **False positive** → Comment in PR with reasoning
 - **Accepted risk** → Comment with business justification and get peer review approval
 - **Requires discussion** → Tag @security-review team
