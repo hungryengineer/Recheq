@@ -35,7 +35,6 @@ export function CaseStatusBadge({ status, verdict }: CaseStatusBadgeProps) {
       awaiting_employer: { color: 'bg-yellow-100 text-yellow-800', label: 'Awaiting Employer' },
       complete: { color: 'bg-green-100 text-green-800', label: 'Complete' },
       withdrawn: { color: 'bg-red-100 text-red-800', label: 'Withdrawn' },
-      error: { color: 'bg-red-100 text-red-800', label: 'Error' },
     };
 
     const config = statusConfig[status];
