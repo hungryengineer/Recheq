@@ -5,7 +5,7 @@ import type { CheckContext } from '../src/check-context.js';
 
 const baseAssembly = {
   case_id: '00000000-0000-0000-0000-000000000001',
-  origins: ['payslip', 'epfo'] as const,
+  origins: ['payslip', 'epfo'] as ('payslip' | 'form_16' | 'epfo' | 'employer' | 'forensics')[],
   has_payslip: true,
   has_form16: false,
   has_epfo: true,
