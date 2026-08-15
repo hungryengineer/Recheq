@@ -9,7 +9,9 @@ export function RiskScore({ score }: RiskScoreProps) {
     return (
       <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900">Risk Score</h3>
-        <p className="mt-2 text-sm text-gray-500">Not available. The case is likely still processing or lacks sufficient evidence.</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Not available. The case is likely still processing or lacks sufficient evidence.
+        </p>
       </div>
     );
   }
@@ -26,7 +28,8 @@ export function RiskScore({ score }: RiskScoreProps) {
         <span className="text-sm opacity-80">/ 100</span>
       </div>
       <p className="mt-4 text-sm opacity-80 border-t border-current pt-4">
-        Arithmetic Breakdown: <span className="font-mono">min(100, 40×high + 15×medium + 5×low)</span>
+        Arithmetic Breakdown:{' '}
+        <span className="font-mono">min(100, 40×high + 15×medium + 5×low)</span>
       </p>
     </div>
   );

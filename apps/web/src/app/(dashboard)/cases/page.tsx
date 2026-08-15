@@ -14,7 +14,8 @@ export default async function CasesPage() {
         <div className="sm:flex-auto">
           <h1 className="text-2xl font-semibold leading-6 text-gray-900">Background Check Cases</h1>
           <p className="mt-2 text-sm text-gray-700">
-            A list of all candidate verification cases in your organization including their status and verdicts.
+            A list of all candidate verification cases in your organization including their status
+            and verdicts.
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">

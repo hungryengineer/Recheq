@@ -16,7 +16,7 @@ export function CreateCaseForm() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    
+
     const input: CaseCreateInput = {
       employer_name: formData.get('employer_name') as string,
       candidate_name: formData.get('candidate_name') as string,
@@ -37,7 +37,10 @@ export function CreateCaseForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6"
+    >
       <div className="md:grid md:grid-cols-3 md:gap-6">
         <div className="md:col-span-1">
           <h3 className="text-lg font-medium leading-6 text-gray-900">Case Information</h3>
@@ -46,7 +49,6 @@ export function CreateCaseForm() {
           </p>
         </div>
         <div className="mt-5 space-y-6 md:col-span-2 md:mt-0">
-          
           <div className="grid grid-cols-6 gap-6">
             <div className="col-span-6 sm:col-span-3">
               <label htmlFor="employer_name" className="block text-sm font-medium text-gray-700">

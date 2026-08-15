@@ -14,11 +14,13 @@ export function CaseStatusBadge({ status, verdict }: CaseStatusBadgeProps) {
       needs_review: { color: 'bg-yellow-100 text-yellow-800', label: 'Needs Review' },
       insufficient_evidence: { color: 'bg-red-100 text-red-800', label: 'Insufficient Evidence' },
     };
-    
+
     const config = verdictConfig[verdict];
-    
+
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}
+      >
         {config.label}
       </span>
     );
@@ -39,7 +41,9 @@ export function CaseStatusBadge({ status, verdict }: CaseStatusBadgeProps) {
     const config = statusConfig[status];
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}
+      >
         {config.label}
       </span>
     );

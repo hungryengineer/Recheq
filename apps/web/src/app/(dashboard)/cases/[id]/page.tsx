@@ -11,7 +11,7 @@ interface PageProps {
 export default async function CaseDetailsPage({ params }: PageProps) {
   // Next.js 16/React 19 dynamic params handling
   const { id } = await params;
-  
+
   try {
     const { caseRecord, findings, notAssessed } = await getCaseDetails(id);
 
@@ -34,7 +34,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
                 {caseRecord.title} at {caseRecord.employer_name}
               </p>
             </div>
-            
+
             <div className="flex flex-col items-end gap-2">
               <CaseStatusBadge status={caseRecord.status} />
               {caseRecord.verdict && <CaseStatusBadge verdict={caseRecord.verdict} />}
@@ -45,7 +45,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
             <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-8">
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">Claimed CTC</dt>
-                <dd className="mt-1 text-sm text-gray-900">₹{caseRecord.claimed_ctc.toLocaleString('en-IN')}</dd>
+                <dd className="mt-1 text-sm text-gray-900">
+                  ₹{caseRecord.claimed_ctc.toLocaleString('en-IN')}
+                </dd>
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">Employment Dates</dt>
@@ -55,15 +57,17 @@ export default async function CaseDetailsPage({ params }: PageProps) {
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">UAN</dt>
-                <dd className="mt-1 text-sm text-gray-900">{caseRecord.uan || <span className="text-gray-400 italic">Not provided</span>}</dd>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {caseRecord.uan || <span className="text-gray-400 italic">Not provided</span>}
+                </dd>
               </div>
             </dl>
           </div>
         </div>
 
         <div className="mt-12">
-          <DiscrepancyLedger 
-            findings={findings} 
+          <DiscrepancyLedger
+            findings={findings}
             notAssessed={notAssessed}
             riskScore={caseRecord.risk_score}
           />
@@ -74,7 +78,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Case Not Found</h2>
-        <p className="text-gray-500 mb-6">The case you are looking for does not exist or you do not have permission to view it.</p>
+        <p className="text-gray-500 mb-6">
+          The case you are looking for does not exist or you do not have permission to view it.
+        </p>
         <Link href="/cases" className="text-blue-600 hover:text-blue-800 font-medium">
           Return to Dashboard
         </Link>

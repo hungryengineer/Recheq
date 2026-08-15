@@ -36,7 +36,7 @@ const mockCases: CaseRecord[] = [
     risk_score: null,
     created_at: new Date(Date.now() - 86400000).toISOString(),
     updated_at: new Date(Date.now() - 3600000).toISOString(),
-  }
+  },
 ];
 
 const mockFindings: FindingRecord[] = [
@@ -61,7 +61,8 @@ const mockFindings: FindingRecord[] = [
     severity: 'medium',
     status: 'open',
     title: 'CTC Implausible',
-    explanation: 'The annualized gross salary derived from the payslip deviates significantly from the claimed CTC.',
+    explanation:
+      'The annualized gross salary derived from the payslip deviates significantly from the claimed CTC.',
     expected: '1200000',
     observed: '1020000',
     source_document_ids: ['doc-1'],
@@ -75,23 +76,21 @@ const mockFindings: FindingRecord[] = [
     severity: 'low',
     status: 'open',
     title: 'Suspicious PDF Producer',
-    explanation: 'The payslip PDF was generated using software known for editing (e.g. Adobe Illustrator).',
+    explanation:
+      'The payslip PDF was generated using software known for editing (e.g. Adobe Illustrator).',
     expected: 'Standard payroll software',
     observed: 'Adobe Illustrator',
     source_document_ids: ['doc-1'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }
+  },
 ];
 
-const mockNotAssessed = [
-  'CHK-PF-IMPLIES-BASIC',
-  'CHK-FORM16-RECONCILES',
-];
+const mockNotAssessed = ['CHK-PF-IMPLIES-BASIC', 'CHK-FORM16-RECONCILES'];
 
 export async function getCases(): Promise<CaseSummary[]> {
   await delay(800);
-  return mockCases.map(c => ({
+  return mockCases.map((c) => ({
     id: c.id,
     employer_name: c.employer_name,
     candidate_name: c.candidate_name,
@@ -127,8 +126,8 @@ export async function getCaseDetails(id: string): Promise<{
   notAssessed: string[];
 }> {
   await delay(1000);
-  const caseRecord = mockCases.find(c => c.id === id);
-  
+  const caseRecord = mockCases.find((c) => c.id === id);
+
   if (!caseRecord) {
     throw new Error('CASE_NOT_FOUND');
   }

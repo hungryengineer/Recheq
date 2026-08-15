@@ -19,8 +19,12 @@ export function FindingCard({ finding }: FindingCardProps) {
   };
 
   return (
-    <div className={`overflow-hidden rounded-lg bg-white shadow border-l-4 ${borderColors[finding.severity]}`}>
-      <div className={`px-4 py-3 sm:px-6 flex justify-between items-center border-b border-gray-200 ${bgColors[finding.severity]}`}>
+    <div
+      className={`overflow-hidden rounded-lg bg-white shadow border-l-4 ${borderColors[finding.severity]}`}
+    >
+      <div
+        className={`px-4 py-3 sm:px-6 flex justify-between items-center border-b border-gray-200 ${bgColors[finding.severity]}`}
+      >
         <div>
           <h3 className="text-base font-semibold leading-6 text-gray-900 capitalize">
             {finding.title}
@@ -37,15 +41,19 @@ export function FindingCard({ finding }: FindingCardProps) {
       </div>
       <div className="px-4 py-5 sm:p-6 text-sm text-gray-700">
         <p className="mb-4">{finding.explanation}</p>
-        
+
         {(finding.expected || finding.observed) && (
           <div className="bg-gray-50 p-4 rounded-md font-mono text-xs border border-gray-200 grid grid-cols-2 gap-4">
             <div>
-              <span className="block text-gray-500 mb-1 font-sans font-medium uppercase tracking-wider text-[10px]">Expected</span>
+              <span className="block text-gray-500 mb-1 font-sans font-medium uppercase tracking-wider text-[10px]">
+                Expected
+              </span>
               {finding.expected || <span className="text-gray-400 italic">null</span>}
             </div>
             <div>
-              <span className="block text-gray-500 mb-1 font-sans font-medium uppercase tracking-wider text-[10px]">Observed</span>
+              <span className="block text-gray-500 mb-1 font-sans font-medium uppercase tracking-wider text-[10px]">
+                Observed
+              </span>
               {finding.observed || <span className="text-gray-400 italic">null</span>}
             </div>
           </div>
