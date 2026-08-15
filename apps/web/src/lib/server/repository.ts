@@ -106,7 +106,7 @@ export const repository = {
       .where(eq(schema.documents.id, documentId));
     if (!doc) throw new Error(`Document ${documentId} not found`);
     const buffer = await storage.getObject(doc.storage_path);
-    return { content: buffer.toString('utf8'), mimeType: doc.mime_type };
+    return { content: buffer, mimeType: doc.mime_type };
   },
   createExtraction: async (docId: string, args: { modelId: string; schemaVersion: string }) => {
     const [result] = await db
@@ -183,6 +183,16 @@ export const repository = {
   },
   getFindingsForCase: async (caseId: string) => {
     return await db.select().from(schema.findings).where(eq(schema.findings.case_id, caseId));
+  },
+  getCompletedEpfoRecords: async (caseId: string) => {
+    return await db
+      .select({ employment_history: schema.epfoRecords.employment_history })
+      .from(schema.epfoRecords)
+      .where(and(eq(schema.epfoRecords.case_id, caseId), eq(schema.epfoRecords.status, 'success')));
+  },
+  getCompletedForensics: async (_caseId: string) => {
+    // Currently no forensics table, return empty array for now as per schema
+    return [];
   },
   transaction: async (cb: Parameters<typeof db.transaction>[0]) => {
     return await db.transaction(cb);

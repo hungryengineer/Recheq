@@ -29,10 +29,25 @@ export function toHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>)
         service: 'api',
       });
 
-      const auth = {
-        userId: process.env.DEV_USER_ID || '00000000-0000-0000-0000-000000000001',
-        orgId: process.env.DEV_ORG_ID || '00000000-0000-0000-0000-000000000002',
-      };
+      const isLocalDev = process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === 'true';
+      const userId =
+        request.headers.get('x-user-id') || (isLocalDev ? process.env.DEV_USER_ID : null);
+      const orgId = request.headers.get('x-org-id') || (isLocalDev ? process.env.DEV_ORG_ID : null);
+
+      if (!userId || !orgId) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Missing authentication headers',
+              request_id: requestId,
+            },
+          },
+          { status: 401 },
+        );
+      }
+
+      const auth = { userId, orgId };
 
       const handlerReq = {
         body,

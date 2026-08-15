@@ -32,10 +32,7 @@ export interface DocumentStorageConfig {
 
 // ─── Transport ──────────────────────────────────────────────────
 
-export type DocumentStorageTransport = (
-  url: URL,
-  init: RequestInit,
-) => Promise<{ ok: boolean; status: number; statusText: string }>;
+export type DocumentStorageTransport = (url: URL, init: RequestInit) => Promise<Response>;
 
 // ─── Factory ────────────────────────────────────────────────────
 
@@ -75,11 +72,15 @@ export function createDocumentStorage(
       const emptyHash = createHash('sha256').update('').digest('hex');
       const headers = signObjectRequest(config, url, emptyHash, '', 0, new Date(), 'GET');
 
-      const response = await fetch(url, { method: 'GET', headers });
-      if (!response.ok) {
-        throw new Error(`Failed to get document: ${response.status} ${response.statusText}`);
+      try {
+        const response = await transport(url, { method: 'GET', headers });
+        if (!response.ok) {
+          throw new Error(`Failed to get document: ${response.status} ${response.statusText}`);
+        }
+        return Buffer.from(await response.arrayBuffer());
+      } catch (err) {
+        throw new Error(`Storage retrieval failed for ${key}`, { cause: err });
       }
-      return Buffer.from(await response.arrayBuffer());
     },
   };
 }
@@ -215,16 +216,8 @@ function toAmzDate(date: Date): string {
   return date.toISOString().replace(/[:-]|\.\\d{3}/g, '');
 }
 
-async function defaultTransport(
-  url: URL,
-  init: RequestInit,
-): Promise<{ ok: boolean; status: number; statusText: string }> {
-  const response = await fetch(url, init);
-  return {
-    ok: response.ok,
-    status: response.status,
-    statusText: response.statusText,
-  };
+async function defaultTransport(url: URL, init: RequestInit): Promise<Response> {
+  return await fetch(url, init);
 }
 
 function requireEnv(env: NodeJS.ProcessEnv, key: string): string {

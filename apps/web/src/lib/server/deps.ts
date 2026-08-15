@@ -8,7 +8,8 @@ import { repository } from './repository';
 import { db } from './db';
 import { AuditService } from '@tieout/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js';
-// We don't have real extractor/epfoProvider wired up yet for Phase 2, but we can wire the DB and audit
+import { FixtureEpfoProvider } from '@tieout/api/src/epfo/fixture-epfo-provider.js';
+import { FixtureExtractor } from '@tieout/api/src/extraction/fixture-extractor.js';
 
 export function buildDeps(): CaseProcessingDeps {
   if (!globalForDeps.deps) {
@@ -19,8 +20,8 @@ export function buildDeps(): CaseProcessingDeps {
     globalForDeps.deps = {
       db: repository as unknown as CaseProcessingDeps['db'],
       audit: auditService as unknown as CaseProcessingDeps['audit'],
-      epfoProvider: {} as unknown as CaseProcessingDeps['epfoProvider'], // To be implemented if needed
-      extractor: {} as unknown as CaseProcessingDeps['extractor'], // To be implemented if needed
+      epfoProvider: new FixtureEpfoProvider(),
+      extractor: new FixtureExtractor(),
     };
   }
   return globalForDeps.deps;
