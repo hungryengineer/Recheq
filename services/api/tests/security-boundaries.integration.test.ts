@@ -79,7 +79,9 @@ describe('wrong token cannot access a case', () => {
       },
     );
     expect(result.status).toBe(401);
-    expect((result.body as { error: { code: string } }).error.code).toBe('INVALID_TOKEN');
+    expect(result.body).toMatchObject({
+      error: { code: 'INVALID_TOKEN' },
+    });
   });
 });
 
@@ -105,9 +107,8 @@ describe('consent token cannot call employer routes', () => {
 
   it('getEmployerHandler rejects consent token with 403', async () => {
     const { rawToken } = generateToken('tie_');
-    const verifier: TokenVerifier = {
-      verifyAndGetCaseId: vi.fn().mockRejectedValue(new InvalidTokenPurposeError()),
-    };
+    const verifyAndGetCaseId = vi.fn().mockRejectedValue(new InvalidTokenPurposeError());
+    const verifier: TokenVerifier = { verifyAndGetCaseId };
 
     const result = await getEmployerHandler(
       { params: { token: rawToken }, context: mockCtx },
@@ -126,6 +127,10 @@ describe('consent token cannot call employer routes', () => {
       },
     );
     expect(result.status).toBe(403);
+    expect(verifyAndGetCaseId).toHaveBeenCalledWith(rawToken, 'employer');
+    expect(result.body).toMatchObject({
+      error: { code: 'INVALID_TOKEN_PURPOSE' },
+    });
   });
 
   it('TokenService cross-purpose rejection is consistent', async () => {
@@ -189,7 +194,9 @@ describe('expired token returns correct error', () => {
       },
     );
     expect(result.status).toBe(410);
-    expect((result.body as { error: { code: string } }).error.code).toBe('TOKEN_EXPIRED');
+    expect(result.body).toMatchObject({
+      error: { code: 'TOKEN_EXPIRED' },
+    });
   });
 });
 
@@ -321,9 +328,8 @@ describe('service keys, DB URLs, LLM keys absent from serialised responses', () 
 
   it.each(sensitiveKeys)('sanitizeSensitiveFields redacts "%s"', (key) => {
     const payload = { [key]: 'super-secret-value', safe_field: 'visible' };
-    const result = sanitizeSensitiveFields(payload) as Record<string, unknown>;
-    expect(result[key]).toBe('[REDACTED]');
-    expect(result['safe_field']).toBe('visible');
+    const result = sanitizeSensitiveFields(payload);
+    expect(result).toEqual({ [key]: '[REDACTED]', safe_field: 'visible' });
   });
 
   it('sanitizes nested sensitive fields', () => {
@@ -331,19 +337,14 @@ describe('service keys, DB URLs, LLM keys absent from serialised responses', () 
       config: { dbUrl: 'postgresql://user:pass@localhost/db' },
       name: 'visible',
     };
-    const result = sanitizeSensitiveFields(payload) as {
-      config: Record<string, unknown>;
-      name: string;
-    };
-    expect(result.config['dbUrl']).toBe('[REDACTED]');
-    expect(result.name).toBe('visible');
+    const result = sanitizeSensitiveFields(payload);
+    expect(result).toEqual({ config: { dbUrl: '[REDACTED]' }, name: 'visible' });
   });
 
   it('sanitizes arrays of objects with sensitive fields', () => {
     const payload = [{ apiKey: 'sk-abc123' }, { name: 'safe' }];
-    const result = sanitizeSensitiveFields(payload) as Array<Record<string, unknown>>;
-    expect(result[0]!['apiKey']).toBe('[REDACTED]');
-    expect(result[1]!['name']).toBe('safe');
+    const result = sanitizeSensitiveFields(payload);
+    expect(result).toEqual([{ apiKey: '[REDACTED]' }, { name: 'safe' }]);
   });
 
   it('does not expose DATABASE_URL-style values in response body', () => {
@@ -351,9 +352,8 @@ describe('service keys, DB URLs, LLM keys absent from serialised responses', () 
       dbUrl: 'postgresql://postgres:postgres@localhost:5432/tieout',
       safe: 'value',
     };
-    const result = sanitizeSensitiveFields(payload) as Record<string, unknown>;
-    expect(result['dbUrl']).toBe('[REDACTED]');
-    expect(result['dbUrl']).not.toContain('postgres');
+    const result = sanitizeSensitiveFields(payload);
+    expect(result).toEqual({ dbUrl: '[REDACTED]', safe: 'value' });
   });
 });
 
