@@ -8,11 +8,13 @@ import { useUser } from '@/contexts/UserContext';
 
 export function ProfileTab() {
   const [isSaving, setIsSaving] = useState(false);
-  const { avatar, setAvatar } = useUser();
+  const { avatar, setAvatar, name, setName, email, setEmail } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Local state for the form so it doesn't update the nav bar until you click Save
   const [formData, setFormData] = useState({
-    name: 'Arun Kumar',
-    email: 'admin@recheq.com'
+    name: name,
+    email: email
   });
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,6 +34,8 @@ export function ProfileTab() {
     setIsSaving(true);
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 800));
+    setName(formData.name);
+    setEmail(formData.email);
     setIsSaving(false);
     toast.success('Profile updated successfully');
   };

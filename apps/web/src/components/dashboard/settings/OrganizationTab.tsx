@@ -3,10 +3,13 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, MoreHorizontal, Loader2 } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
 
 export function OrganizationTab() {
   const [isUpdating, setIsUpdating] = useState(false);
-  const [companyName, setCompanyName] = useState('Acme Technologies Pvt Ltd');
+  const { companyName, setCompanyName } = useUser();
+  const [localCompanyName, setLocalCompanyName] = useState(companyName);
+  
   const [members, setMembers] = useState([
     { id: 1, name: 'Arun Kumar', email: 'admin@recheq.com', role: 'Owner', initials: 'AK', color: 'blue' },
     { id: 2, name: 'Sarah Jenkins', email: 'sarah@acme.com', role: 'Verifier', initials: 'SJ', color: 'emerald' }
@@ -15,6 +18,7 @@ export function OrganizationTab() {
   const handleUpdateCompany = async () => {
     setIsUpdating(true);
     await new Promise(resolve => setTimeout(resolve, 800));
+    setCompanyName(localCompanyName);
     setIsUpdating(false);
     toast.success('Organization updated successfully');
   };
@@ -49,8 +53,8 @@ export function OrganizationTab() {
         <div className="w-full md:w-2/3 flex gap-2">
           <input
             type="text"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
+            value={localCompanyName}
+            onChange={(e) => setLocalCompanyName(e.target.value)}
             className="max-w-md w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow"
           />
           <button 

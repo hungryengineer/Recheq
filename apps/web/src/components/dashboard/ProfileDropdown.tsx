@@ -15,7 +15,7 @@ export function ProfileDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const { avatar } = useUser();
+  const { avatar, name, email } = useUser();
 
   useEffect(() => {
     setMounted(true);
@@ -48,18 +48,18 @@ export function ProfileDropdown() {
           {avatar ? (
             <Image src={avatar} alt="Avatar" fill className="object-cover" />
           ) : (
-            'AK'
+            name.charAt(0).toUpperCase()
           )}
         </div>
-        <span className="text-sm font-medium text-[var(--color-fg)]">Admin</span>
+        <span className="text-sm font-medium text-[var(--color-fg)] truncate max-w-[100px]">{name.split(' ')[0]}</span>
         <ChevronDown className={`w-4 h-4 text-[var(--color-fg-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 rounded-[var(--radius-card)] bg-[var(--color-surface)] shadow-lg ring-1 ring-black ring-opacity-5 border border-[var(--color-border)] z-50 animate-fade-in origin-top-right">
           <div className="px-4 py-3 border-b border-[var(--color-border)]">
-            <p className="text-sm text-[var(--color-fg)] font-medium">Arun Kumar</p>
-            <p className="text-xs text-[var(--color-fg-muted)] truncate mt-0.5">admin@recheq.com</p>
+            <p className="text-sm text-[var(--color-fg)] font-medium truncate">{name}</p>
+            <p className="text-xs text-[var(--color-fg-muted)] truncate mt-0.5">{email}</p>
           </div>
           
           <div className="py-1">

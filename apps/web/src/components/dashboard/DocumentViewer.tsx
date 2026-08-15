@@ -6,6 +6,7 @@ import {
   Minus, Plus, Maximize, File, User, IdCard, Briefcase, Shield, 
   Building2, Wallet, PiggyBank, ChevronsLeft, ChevronsRight, ChevronRight, ChevronLeft
 } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
 
 interface DocumentViewerProps {
   sourceLabel: string;
@@ -147,6 +148,7 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
 }
 
 function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
+  const { companyName } = useUser();
   return (
     <>
       {/* Highlight Background Graphic */}
@@ -165,7 +167,7 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
               <Building2 className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 text-sm">Acme Technologies Pvt Ltd</h3>
+              <h3 className="font-bold text-gray-900 text-sm">{companyName}</h3>
               <p className="text-xs text-gray-500 mt-0.5">123 Tech Park, Phase 1</p>
               <p className="text-xs text-gray-500">Bangalore, KA 560001</p>
             </div>
