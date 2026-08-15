@@ -6,7 +6,7 @@
 import { z } from 'zod';
 
 // ─── Form 16 Extraction ─────────────────────────────────────────
-export const Form16ExtractionV1 = z.object({
+export const Form16Extraction = z.object({
   // ── Identity ────────────────────────────────────────────────
   employee_name: z.string().nullable(),
   employee_pan: z.string().nullable(),
@@ -54,4 +54,4 @@ export const Form16ExtractionV1 = z.object({
   /** Schema version used during extraction */
   schema_version: z.literal('form16-v1'),
 });
-export type Form16ExtractionV1 = z.infer<typeof Form16ExtractionV1>;
+export type Form16Extraction = z.infer<typeof Form16Extraction>;

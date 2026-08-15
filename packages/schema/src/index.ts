@@ -15,12 +15,7 @@ export {
 
 export { CaseCreateInput, CaseRecord, CaseSummary } from './case.js';
 
-export {
-  DocumentRecord,
-  PayslipExtraction,
-  Form16Extraction,
-  DocumentUploadInput,
-} from './document.js';
+export { DocumentRecord, DocumentUploadInput } from './document.js';
 
 export { FindingRecord, FindingInput } from './finding.js';
 
@@ -30,6 +25,6 @@ export { EvidenceOrigin, EvidenceAssembly } from './evidence.js';
 
 export { EventRecord, EventInput } from './event.js';
 
-export { SalaryComponent, PayslipExtractionV1 } from './payslip.js';
+export { SalaryComponent, PayslipExtraction } from './payslip.js';
 
-export { Form16ExtractionV1 } from './form16.js';
+export { Form16Extraction } from './form16.js';

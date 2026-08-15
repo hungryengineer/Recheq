@@ -146,15 +146,15 @@ describe('PayslipExtraction', () => {
   it('accepts all-null numeric fields', () => {
     const extraction = {
       employee_name: 'Jane Doe',
+      employee_id: null,
       employer_name: 'Acme',
       month: 'January',
       year: 2025,
-      basic_raw_label: null,
-      basic: null,
-      hra: null,
-      da: null,
-      special_allowance: null,
-      other_allowances: null,
+      basic: { raw_label: null, amount: null },
+      hra: { raw_label: null, amount: null },
+      da: { raw_label: null, amount: null },
+      special_allowance: { raw_label: null, amount: null },
+      other_allowances: [],
       gross_salary: null,
       pf_deduction: null,
       professional_tax: null,
@@ -162,7 +162,10 @@ describe('PayslipExtraction', () => {
       other_deductions: null,
       total_deductions: null,
       net_salary: null,
+      uan: null,
+      pf_account_number: null,
       extraction_notes: null,
+      schema_version: 'payslip-v1',
     };
     expect(PayslipExtraction.parse(extraction)).toEqual(extraction);
   });
@@ -170,15 +173,15 @@ describe('PayslipExtraction', () => {
   it('accepts fully populated extraction', () => {
     const extraction = {
       employee_name: 'Jane Doe',
+      employee_id: 'E123',
       employer_name: 'Acme',
       month: 'January',
       year: 2025,
-      basic_raw_label: 'Basic Pay',
-      basic: 50000,
-      hra: 20000,
-      da: 5000,
-      special_allowance: 10000,
-      other_allowances: 2000,
+      basic: { raw_label: 'Basic Pay', amount: 50000 },
+      hra: { raw_label: 'HRA', amount: 20000 },
+      da: { raw_label: 'DA', amount: 5000 },
+      special_allowance: { raw_label: 'Special', amount: 10000 },
+      other_allowances: [{ raw_label: 'Other', amount: 2000 }],
       gross_salary: 87000,
       pf_deduction: 6000,
       professional_tax: 200,
@@ -186,7 +189,10 @@ describe('PayslipExtraction', () => {
       other_deductions: 1000,
       total_deductions: 12200,
       net_salary: 74800,
+      uan: '123456789012',
+      pf_account_number: 'PF123',
       extraction_notes: null,
+      schema_version: 'payslip-v1',
     };
     expect(PayslipExtraction.parse(extraction)).toEqual(extraction);
   });

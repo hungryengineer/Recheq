@@ -20,11 +20,11 @@ describe('checkPayslipArithmetic', () => {
     const ctx = {
       assembly: { has_payslip: true },
       payslip: {
-        basic: 10000,
-        hra: 5000,
-        da: 0,
-        special_allowance: 0,
-        other_allowances: 0,
+        basic: { raw_label: 'Basic', amount: 10000 },
+        hra: { raw_label: 'HRA', amount: 5000 },
+        da: { raw_label: 'DA', amount: 0 },
+        special_allowance: { raw_label: 'Special', amount: 0 },
+        other_allowances: [],
         gross_salary: 15000,
         pf_deduction: 1200,
         professional_tax: 200,
@@ -45,11 +45,11 @@ describe('checkPayslipArithmetic', () => {
     const ctx = {
       assembly: { has_payslip: true },
       payslip: {
-        basic: 10000,
-        hra: 5000,
-        da: 0,
-        special_allowance: 0,
-        other_allowances: 0,
+        basic: { raw_label: 'Basic', amount: 10000 },
+        hra: { raw_label: 'HRA', amount: 5000 },
+        da: { raw_label: 'DA', amount: 0 },
+        special_allowance: { raw_label: 'Special', amount: 0 },
+        other_allowances: [],
         gross_salary: 16000, // Should be 15000
         pf_deduction: 1200,
         professional_tax: 200,

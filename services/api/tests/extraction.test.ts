@@ -31,10 +31,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       expect(result.status).toBe('success');
-      expect(result.data.employee_name).toBe('John Doe');
-      expect(result.data.employer_name).toBe('TechCorp Inc');
-      expect(result.data.basic).toBe(50000);
-      expect(result.data.net_salary).toBe(75000);
+      expect(result.data.employee_name).toBe('Priya Sharma');
+      expect(result.data.employer_name).toBe('Tech Corp India Pvt Ltd');
+      expect(result.data.basic?.amount).toBe(55000);
+      expect(result.data.net_salary).toBe(82400);
       expect(result.retryCount).toBe(0);
     });
 
@@ -50,10 +50,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractForm16(request);
 
       expect(result.status).toBe('success');
-      expect(result.data.employee_name).toBe('John Doe');
-      expect(result.data.employer_name).toBe('TechCorp Inc');
-      expect(result.data.gross_total_income).toBe(1200000);
-      expect(result.data.total_tax_deducted).toBe(120000);
+      expect(result.data.employee_name).toBe('Priya Sharma');
+      expect(result.data.employer_name).toBe('Tech Corp India Pvt Ltd');
+      expect(result.data.gross_total_income).toBe(1172400);
+      expect(result.data.total_tax_deducted).toBe(102000);
       expect(result.retryCount).toBe(0);
     });
 
@@ -84,10 +84,8 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       expect(result.status).toBe('success');
-      expect(result.data.income_tax).toBeNull(); // Missing value should be null
-      expect(result.data.total_deductions).toBeNull(); // Missing value should be null
-      expect(result.data.net_salary).toBeNull(); // Missing value should be null
-      expect(result.data.extraction_notes).toContain('smudged');
+      expect(result.data.da?.amount).toBeNull(); // Missing value should be nulluld be null
+      expect(result.data.extraction_notes).toContain('DA column not present');
     });
 
     it('preserves raw labels in fixture', async () => {
@@ -101,8 +99,8 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.data.basic_raw_label).toBe('Basic Salary');
-      expect(result.data.basic_raw_label).not.toBe('basic'); // Should preserve raw label
+      expect(result.data.basic?.raw_label).toBe('Basic Salary');
+      expect(result.data.basic?.raw_label).not.toBe('basic'); // Should preserve raw label
     });
 
     it('never computes arithmetic', async () => {
@@ -119,9 +117,9 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       // Values are static fixtures, not calculated
-      expect(result.data.basic).toBe(50000);
-      expect(result.data.hra).toBe(20000);
-      expect(result.data.gross_salary).toBe(100000);
+      expect(result.data.basic?.amount).toBe(55000);
+      expect(result.data.hra?.amount).toBe(22000);
+      expect(result.data.gross_salary).toBe(97700);
       // Note: 50000 + 20000 + 10000 + 15000 + 5000 = 100000 matches, but it's a fixture, not a calculation
     });
 
@@ -165,15 +163,15 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
     it('passes through successful extractions', async () => {
       const validPayslip: PayslipExtraction = {
         employee_name: 'John Doe',
+        employee_id: 'EMP123',
         employer_name: 'TechCorp Inc',
         month: 'January',
         year: 2024,
-        basic_raw_label: 'Basic Salary',
-        basic: 50000,
-        hra: 20000,
-        da: 10000,
-        special_allowance: 15000,
-        other_allowances: 5000,
+        basic: { raw_label: 'Basic Salary', amount: 50000 },
+        hra: { raw_label: 'HRA', amount: 20000 },
+        da: { raw_label: 'DA', amount: 10000 },
+        special_allowance: { raw_label: 'Special', amount: 15000 },
+        other_allowances: [{ raw_label: 'Other', amount: 5000 }],
         gross_salary: 100000,
         pf_deduction: 12000,
         professional_tax: 2000,
@@ -181,7 +179,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         other_deductions: 1000,
         total_deductions: 25000,
         net_salary: 75000,
+        uan: '123456789012',
+        pf_account_number: 'PF123',
         extraction_notes: 'Clear document',
+        schema_version: 'payslip-v1',
       };
 
       const mockResult: ExtractionResult<PayslipExtraction> = {
@@ -219,8 +220,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         // Missing employer_name (required field)
         month: 'January',
         year: 2024,
-        basic_raw_label: 'Basic Salary',
-        basic: 50000,
+        basic: { raw_label: 'Basic Salary', amount: 50000 },
       };
 
       const mockResult1: ExtractionResult<PayslipExtraction> = {
@@ -236,15 +236,15 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       // Second attempt: valid extraction
       const validPayslip: PayslipExtraction = {
         employee_name: 'John Doe',
+        employee_id: 'EMP123',
         employer_name: 'TechCorp Inc',
         month: 'January',
         year: 2024,
-        basic_raw_label: 'Basic Salary',
-        basic: 50000,
-        hra: 20000,
-        da: 10000,
-        special_allowance: 15000,
-        other_allowances: 5000,
+        basic: { raw_label: 'Basic Salary', amount: 50000 },
+        hra: { raw_label: 'HRA', amount: 20000 },
+        da: { raw_label: 'DA', amount: 10000 },
+        special_allowance: { raw_label: 'Special', amount: 15000 },
+        other_allowances: [{ raw_label: 'Other', amount: 5000 }],
         gross_salary: 100000,
         pf_deduction: 12000,
         professional_tax: 2000,
@@ -252,7 +252,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         other_deductions: 1000,
         total_deductions: 25000,
         net_salary: 75000,
+        uan: '123456789012',
+        pf_account_number: 'PF123',
         extraction_notes: 'Clear document',
+        schema_version: 'payslip-v1',
       };
 
       const mockResult2: ExtractionResult<PayslipExtraction> = {
@@ -355,8 +358,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         // Missing employer_name (required field) -> triggers schema validation failure
         month: 'January',
         year: 2024,
-        basic_raw_label: 'Basic Salary',
-        basic: 50000,
+        basic: { raw_label: 'Basic Salary', amount: 50000 },
       };
 
       const invalidResult: ExtractionResult<PayslipExtraction> = {
@@ -371,15 +373,15 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const validPayslip: PayslipExtraction = {
         employee_name: 'John Doe',
+        employee_id: 'EMP123',
         employer_name: 'TechCorp Inc',
         month: 'January',
         year: 2024,
-        basic_raw_label: 'Basic Salary',
-        basic: 50000,
-        hra: 20000,
-        da: 10000,
-        special_allowance: 15000,
-        other_allowances: 5000,
+        basic: { raw_label: 'Basic Salary', amount: 50000 },
+        hra: { raw_label: 'HRA', amount: 20000 },
+        da: { raw_label: 'DA', amount: 10000 },
+        special_allowance: { raw_label: 'Special', amount: 15000 },
+        other_allowances: [{ raw_label: 'Other', amount: 5000 }],
         gross_salary: 100000,
         pf_deduction: 12000,
         professional_tax: 2000,
@@ -387,7 +389,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         other_deductions: 1000,
         total_deductions: 25000,
         net_salary: 75000,
+        uan: '123456789012',
+        pf_account_number: 'PF123',
         extraction_notes: 'Clear document',
+        schema_version: 'payslip-v1',
       };
 
       const validResult: ExtractionResult<PayslipExtraction> = {
@@ -539,8 +544,8 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       expect(result.status).toBe('success');
-      expect(result.data.employee_name).toBe('John Doe');
-      expect(result.data.basic).toBe(50000);
+      expect(result.data.employee_name).toBe('Priya Sharma');
+      expect(result.data.basic?.amount).toBe(55000);
       expect(result.retryCount).toBe(0);
     });
 
@@ -549,15 +554,15 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         payslips: {
           'custom-payslip': {
             employee_name: 'Custom Employee',
+            employee_id: 'EMP-999',
             employer_name: 'Custom Corp',
             month: 'December',
             year: 2024,
-            basic_raw_label: 'Base Pay',
-            basic: 100000,
-            hra: 40000,
-            da: 20000,
-            special_allowance: 30000,
-            other_allowances: 10000,
+            basic: { raw_label: 'Base Pay', amount: 100000 },
+            hra: { raw_label: 'HRA', amount: 40000 },
+            da: { raw_label: 'DA', amount: 20000 },
+            special_allowance: { raw_label: 'Special', amount: 30000 },
+            other_allowances: [{ raw_label: 'Other', amount: 10000 }],
             gross_salary: 200000,
             pf_deduction: 24000,
             professional_tax: 4000,
@@ -565,7 +570,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
             other_deductions: 2000,
             total_deductions: 50000,
             net_salary: 150000,
+            uan: '999999999999',
+            pf_account_number: 'PF999',
             extraction_notes: 'Custom fixture',
+            schema_version: 'payslip-v1' as const,
           },
         },
         form16s: {},
@@ -586,7 +594,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       expect(result.status).toBe('success');
       expect(result.data.employee_name).toBe('Custom Employee');
-      expect(result.data.basic).toBe(100000);
+      expect(result.data.basic?.amount).toBe(100000);
       expect(result.retryCount).toBe(0);
     });
   });
@@ -617,9 +625,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       // These values should be null in the partial fixture
-      expect(result.data.income_tax).toBeNull();
-      expect(result.data.total_deductions).toBeNull();
-      expect(result.data.net_salary).toBeNull();
+      expect(result.data.da?.amount).toBeNull();
     });
 
     it('extractor never computes arithmetic', () => {
@@ -643,9 +649,9 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.data.basic_raw_label).toBe('Basic Salary');
-      expect(result.data.basic_raw_label).not.toBe('basic');
-      expect(result.data.basic_raw_label).not.toBe('Basic');
+      expect(result.data.basic.raw_label).toBe('Basic Salary');
+      expect(result.data.basic.raw_label).not.toBe('basic');
+      expect(result.data.basic.raw_label).not.toBe('Basic');
     });
 
     it('schema failure retries exactly once with validation error', async () => {
@@ -673,15 +679,15 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const validResult: ExtractionResult<PayslipExtraction> = {
         data: {
           employee_name: 'John Doe',
+          employee_id: 'EMP123',
           employer_name: 'TechCorp Inc',
           month: 'January',
           year: 2024,
-          basic_raw_label: 'Basic Salary',
-          basic: 50000,
-          hra: 20000,
-          da: 10000,
-          special_allowance: 15000,
-          other_allowances: 5000,
+          basic: { raw_label: 'Basic Salary', amount: 50000 },
+          hra: { raw_label: 'HRA', amount: 20000 },
+          da: { raw_label: 'DA', amount: 10000 },
+          special_allowance: { raw_label: 'Special', amount: 15000 },
+          other_allowances: [{ raw_label: 'Other', amount: 5000 }],
           gross_salary: 100000,
           pf_deduction: 12000,
           professional_tax: 2000,
@@ -689,7 +695,10 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
           other_deductions: 1000,
           total_deductions: 25000,
           net_salary: 75000,
+          uan: '123456789012',
+          pf_account_number: 'PF123',
           extraction_notes: null,
+          schema_version: 'payslip-v1',
         },
         rawOutput: '{}',
         modelId: 'test',

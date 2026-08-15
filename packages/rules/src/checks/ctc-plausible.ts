@@ -32,8 +32,8 @@ export const checkCtcPlausible: RuleFunction = (ctx) => {
 
   const findings: FindingInput[] = [];
 
-  if (p.basic !== null && p.gross_salary > 0) {
-    const basicRatio = p.basic / p.gross_salary;
+  if (p.basic.amount !== null && p.gross_salary > 0) {
+    const basicRatio = p.basic.amount / p.gross_salary;
     if (
       basicRatio < 0.3 - CTC_PLAUSIBILITY_TOLERANCE ||
       basicRatio > 0.6 + CTC_PLAUSIBILITY_TOLERANCE
