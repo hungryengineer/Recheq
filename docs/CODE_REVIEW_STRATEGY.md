@@ -31,7 +31,7 @@ CodeRabbit is an AI code reviewer that scans PRs for:
    - What was found (e.g., "SQL injection risk in query string")
    - Why it matters for Tieout (e.g., "financial data exposure")
    - Suggested fix or reference
-4. **Cannot merge PRs with critical security findings** (enforced by branch protection)
+4. **Strongly advise against merging PRs with critical security findings** (unless explicitly approved)
 
 ### For Fintech/Compliance Context
 
@@ -49,29 +49,29 @@ Install CodeRabbit CLI:
 
 ```bash
 # macOS/Linux
-curl -sL https://cli.coderabbit.ai/install.sh | bash
+curl -fsSL https://cli.coderabbit.ai/install.sh | sh
 
 # Or via Homebrew
-brew install coderabbit/cli/coderabbit
+brew install coderabbit
 ```
 
 Review your branch before pushing:
 
 ```bash
-coderabbit review --base master --head $(git rev-parse HEAD)
+coderabbit review --base master
 ```
 
 ## CI Pipeline Integration
 
-CodeRabbit runs automatically on every PR. Status checks:
+CodeRabbit runs automatically on eligible non-draft pull requests targeting configured branches. Status checks:
 
 - ✅ CodeRabbit review completed → comments posted to PR
-- ❌ Critical findings → blocks merge (via branch protection)
+- ❌ Critical findings → strongly advised to fix before merge
 - ⚠️ Medium/low findings → comments only (can merge)
 
 ## Configuration
 
-CodeRabbit is configured via GitHub App (no config file needed). Findings are tuned for:
+CodeRabbit is configured via the `.coderabbit.yaml` file in the repository root. Findings are tuned for:
 
 - **Language**: TypeScript/JavaScript
 - **Framework**: Monorepo (pnpm workspaces)

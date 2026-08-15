@@ -11,13 +11,15 @@ reviews:
     drafts: false
     base_branches:
       - 'master'
-      - 'main'
 
   # Wait for your CI pipeline stages to complete before posting reviews
-  request_tools:
-    github_checks:
+  tools:
+    github-checks:
       enabled: true
       timeout_ms: 900000 # 15 minutes to allow for your test suite & build
+
+  # Provide high-level summarize release notes in PRs
+  high_level_summary: true
 
   # Paths to exclude from AI code review
   path_filters:
@@ -45,7 +47,3 @@ reviews:
 chat:
   # Allows team members to respond to CodeRabbit comments to ask questions or request code changes
   auto_reply: true
-
-# Provide high-level summarize release notes in PRs
-summaries:
-  enabled: true

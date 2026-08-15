@@ -34,13 +34,17 @@ async function checkPostgres(url: string, timeout: number): Promise<boolean> {
   const start = Date.now();
 
   while (Date.now() - start < timeout) {
+    let sql;
     try {
-      const sql = createConnection(url);
+      sql = createConnection(url, { max: 1 });
       await sql`SELECT 1`;
-      sql.end();
       return true;
     } catch {
-      await new Promise((r) => setTimeout(r, 1000));
+      const remaining = timeout - (Date.now() - start);
+      if (remaining <= 0) break;
+      await new Promise((r) => setTimeout(r, Math.min(1000, remaining)));
+    } finally {
+      if (sql) await sql.end();
     }
   }
 
@@ -51,13 +55,19 @@ async function checkHttp(url: string, timeout: number, method = 'GET'): Promise<
   const start = Date.now();
 
   while (Date.now() - start < timeout) {
+    const remaining = timeout - (Date.now() - start);
+    if (remaining <= 0) break;
+
     try {
-      const response = await fetch(url, { method });
-      if (response.ok || response.status < 500) return true;
+      const response = await fetch(url, { method, signal: AbortSignal.timeout(remaining) });
+      if (response.ok) return true;
     } catch {
       // Silently continue
     }
-    await new Promise((r) => setTimeout(r, 1000));
+    const sleepRemaining = timeout - (Date.now() - start);
+    if (sleepRemaining > 0) {
+      await new Promise((r) => setTimeout(r, Math.min(1000, sleepRemaining)));
+    }
   }
 
   return false;

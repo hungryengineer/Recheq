@@ -47,8 +47,8 @@ See `.env.example` for required variables.
 ```bash
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tieout
 S3_ENDPOINT=http://localhost:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
 SMTP_HOST=localhost
 SMTP_PORT=1025
 ```

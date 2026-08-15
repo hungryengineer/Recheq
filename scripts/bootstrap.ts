@@ -85,7 +85,7 @@ async function startServices(): Promise<void> {
   console.log('🐳 Starting Docker services...\n');
 
   try {
-    execSync('docker compose up -d', { cwd: PROJECT_ROOT, stdio: 'inherit' });
+    execSync('docker compose --env-file .env.local up -d', { cwd: PROJECT_ROOT, stdio: 'inherit' });
   } catch {
     console.error('Failed to start Docker services');
     process.exit(1);
