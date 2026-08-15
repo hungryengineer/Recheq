@@ -1,5 +1,8 @@
 import type { RequestContext } from '../../observability/request-context.js';
-import { requestReprocess, type ReprocessServiceDeps } from '../../services/cases/reprocess-service.js';
+import {
+  requestReprocess,
+  type ReprocessServiceDeps,
+} from '../../services/cases/reprocess-service.js';
 import { toErrorResponse } from '../../http/errors.js';
 
 export interface ReprocessCaseRequest {

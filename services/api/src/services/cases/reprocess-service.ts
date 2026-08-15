@@ -36,7 +36,7 @@ export async function requestReprocess(caseId: string, deps: ReprocessServiceDep
     payload: {
       previous_status: caseRecord.status,
     },
-    actor: 'verifier'
+    actor: 'verifier',
   });
 
   // Enqueue job for background worker

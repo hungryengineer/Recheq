@@ -27,7 +27,7 @@ export async function deleteCaseHandler(req: DeleteCaseRequest, deps: DeleteCase
   try {
     const caseId = req.params.id;
     const caseRecord = await deps.db.getCaseById(caseId);
-    
+
     if (!caseRecord || caseRecord.org_id !== req.auth.orgId) {
       throw notFoundError(`Case ${caseId} not found`);
     }
@@ -42,7 +42,7 @@ export async function deleteCaseHandler(req: DeleteCaseRequest, deps: DeleteCase
       payload: {
         message: 'Case personally identifiable information has been redacted',
       },
-      actor: 'verifier'
+      actor: 'verifier',
     });
 
     return {

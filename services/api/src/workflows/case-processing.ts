@@ -7,21 +7,23 @@ import { runAllChecks } from '@tieout/rules';
 import { syncEpfoHistory } from '../epfo/epfo-service.js';
 import type { EpfoProvider } from '../epfo/epfo-provider.js';
 import type { LlmDocumentExtractor } from '../extraction/llm-document-extractor.js';
-import { 
-  createExtraction, 
-  updateExtractionSuccess, 
-  updateExtractionFailure 
+import {
+  createExtraction,
+  updateExtractionSuccess,
+  updateExtractionFailure,
 } from '../extraction/extraction-service.js';
 
 export interface CaseProcessingDeps extends EvidenceServiceDeps {
   db: EvidenceServiceDeps['db'] & {
-    getCaseById: (caseId: string) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
+    getCaseById: (
+      caseId: string,
+    ) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
     getConsentByCaseId: (caseId: string) => Promise<{ id: string } | null>;
     updateCaseStatusAndVerdict: (
-      caseId: string, 
-      status: CaseStatus, 
-      verdict: string, 
-      riskScore: number
+      caseId: string,
+      status: CaseStatus,
+      verdict: string,
+      riskScore: number,
     ) => Promise<void>;
     replaceFindings: (caseId: string, findings: any[]) => Promise<void>;
     createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
@@ -36,7 +38,11 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
   extractor: LlmDocumentExtractor;
 }
 
-export async function processCase(caseId: string, isReprocess: boolean, deps: CaseProcessingDeps): Promise<void> {
+export async function processCase(
+  caseId: string,
+  isReprocess: boolean,
+  deps: CaseProcessingDeps,
+): Promise<void> {
   const caseRecord = await deps.db.getCaseById(caseId);
   if (!caseRecord) {
     throw new Error(`Case ${caseId} not found`);
@@ -47,15 +53,16 @@ export async function processCase(caseId: string, isReprocess: boolean, deps: Ca
 
   // 2. Extractions and Forensics
   const documents = await deps.db.getDocumentsForCase(caseId);
-  
+
   // Find which documents don't have extractions yet
-  const docIds = documents.map(d => d.id);
-  const existingExtractions = docIds.length > 0 ? await deps.db.getSuccessfulExtractions(docIds) : [];
-  const extractedDocIds = new Set(existingExtractions.map(e => e.document_id));
+  const docIds = documents.map((d) => d.id);
+  const existingExtractions =
+    docIds.length > 0 ? await deps.db.getSuccessfulExtractions(docIds) : [];
+  const extractedDocIds = new Set(existingExtractions.map((e) => e.document_id));
 
   const extractionPromises = documents
-    .filter(doc => !extractedDocIds.has(doc.id))
-    .map(async doc => {
+    .filter((doc) => !extractedDocIds.has(doc.id))
+    .map(async (doc) => {
       // Create pending extraction
       const extId = await createExtraction(deps.db as any, doc.id, {
         modelId: 'default',
@@ -64,7 +71,7 @@ export async function processCase(caseId: string, isReprocess: boolean, deps: Ca
 
       try {
         const docContent = await deps.db.getDocumentContent(doc.id);
-        
+
         const req = {
           documentId: doc.id,
           documentKind: doc.kind as 'payslip' | 'form_16',
@@ -72,10 +79,11 @@ export async function processCase(caseId: string, isReprocess: boolean, deps: Ca
           mimeType: docContent.mimeType,
           schemaVersion: doc.kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
         };
-        
-        const result = doc.kind === 'payslip' 
-          ? await deps.extractor.extractPayslip(req)
-          : await deps.extractor.extractForm16(req);
+
+        const result =
+          doc.kind === 'payslip'
+            ? await deps.extractor.extractPayslip(req)
+            : await deps.extractor.extractForm16(req);
 
         await updateExtractionSuccess(deps.db as any, extId, result.data, result.usage);
       } catch (err) {
@@ -94,10 +102,7 @@ export async function processCase(caseId: string, isReprocess: boolean, deps: Ca
   }
 
   // Wait for all async dependencies
-  await Promise.all([
-    Promise.all(extractionPromises),
-    epfoPromise
-  ]);
+  await Promise.all([Promise.all(extractionPromises), epfoPromise]);
 
   // 4. Assemble Evidence
   const ctx = await assembleEvidence(deps, caseId);
@@ -120,8 +125,8 @@ export async function processCase(caseId: string, isReprocess: boolean, deps: Ca
       verdict,
       risk_score: score,
       finding_count: findings.length,
-      is_reprocess: isReprocess
+      is_reprocess: isReprocess,
     },
-    actor: 'system'
+    actor: 'system',
   });
 }
