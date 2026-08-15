@@ -148,7 +148,7 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
 }
 
 function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
-  const { companyName } = useUser();
+  const { companyName, name } = useUser();
   return (
     <>
       {/* Highlight Background Graphic */}
@@ -183,7 +183,7 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
               </div>
               <div>
                 <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">Employee Name</p>
-                <p className="text-sm font-semibold text-gray-900">Arun Kumar</p>
+                <p className="text-sm font-semibold text-gray-900">{name}</p>
               </div>
             </div>
             <div className="flex gap-4 items-center">
