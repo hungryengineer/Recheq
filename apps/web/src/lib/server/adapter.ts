@@ -75,3 +75,59 @@ export function toHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>)
     }
   };
 }
+
+export function toPublicHandler(fn: (req: unknown, deps: unknown) => Promise<unknown>) {
+  return async function (request: Request, context: { params: Promise<Record<string, string>> }) {
+    const requestId = crypto.randomUUID();
+    try {
+      let body: unknown = {};
+
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        const contentType = request.headers.get('content-type') || '';
+        // If multipart/form-data, skip body parsing here and let the handler deal with request.formData()
+        if (contentType.includes('application/json')) {
+          try {
+            const text = await request.text();
+            if (text) {
+              body = JSON.parse(text);
+            }
+          } catch {
+            // ignore empty body parse errors
+          }
+        }
+      }
+
+      const reqCtx = createRequestContext({
+        requestId,
+        service: 'api',
+      });
+
+      const params = await context.params;
+
+      const handlerReq = {
+        body,
+        context: reqCtx,
+        params,
+        raw: request,
+      };
+
+      const deps = buildDeps();
+      const result = await fn(handlerReq, deps);
+
+      if (result.status >= 400 && result.body && result.body.error) {
+        result.body.error.request_id = requestId;
+      }
+
+      return NextResponse.json(result.body, { status: result.status });
+    } catch (err) {
+      console.error('Unhandled public handler error:', err);
+      const errorResponse = toErrorResponse(err);
+
+      if (errorResponse.body && errorResponse.body.error) {
+        (errorResponse.body.error as Record<string, unknown>).request_id = requestId;
+      }
+
+      return NextResponse.json(errorResponse.body, { status: errorResponse.status });
+    }
+  };
+}
