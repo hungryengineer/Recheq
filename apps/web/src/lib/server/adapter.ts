@@ -8,7 +8,7 @@ export function toHandler(fn: any) {
     const requestId = crypto.randomUUID();
     try {
       let body: unknown = {};
-      
+
       // Parse JSON body if present
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         try {
@@ -43,20 +43,19 @@ export function toHandler(fn: any) {
 
       const deps = buildDeps();
       const result = await fn(handlerReq, deps);
-      
-      if (result.status >= 400 && result.body && result.body.error) {
-         result.body.error.request_id = requestId;
-      }
-      
-      return NextResponse.json(result.body, { status: result.status });
 
+      if (result.status >= 400 && result.body && result.body.error) {
+        result.body.error.request_id = requestId;
+      }
+
+      return NextResponse.json(result.body, { status: result.status });
     } catch (err) {
       console.error('Unhandled handler error:', err);
       const errorResponse = toErrorResponse(err);
-      
+
       // Attach request_id to match OpenAPI contract
       (errorResponse.body.error as any).request_id = requestId;
-      
+
       return NextResponse.json(errorResponse.body, { status: errorResponse.status });
     }
   };

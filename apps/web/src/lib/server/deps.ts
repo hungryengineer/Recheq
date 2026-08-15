@@ -13,13 +13,13 @@ import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js'
 export function buildDeps(): CaseProcessingDeps {
   if (!globalForDeps.deps) {
     const auditService = new AuditService(new DbAuditRepository(db as any));
-    
+
     globalForDeps.deps = {
       db: repository as any,
       audit: auditService as any,
       epfoProvider: {} as any, // To be implemented if needed
-      extractor: {} as any,    // To be implemented if needed
-    } as any; 
+      extractor: {} as any, // To be implemented if needed
+    } as any;
   }
   return globalForDeps.deps;
 }

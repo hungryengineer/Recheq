@@ -12,7 +12,7 @@ export interface DocumentStorage {
    * @param contentType - MIME type of the file
    */
   putObject(key: string, content: Buffer, contentType: string): Promise<void>;
-  
+
   /**
    * Retrieves a document from the private storage bucket.
    */
@@ -73,22 +73,14 @@ export function createDocumentStorage(
     async getObject(key: string): Promise<Buffer> {
       const url = getObjectUrl(config, key);
       const emptyHash = createHash('sha256').update('').digest('hex');
-      const headers = signObjectRequest(
-        config,
-        url,
-        emptyHash,
-        '',
-        0,
-        new Date(),
-        'GET'
-      );
-      
+      const headers = signObjectRequest(config, url, emptyHash, '', 0, new Date(), 'GET');
+
       const response = await fetch(url, { method: 'GET', headers });
       if (!response.ok) {
         throw new Error(`Failed to get document: ${response.status} ${response.statusText}`);
       }
       return Buffer.from(await response.arrayBuffer());
-    }
+    },
   };
 }
 
@@ -144,10 +136,10 @@ function signObjectRequest(
     'x-amz-content-sha256': bodyHash,
     'x-amz-date': amzDate,
   });
-  
+
   if (contentLength > 0 || method === 'PUT') {
-      headers.set('content-length', String(contentLength));
-      if (contentType) headers.set('content-type', contentType);
+    headers.set('content-length', String(contentLength));
+    if (contentType) headers.set('content-type', contentType);
   }
 
   const canonicalHeaders = getCanonicalHeaders(headers);
