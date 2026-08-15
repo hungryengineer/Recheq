@@ -32,7 +32,9 @@ export function DisputeForm({ token, findingId, onSuccess }: DisputeFormProps) {
         onSuccess();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while submitting the dispute.');
+      setError(
+        err instanceof Error ? err.message : 'An error occurred while submitting the dispute.',
+      );
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,10 @@ export function DisputeForm({ token, findingId, onSuccess }: DisputeFormProps) {
 
   if (success) {
     return (
-      <div className="mt-4 p-4 rounded-md bg-green-50 border border-green-200" data-testid="dispute-success">
+      <div
+        className="mt-4 p-4 rounded-md bg-green-50 border border-green-200"
+        data-testid="dispute-success"
+      >
         <p className="text-sm font-medium text-green-800">
           Dispute submitted successfully. Our team will review the context provided.
         </p>
