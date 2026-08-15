@@ -15,7 +15,7 @@ export async function createCase(input: CaseCreateInput): Promise<CaseRecord> {
   const res = await fetch('/api/cases', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error('Failed to create case');
   return res.json();
