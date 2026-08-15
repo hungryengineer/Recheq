@@ -9,7 +9,7 @@ Binding artifact: `contract/openapi.yaml`. You do not touch route handlers, the 
 
 Your lane has **zero dependency on the other two**. That means you are never blocked - and if you slip, nobody can cover for you.
 
---- 
+---
 
 > Identical in `BACKEND.md`, `FRONTEND.md`, `PLATFORM.md`. If you change anything here, change it in all three and announce it.
 
