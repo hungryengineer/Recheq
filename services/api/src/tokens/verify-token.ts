@@ -48,7 +48,7 @@ export function verifyToken(
     throw new InvalidTokenError();
   }
 
-  if (nowUtcIso > record.expires_at) {
+  if (nowUtcIso >= record.expires_at) {
     throw new TokenExpiredError();
   }
 
