@@ -5,13 +5,21 @@
       "employerName": "Shady Business Ltd",
       "establishmentId": "DL55555",
       "startDate": "2021-01-01",
-      "endDate": "2021-06-30"
+      "endDate": "2021-06-30",
+      "contributions": [
+        { "month": "2021-05", "employee_share": 1800, "employer_share": 1800 },
+        { "month": "2021-06", "employee_share": 1800, "employer_share": 1800 }
+      ]
     },
     {
       "employerName": "Another Shady Org",
       "establishmentId": "DL66666",
       "startDate": "2021-05-01",
-      "endDate": "2021-12-31"
+      "endDate": "2021-12-31",
+      "contributions": [
+        { "month": "2021-05", "employee_share": 2400, "employer_share": 2400 },
+        { "month": "2021-06", "employee_share": 2400, "employer_share": 2400 }
+      ]
     }
   ]
 }

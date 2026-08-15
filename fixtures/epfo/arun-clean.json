@@ -5,7 +5,15 @@
       "employerName": "Acme Technologies Pvt Ltd",
       "establishmentId": "MH/MUM/12345",
       "startDate": "2023-04-01",
-      "endDate": null
+      "endDate": null,
+      "contributions": [
+        { "month": "2025-10", "employee_share": 3600, "employer_share": 3600 },
+        { "month": "2025-11", "employee_share": 3600, "employer_share": 3600 },
+        { "month": "2025-12", "employee_share": 3600, "employer_share": 3600 },
+        { "month": "2026-01", "employee_share": 3600, "employer_share": 3600 },
+        { "month": "2026-02", "employee_share": 3600, "employer_share": 3600 },
+        { "month": "2026-03", "employee_share": 3600, "employer_share": 3600 }
+      ]
     }
   ]
 }
