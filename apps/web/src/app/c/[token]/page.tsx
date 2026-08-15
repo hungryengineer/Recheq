@@ -113,7 +113,7 @@ export default async function CandidateConsentPage({
       >
         <button
           type="submit"
-          className="w-full mb-3 flex justify-center py-3 px-4 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-white bg-[var(--color-fg)] hover:opacity-90"
+          className="w-full mb-3 flex justify-center py-3 px-4 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] hover:opacity-90"
         >
           I consent
         </button>

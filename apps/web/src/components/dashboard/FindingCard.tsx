@@ -103,7 +103,7 @@ export function FindingCard({ finding }: { finding: Record<string, any> }) {
               </button>
             </div>
             
-            <div className="flex-1 bg-gray-100 p-8 overflow-auto flex items-center justify-center min-h-[500px]">
+            <div className="flex-1 bg-[var(--color-page)] p-8 overflow-auto flex items-center justify-center min-h-[500px]">
               {/* Mock PDF rendering */}
               <div className="bg-white w-full max-w-2xl min-h-[800px] shadow-sm rounded border border-gray-200 p-12 mx-auto flex flex-col relative">
                 <div className="absolute top-0 right-0 p-8 text-4xl text-gray-100 font-bold rotate-12 opacity-50 select-none">
@@ -197,7 +197,7 @@ export function FindingCard({ finding }: { finding: Record<string, any> }) {
             <div className="px-6 py-4 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex justify-end">
               <button 
                 onClick={() => setIsViewerOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-fg)] rounded-[var(--radius-control)] hover:opacity-90 active:scale-95 transition-all focus:outline-none"
+                className="px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] hover:opacity-90 active:scale-95 transition-all focus:outline-none"
               >
                 Close viewer
               </button>

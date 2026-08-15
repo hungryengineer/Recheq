@@ -47,7 +47,7 @@
   --high-bg: #fef2f2;
 }
 
-.dark {
+:root.dark, .dark {
   --bg-page: #020617; 
   --bg-surface: #0f172a; 
   --fg-primary: #f8fafc; 

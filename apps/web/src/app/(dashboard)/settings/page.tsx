@@ -84,7 +84,7 @@ export default function SettingsPage() {
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xl font-semibold text-white shadow-sm">
                       AK
                     </div>
-                    <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-white border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
+                    <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
                       Change avatar
                     </button>
                   </div>
@@ -120,7 +120,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="pt-6 flex justify-end">
-                <button className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
+                <button className="px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
                   Save changes
                 </button>
               </div>
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                     defaultValue="Acme Technologies Pvt Ltd"
                     className="max-w-md w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow"
                   />
-                  <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-white border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
+                  <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all">
                     Update
                   </button>
                 </div>
@@ -160,7 +160,7 @@ export default function SettingsPage() {
                     <h3 className="text-sm font-medium text-[var(--color-fg)]">Team Members</h3>
                     <p className="text-xs text-[var(--color-fg-muted)] mt-1">Users who have access to this workspace.</p>
                   </div>
-                  <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-[var(--color-fg)] bg-white border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                  <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
                     <Plus className="w-4 h-4 mr-2" />
                     Invite member
                   </button>
@@ -175,7 +175,7 @@ export default function SettingsPage() {
                         <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-fg-muted)] uppercase">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-[var(--color-border)]">
+                    <tbody className="bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
                       <tr className="hover:bg-[var(--color-page)] transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center">
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                     Manage API keys used to authenticate programmatic requests to the Recheq API.
                   </p>
                 </div>
-                <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 active:scale-95 transition-all">
+                <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 active:scale-95 transition-all">
                   <Plus className="w-4 h-4 mr-2" />
                   Generate new key
                 </button>
@@ -240,7 +240,7 @@ export default function SettingsPage() {
                       <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-fg-muted)] uppercase"></th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-[var(--color-border)]">
+                  <tbody className="bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
                     <tr className="hover:bg-[var(--color-page)] transition-colors">
                       <td className="px-4 py-4 text-sm font-medium text-[var(--color-fg)]">Production Key</td>
                       <td className="px-4 py-4">
@@ -307,7 +307,7 @@ export default function SettingsPage() {
                   </div>
                   <p className="text-sm text-[var(--color-fg-muted)] mt-2">Unlimited verifications with priority processing.</p>
                 </div>
-                <button className="mt-4 sm:mt-0 px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-white border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                <button className="mt-4 sm:mt-0 px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
                   Manage Plan
                 </button>
               </div>
@@ -346,7 +346,7 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-medium text-[var(--color-fg)] mb-4">Billing History</h3>
                 <div className="border border-[var(--color-border)] rounded-[var(--radius-card)] overflow-hidden">
                   <table className="min-w-full divide-y divide-[var(--color-border)]">
-                    <tbody className="bg-white divide-y divide-[var(--color-border)]">
+                    <tbody className="bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
                       {[
                         { date: 'Aug 1, 2026', amount: '$499.00', status: 'Paid' },
                         { date: 'Jul 1, 2026', amount: '$499.00', status: 'Paid' },
@@ -388,7 +388,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Get an email when a verification case is fully processed.</p>
                   </div>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle1" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
+                    <input type="checkbox" name="toggle" id="toggle1" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-[var(--color-surface)] border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
                     <label htmlFor="toggle1" className="toggle-label block overflow-hidden h-5 rounded-full bg-[var(--color-accent)] cursor-pointer"></label>
                   </div>
                 </div>
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Get notified when a candidate uploads their forms.</p>
                   </div>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle2" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300" />
+                    <input type="checkbox" name="toggle" id="toggle2" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-[var(--color-surface)] border-4 appearance-none cursor-pointer border-gray-300" />
                     <label htmlFor="toggle2" className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-[var(--color-fg-muted)] mt-1">Receive monthly invoices and billing updates.</p>
                   </div>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle3" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
+                    <input type="checkbox" name="toggle" id="toggle3" className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-[var(--color-surface)] border-4 appearance-none cursor-pointer border-[var(--color-accent)] transform translate-x-5" defaultChecked />
                     <label htmlFor="toggle3" className="toggle-label block overflow-hidden h-5 rounded-full bg-[var(--color-accent)] cursor-pointer"></label>
                   </div>
                 </div>
@@ -436,7 +436,7 @@ export default function SettingsPage() {
                     <p className="text-xs text-[var(--color-fg-muted)] mt-1">Last changed 3 months ago.</p>
                   </div>
                   <div className="w-full md:w-2/3">
-                    <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-white border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                    <button className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
                       Update password
                     </button>
                   </div>
@@ -453,7 +453,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-3 mb-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">Disabled</span>
                     </div>
-                    <button className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 active:scale-95 transition-all">
+                    <button className="px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 active:scale-95 transition-all">
                       Enable 2FA
                     </button>
                   </div>

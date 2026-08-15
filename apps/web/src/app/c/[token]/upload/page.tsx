@@ -211,7 +211,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
         <button
           type="submit"
           disabled={!bothUploaded || isSubmitting}
-          className="w-full mb-2 flex justify-center py-3 px-4 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-white bg-[var(--color-fg)] hover:opacity-90 disabled:opacity-50 disabled:bg-[var(--color-border)] disabled:text-[var(--color-fg-muted)] transition-colors"
+          className="w-full mb-2 flex justify-center py-3 px-4 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] hover:opacity-90 disabled:opacity-50 disabled:bg-[var(--color-border)] disabled:text-[var(--color-fg-muted)] transition-colors"
         >
           {isSubmitting ? 'Submitting...' : 'Submit'}
         </button>
