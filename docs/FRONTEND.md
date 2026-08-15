@@ -3,6 +3,7 @@
 ## PART 0 — Shared
 
 ### The situation
+
 You own every pixel and the six screens in the demo.
 Open `recheq-screens.svg` in a browser now. That is your spec — build it, don't design it.
 Binding artifact: `contract/openapi.yaml`. You do not touch `services/api/**`, `lib/server/**`, fixtures, or the model provider.
@@ -11,21 +12,21 @@ Binding artifact: `contract/openapi.yaml`. You do not touch `services/api/**`, `
 
 347 tests pass, typecheck is clean, the 11-check rules engine works — and a case created in the browser vanishes on restart. Three lines explain it:
 
-| File | Line | |
-|---|---|---|
-| `services/api/src/routes/cases/create.ts` | 1 | `// …since Express/Fastify isn't set up yet` |
-| `services/api/src/workers/worker.ts` | 37 | `// Placeholder for actual processing logic` |
-| `apps/web/src/lib/api/store.ts` | 8 | `globalForStore.mockCases = [ … ]` |
+| File                                      | Line |                                              |
+| ----------------------------------------- | ---- | -------------------------------------------- |
+| `services/api/src/routes/cases/create.ts` | 1    | `// …since Express/Fastify isn't set up yet` |
+| `services/api/src/workers/worker.ts`      | 37   | `// Placeholder for actual processing logic` |
+| `apps/web/src/lib/api/store.ts`           | 8    | `globalForStore.mockCases = [ … ]`           |
 
 `grep -c "processCase(" worker.ts` returns 0. The 158-line pipeline is orphaned. This is a wiring problem, not a quality problem.
 
 ### The three decisions
 
-| Decision | Why |
-|---|---|
-| **No Fastify.** | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@tieout/api`; `next.config.ts` lists it in `transpilePackages`. |
-| **No pg-boss.** | Fire the pipeline in-process from submit, poll for status. Kills queue bootstrap, worker wiring, idempotency, a whole failure surface. |
-| **No deployment.** | One laptop, one tab, localhost. No Docker, no TLS, no Server Actions origin problem, no venue wifi. |
+| Decision           | Why                                                                                                                                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@tieout/api`; `next.config.ts` lists it in `transpilePackages`. |
+| **No pg-boss.**    | Fire the pipeline in-process from submit, poll for status. Kills queue bootstrap, worker wiring, idempotency, a whole failure surface.                                                                                        |
+| **No deployment.** | One laptop, one tab, localhost. No Docker, no TLS, no Server Actions origin problem, no venue wifi.                                                                                                                           |
 
 ### Frozen enums
 
@@ -52,13 +53,13 @@ forensics-metadata        forensics-font-anomalies  forensics-monetary-anomalies
 Branch on HTTP status, not on `error.code`. `services/api/src/http/errors.ts` emits seven generic codes today — `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `GONE`, `VALIDATION_ERROR`, `INTERNAL_ERROR`. Everything else is a refinement. Status is guaranteed; code is a bonus. Always have a default branch.
 
 ```json
-{ 
-  "error": { 
-    "code": "VALIDATION_ERROR", 
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
     "message": "Some fields need attention.",
     "details": { "fields": [{ "path": "uan", "message": "UAN must be 12 digits." }] },
-    "request_id": "req_01HZYD" 
-  } 
+    "request_id": "req_01HZYD"
+  }
 }
 ```
 
@@ -75,23 +76,23 @@ DEV_ORG_ID=00000000-0000-0000-0000-000000000002
 
 ### Checkpoints - 15 min, all three present, no laptops
 
-| Hour | Question | If no |
-| --- | --- | --- |
-| CP1 | 4 | Does POST `/api/cases` write a real row? |
-| CP2 | 8 | Has a doctored payslip produced a real finding from a real extraction? |
-| CP3 | 12 | Does the full chain run clean twice? |
+| Hour | Question | If no                                                                  |
+| ---- | -------- | ---------------------------------------------------------------------- |
+| CP1  | 4        | Does POST `/api/cases` write a real row?                               |
+| CP2  | 8        | Has a doctored payslip produced a real finding from a real extraction? |
+| CP3  | 12       | Does the full chain run clean twice?                                   |
 
 ### Degradation ladder - check at CP2
 
-| Rung | Trigger | Action |
-| --- | --- | --- |
-| 0 | On track | Live upload, live extraction |
-| 1 | Model unreliable | `EXTRACTION_FALLBACK=fixture`, Say so on stage. |
-| 2 | Repository incomplete at H10 | Seeded cases + live case creation. Skip upload. |
-| 3 | Nothing wired by H11 | Demo on mocks; show psql output and passing rules tests. |
-| 4 | Breaks at H14 | Play the backup video, narrate live. |
+| Rung | Trigger                      | Action                                                   |
+| ---- | ---------------------------- | -------------------------------------------------------- |
+| 0    | On track                     | Live upload, live extraction                             |
+| 1    | Model unreliable             | `EXTRACTION_FALLBACK=fixture`, Say so on stage.          |
+| 2    | Repository incomplete at H10 | Seeded cases + live case creation. Skip upload.          |
+| 3    | Nothing wired by H11         | Demo on mocks; show psql output and passing rules tests. |
+| 4    | Breaks at H14                | Play the backup video, narrate live.                     |
 
-*Never fake a finding. Judges forgive a stated limitation; they do not forgive discovering one.*
+_Never fake a finding. Judges forgive a stated limitation; they do not forgive discovering one._
 
 ### Not built today
 
@@ -99,25 +100,25 @@ Fastify · pg-boss · SeaweedFS · generated OpenAPI · Schemathesis · generate
 
 ### Rules
 
-* The seam beats the feature.
-* Merge to main every two hours, behind a flag if unfinished.
-* Nobody fixes anybody else's code — report it, keep moving.
-* Code freeze H13 regardless of state. Rehearse three times.
+- The seam beats the feature.
+- Merge to main every two hours, behind a flag if unfinished.
+- Nobody fixes anybody else's code — report it, keep moving.
+- Code freeze H13 regardless of state. Rehearse three times.
 
 ---
 
 ## PART 1 — Your gaps
 
-| Gap | Workaround |
-| --- | --- |
-| `pnpm --filter @tieout/web build` fails, `WorkerError` | Delete the `webpack:` block (Next 16 uses Turbopack) and the `rewrites()` block (proxies to a server that will never exist); add `turbopack: {}` |
-| `lib/api/*` is five in-memory mock files, 29 lines of "mock"/"simulate" | Delete `store.ts`, rewrite the rest to fetch same-origin. Keep every exported name identical so pages don't change. |
-| Backend won't exist for 4 hours | Run Prism. You are never blocked. |
-| Two style systems: ~25 CSS vars used 11 times vs ~200 raw palette classes (`text-gray-900` x39) | Define tokens once via `@theme`, delete every raw palette class from the six demo screens |
-| FE hardcodes `CHK-PAYSLIP-ARITH`; the API emits `pf-implies-basic` | Render whatever string the API returns, through a display map with raw-id fallback |
-| `APP_BASE_URL` missing from `.env.example` | Add it |
-| `app/page.tsx` says "standalone candidate frontend" - wrong, this app hosts the dashboard | `redirect('/cases')` |
-| No app shell, no loading/error boundaries, one bare `<body>` layout | Two route-group layouts, one loading state on `/status`. Nothing more. |
+| Gap                                                                                             | Workaround                                                                                                                                       |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm --filter @tieout/web build` fails, `WorkerError`                                          | Delete the `webpack:` block (Next 16 uses Turbopack) and the `rewrites()` block (proxies to a server that will never exist); add `turbopack: {}` |
+| `lib/api/*` is five in-memory mock files, 29 lines of "mock"/"simulate"                         | Delete `store.ts`, rewrite the rest to fetch same-origin. Keep every exported name identical so pages don't change.                              |
+| Backend won't exist for 4 hours                                                                 | Run Prism. You are never blocked.                                                                                                                |
+| Two style systems: ~25 CSS vars used 11 times vs ~200 raw palette classes (`text-gray-900` x39) | Define tokens once via `@theme`, delete every raw palette class from the six demo screens                                                        |
+| FE hardcodes `CHK-PAYSLIP-ARITH`; the API emits `pf-implies-basic`                              | Render whatever string the API returns, through a display map with raw-id fallback                                                               |
+| `APP_BASE_URL` missing from `.env.example`                                                      | Add it                                                                                                                                           |
+| `app/page.tsx` says "standalone candidate frontend" - wrong, this app hosts the dashboard       | `redirect('/cases')`                                                                                                                             |
+| No app shell, no loading/error boundaries, one bare `<body>` layout                             | Two route-group layouts, one loading state on `/status`. Nothing more.                                                                           |
 
 ---
 
@@ -142,13 +143,13 @@ Set `API_BASE_URL=http://localhost:4010`. Every screen builds against realistic 
 
 ### Troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| Build: Call retries were exceeded `{ type: 'WorkerError' }` | FE-1 - the `webpack:` block |
-| `pnpm install` warns "Ignored build scripts: esbuild" | `pnpm approve-builds && pnpm rebuild esbuild` |
-| Candidate link opens blank or wrong | `APP_BASE_URL` unset. Then `grep -rn "localhost:3000" apps/web/src` - should appear only in `.env` |
+| Symptom                                                             | Fix                                                                                                   |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Build: Call retries were exceeded `{ type: 'WorkerError' }`         | FE-1 - the `webpack:` block                                                                           |
+| `pnpm install` warns "Ignored build scripts: esbuild"               | `pnpm approve-builds && pnpm rebuild esbuild`                                                         |
+| Candidate link opens blank or wrong                                 | `APP_BASE_URL` unset. Then `grep -rn "localhost:3000" apps/web/src` - should appear only in `.env`    |
 | Form silently does nothing, log says Invalid Server Actions request | Only happens behind a tunnel. On plain localhost it never occurs - which is why we stay on localhost. |
-| Port 3000 in use | `lsof -ti:3000` |
+| Port 3000 in use                                                    | `lsof -ti:3000`                                                                                       |
 
 ---
 
@@ -158,17 +159,17 @@ Feed one at a time to your agent. Prefix every prompt:
 
 > Recheq monorepo: pnpm workspaces, TypeScript, Next 16 App Router, Tailwind v4, Zod, Vitest. Hackathon sprint, hours remaining. Implement ONLY the task below. Inspect existing files first. Prefer the smallest change that works. Do not refactor adjacent code. Do not add abstractions. Run the acceptance command and paste the output.
 
-| Hours | Task |
-| --- | --- |
-| 0-1 | **FE-1** build fix, env, landing redirect |
-| 1-3 | **FE-2** tokens and shell |
-| 3-5 | **FE-3** screens 1 and 2 |
-| 4 | **CP1** |
-| 5-8 | **FE-4** the ledger, screen 6 |
-| 8 | **CP2** - flip off Prism |
-| 8-11 | **FE-5** screens 3, 4, 5 |
-| 11-12 | **FE-6** kill the mocks |
-| 12-13 | Polish the two pitch screens |
+| Hours | Task                                      |
+| ----- | ----------------------------------------- |
+| 0-1   | **FE-1** build fix, env, landing redirect |
+| 1-3   | **FE-2** tokens and shell                 |
+| 3-5   | **FE-3** screens 1 and 2                  |
+| 4     | **CP1**                                   |
+| 5-8   | **FE-4** the ledger, screen 6             |
+| 8     | **CP2** - flip off Prism                  |
+| 8-11  | **FE-5** screens 3, 4, 5                  |
+| 11-12 | **FE-6** kill the mocks                   |
+| 12-13 | Polish the two pitch screens              |
 
 ### FE-1 · Build fix, env, landing — 1 h, blocks everything
 
@@ -177,11 +178,12 @@ Feed one at a time to your agent. Prefix every prompt:
 `pnpm --filter @tieout/web build` fails with "Error: Call retries were exceeded { type: 'WorkerError' }".
 
 1. In `next.config.ts`:
-* delete the entire `webpack:` block - Next 16 defaults to Turbopack and this kills the build worker
-* delete the `rewrites()` block - it proxies `/api/*` to `localhost:4000`, a server that will never exist. We serve the API from Next itself.
-* keep `transpilePackages`
-* add: `turbopack: {}`
-* add: `serverExternalPackages: ['postgres', 'drizzle-orm', 'pdfjs-dist']`
+
+- delete the entire `webpack:` block - Next 16 defaults to Turbopack and this kills the build worker
+- delete the `rewrites()` block - it proxies `/api/*` to `localhost:4000`, a server that will never exist. We serve the API from Next itself.
+- keep `transpilePackages`
+- add: `turbopack: {}`
+- add: `serverExternalPackages: ['postgres', 'drizzle-orm', 'pdfjs-dist']`
 
 2. Change the dev script from `next dev --webpack` to `next dev`.
 3. Delete `src/app/globals.tmp.css` (223 lines, never imported).
@@ -198,23 +200,13 @@ Feed one at a time to your agent. Prefix every prompt:
 Two competing systems: ~25 CSS custom properties in `globals.css` used 11 times, versus ~200 raw Tailwind palette classes (`text-gray-900` x39, `text-gray-500` x20, `border-gray-300` x14). Pick the tokens.
 
 1. Rewrite `globals.css` using Tailwind v4's `@theme` so tokens become real utilities. Match `recheq-screens.svg` exactly:
+
 ```css
---color-page: #FAF9F5
---color-surface: #FFFFFF
---color-border: #E2E0D8
---color-fg: #1F1E1C
---color-fg-muted: #6B6A65
---color-fg-subtle: #9A9892
---color-accent: #2C6ECB
---color-accent-bg: #E8F0FB
---color-high: #C0392B
---color-high-bg: #FDECEA
---color-medium: #B8730A
---color-medium-bg: #FBF0DC
---color-ok: #1D7A55
---color-ok-bg: #E3F3EC
---radius-card: 12px
---radius-control: 8px
+--color-page: #faf9f5 --color-surface: #ffffff --color-border: #e2e0d8 --color-fg: #1f1e1c
+  --color-fg-muted: #6b6a65 --color-fg-subtle: #9a9892 --color-accent: #2c6ecb
+  --color-accent-bg: #e8f0fb --color-high: #c0392b --color-high-bg: #fdecea --color-medium: #b8730a
+  --color-medium-bg: #fbf0dc --color-ok: #1d7a55 --color-ok-bg: #e3f3ec --radius-card: 12px
+  --radius-control: 8px;
 ```
 
 2. `(dashboard)/layout.tsx`: top nav - "Recheq" wordmark, Cases, Settings, avatar - over a `max-w-7xl` container. Exactly as in the SVG.
@@ -254,22 +246,22 @@ Build screen 6 exactly as in `recheq-screens.svg` (bottom, full width). Shape: t
 
 Top to bottom:
 
-* back link + case id in mono 10px muted
-* candidate name 22px, verdict badge right-aligned
-* "Senior Analyst at Acme Technologies Pvt Ltd" 13px muted
-* four stat tiles: Risk score - with "40x2 high + 0 med" in mono beside the number, the arithmetic must be VISIBLE, that is the auditability claim - High severity, Medium severity, Independent sources
-* evidence chips from `origins`: green when present, neutral "Employer pending" when absent
-* "Discrepancy ledger" heading
-* `FindingCards`
-* not-assessed strip
+- back link + case id in mono 10px muted
+- candidate name 22px, verdict badge right-aligned
+- "Senior Analyst at Acme Technologies Pvt Ltd" 13px muted
+- four stat tiles: Risk score - with "40x2 high + 0 med" in mono beside the number, the arithmetic must be VISIBLE, that is the auditability claim - High severity, Medium severity, Independent sources
+- evidence chips from `origins`: green when present, neutral "Employer pending" when absent
+- "Discrepancy ledger" heading
+- `FindingCards`
+- not-assessed strip
 
 **FindingCard:**
 
-* severity badge left, `rule_id` in mono 10px muted FAR RIGHT. Never hide the `rule_id`.
-* title 14px, explanation 12px muted
-* EXPECTED / OBSERVED as small-caps labels with mono values side by side; observed tinted with the severity colour
-* `source_label` as an accent link on the right. The API supplies this string - never render a raw uuid.
-* border colour is the severity colour
+- severity badge left, `rule_id` in mono 10px muted FAR RIGHT. Never hide the `rule_id`.
+- title 14px, explanation 12px muted
+- EXPECTED / OBSERVED as small-caps labels with mono values side by side; observed tinted with the severity colour
+- `source_label` as an accent link on the right. The API supplies this string - never render a raw uuid.
+- border colour is the severity colour
 
 Not-assessed is a flat strip with a muted mono list. NEVER styled like a finding. Absence of evidence must not look like evidence.
 
@@ -287,15 +279,15 @@ Build screens 3, 4, 5 exactly as in `recheq-screens.svg` (middle row). These are
 
 **Screen 3 - consent, `/c/[token]`:**
 
-* "Acme Corp has asked us to verify your employment at Acme Technologies."
-* "What we'll collect": payslip, Form 16, EPFO contribution history via your UAN
-* divider, then:
-* Why: Employment verification only
-* Kept: 180 days, then deleted
-* Where: India; documents are read by an AI model hosted outside India
-* Rights: Withdraw anytime
+- "Acme Corp has asked us to verify your employment at Acme Technologies."
+- "What we'll collect": payslip, Form 16, EPFO contribution history via your UAN
+- divider, then:
+- Why: Employment verification only
+- Kept: 180 days, then deleted
+- Where: India; documents are read by an AI model hosted outside India
+- Rights: Withdraw anytime
 
-* dark "I consent" button, muted "Decline" below.
+- dark "I consent" button, muted "Decline" below.
 
 THREE HARD RULES:
 
@@ -307,18 +299,18 @@ THREE HARD RULES:
 
 **Screen 4 - upload, `/c/[token]/upload`:**
 
-* One card per document, four visually distinct states: empty (dashed border), uploading (progress), uploaded (solid green, filename in mono), failed (red, retry).
-* UAN field below, optional.
-* Submit disabled with "Both documents needed" until both are uploaded.
-* 413 and 415 render INLINE ON THAT CARD ONLY - never reset the other card's state.
-* A 200 response (duplicate sha256) is success, not an error.
+- One card per document, four visually distinct states: empty (dashed border), uploading (progress), uploaded (solid green, filename in mono), failed (red, retry).
+- UAN field below, optional.
+- Submit disabled with "Both documents needed" until both are uploaded.
+- 413 and 415 render INLINE ON THAT CARD ONLY - never reset the other card's state.
+- A 200 response (duplicate sha256) is success, not an error.
 
 **Screen 5 - status, `/c/[token]/status`:**
 
-* Poll `GET /api/public/:token/status` every 2s. Render the `steps` array verbatim - done (green check), active (accent), pending (grey). NAMED STEPS, NEVER A BARE SPINNER. The named steps make the wait read as work happening, and they advertise the architecture while a judge watches.
-* "Usually under 90 seconds. Keep this page open."
-* Redirect to a thank-you state on complete. If the response carries `error`, show it as a degraded note - the case still completes.
-* Do NOT promise an email. Email is not wired.
+- Poll `GET /api/public/:token/status` every 2s. Render the `steps` array verbatim - done (green check), active (accent), pending (grey). NAMED STEPS, NEVER A BARE SPINNER. The named steps make the wait read as work happening, and they advertise the architecture while a judge watches.
+- "Usually under 90 seconds. Keep this page open."
+- Redirect to a thank-you state on complete. If the response carries `error`, show it as a degraded note - the case still completes.
+- Do NOT promise an email. Email is not wired.
 
 **HARD CONSTRAINT** on all three: never render `risk_score`, `verdict`, or a `finding`.
 
@@ -343,14 +335,14 @@ THREE HARD RULES:
 
 ### UI states — every screen, every state:
 
-| Screen | Loading | Success | Empty | Validation error | Server error |
-| --- | --- | --- | --- | --- | --- |
-| `/cases` | skeleton rows | table | "No cases yet" + CTA | - | banner + retry |
-| `/cases/new` | button spinner | link panel with Copy | - | inline per field from `details.fields[]` | banner, form preserved |
-| `/cases/[id]` | skeleton | ledger | "No findings" ≠ "not assessed" | - | banner + retry |
-| `/c/[token]` | skeleton | consent form | - | - | 404 vs 410, different copy |
-| `/c/[token]/upload` | per-card progress | green card + filename | both empty, submit disabled | inline on that card only | retry on that card, other card keeps state |
-| `/c/[token]/status` | named steps | redirect on complete | - | - | degraded note, still completes |
+| Screen              | Loading           | Success               | Empty                          | Validation error                         | Server error                               |
+| ------------------- | ----------------- | --------------------- | ------------------------------ | ---------------------------------------- | ------------------------------------------ |
+| `/cases`            | skeleton rows     | table                 | "No cases yet" + CTA           | -                                        | banner + retry                             |
+| `/cases/new`        | button spinner    | link panel with Copy  | -                              | inline per field from `details.fields[]` | banner, form preserved                     |
+| `/cases/[id]`       | skeleton          | ledger                | "No findings" ≠ "not assessed" | -                                        | banner + retry                             |
+| `/c/[token]`        | skeleton          | consent form          | -                              | -                                        | 404 vs 410, different copy                 |
+| `/c/[token]/upload` | per-card progress | green card + filename | both empty, submit disabled    | inline on that card only                 | retry on that card, other card keeps state |
+| `/c/[token]/status` | named steps       | redirect on complete  | -                              | -                                        | degraded note, still completes             |
 
 Force each against Prism by sending a shape the contract rejects, or `docker compose stop postgres`.
 
@@ -372,27 +364,27 @@ grep -rE "(text|bg|border)-(gray|blue|red|green|yellow)-[0-9]" apps/web/src/app 
 
 Platform runs this every 30 min from H10, but you should run it yourself after FE-6.
 
-| # | Step | Pass |
-| --- | --- | --- |
-| 1 | Open `localhost:3000` | Redirects to `/cases` |
-| 2 | Case list | Seeded cases with status and verdict badges |
-| 3 | + New case, fill, submit | Link panel appears on the same page |
-| 4 | Paste the link in a new tab | Consent screen, no scrolling |
-| 5 | Read the copy | "Where" row present |
-| 6 | Grant consent | Redirects to upload |
-| 7 | Upload doctored payslip + Form 16 | Both cards green, filenames shown |
-| 8 | Enter UAN, submit | Status screen, named steps advancing |
-| 9 | Watch to completion | complete inside 90 s |
-| 10 | Open the case in the dashboard | `needs_review`, score 80 |
-| 11 | Read the ledger | ≥2 high findings, each with rule id, expected, observed, source label |
-| 12 | Not-assessed | Quiet strip, visually distinct |
-| 13 | Devtools on the candidate tab | No verdict / score / findings |
-| 14 | Restart `pnpm dev`, reload | The case is still there |
+| #   | Step                              | Pass                                                                  |
+| --- | --------------------------------- | --------------------------------------------------------------------- |
+| 1   | Open `localhost:3000`             | Redirects to `/cases`                                                 |
+| 2   | Case list                         | Seeded cases with status and verdict badges                           |
+| 3   | + New case, fill, submit          | Link panel appears on the same page                                   |
+| 4   | Paste the link in a new tab       | Consent screen, no scrolling                                          |
+| 5   | Read the copy                     | "Where" row present                                                   |
+| 6   | Grant consent                     | Redirects to upload                                                   |
+| 7   | Upload doctored payslip + Form 16 | Both cards green, filenames shown                                     |
+| 8   | Enter UAN, submit                 | Status screen, named steps advancing                                  |
+| 9   | Watch to completion               | complete inside 90 s                                                  |
+| 10  | Open the case in the dashboard    | `needs_review`, score 80                                              |
+| 11  | Read the ledger                   | ≥2 high findings, each with rule id, expected, observed, source label |
+| 12  | Not-assessed                      | Quiet strip, visually distinct                                        |
+| 13  | Devtools on the candidate tab     | No verdict / score / findings                                         |
+| 14  | Restart `pnpm dev`, reload        | The case is still there                                               |
 
 ---
 
 ## PART 6 — Handoffs
 
-* From BE at H1: `/api/cases` is live - flip that one route off Prism.
-* From BE at H8: confirm `GET /api/cases/:id` returns `not_assessed` and `source_label`. You render both - if they're missing, tell them immediately.
-* To Platform at H11: hand over for the dry run. They own end-to-end timing, not you.
+- From BE at H1: `/api/cases` is live - flip that one route off Prism.
+- From BE at H8: confirm `GET /api/cases/:id` returns `not_assessed` and `source_label`. You render both - if they're missing, tell them immediately.
+- To Platform at H11: hand over for the dry run. They own end-to-end timing, not you.
