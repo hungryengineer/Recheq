@@ -498,39 +498,41 @@ async function writePdf(filePath: string, bytes: Uint8Array) {
 }
 
 async function main() {
-  console.log('Generating fixture PDFs...\n');
+  try {
+    console.log('Generating fixture PDFs...\n');
 
-  await ensureDir(path.join(DOCS, 'clean-01'));
-  await ensureDir(path.join(DOCS, 'doctored-01'));
-  await ensureDir(path.join(DOCS, 'doctored-02'));
+    await ensureDir(path.join(DOCS, 'clean-01'));
+    await ensureDir(path.join(DOCS, 'doctored-01'));
+    await ensureDir(path.join(DOCS, 'doctored-02'));
 
-  // clean-01
-  await writePdf(
-    path.join(DOCS, 'clean-01', 'payslip.pdf'),
-    await generatePayslipPdf(cleanPayslip),
-  );
-  await writePdf(path.join(DOCS, 'clean-01', 'form16.pdf'), await generateForm16Pdf(cleanForm16));
+    // clean-01
+    await writePdf(
+      path.join(DOCS, 'clean-01', 'payslip.pdf'),
+      await generatePayslipPdf(cleanPayslip),
+    );
+    await writePdf(path.join(DOCS, 'clean-01', 'form16.pdf'), await generateForm16Pdf(cleanForm16));
 
-  // doctored-01: basic inflated, PF unchanged
-  await writePdf(
-    path.join(DOCS, 'doctored-01', 'payslip.pdf'),
-    await generatePayslipPdf(doctoredPayslip01),
-  );
-  await writePdf(
-    path.join(DOCS, 'doctored-01', 'form16.pdf'),
-    await generateForm16Pdf(cleanForm16), // Form 16 matches clean — cross-doc inconsistency
-  );
+    // doctored-01: basic inflated, PF unchanged
+    await writePdf(
+      path.join(DOCS, 'doctored-01', 'payslip.pdf'),
+      await generatePayslipPdf(doctoredPayslip01),
+    );
+    await writePdf(
+      path.join(DOCS, 'doctored-01', 'form16.pdf'),
+      await generateForm16Pdf(cleanForm16), // Form 16 matches clean — cross-doc inconsistency
+    );
 
-  // doctored-02: net pay tampered
-  await writePdf(
-    path.join(DOCS, 'doctored-02', 'payslip.pdf'),
-    await generatePayslipPdf(doctoredPayslip02),
-  );
+    // doctored-02: net pay tampered
+    await writePdf(
+      path.join(DOCS, 'doctored-02', 'payslip.pdf'),
+      await generatePayslipPdf(doctoredPayslip02),
+    );
 
-  console.log('\nDone. Files written to fixtures/documents/');
+    console.log('\nDone. Files written to fixtures/documents/');
+  } catch (err) {
+    console.error('PDF generation failed:', err instanceof Error ? err.message : String(err));
+    process.exitCode = 1;
+  }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+void main();
