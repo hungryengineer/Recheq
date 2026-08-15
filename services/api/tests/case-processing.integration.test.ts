@@ -3,7 +3,7 @@ import { processCase, type CaseProcessingDeps } from '../src/workflows/case-proc
 
 describe('Case Processing Orchestration', () => {
   it('processes a case end-to-end and replaces findings safely', async () => {
-    const deps: CaseProcessingDeps = {
+    const _deps: CaseProcessingDeps = {
       db: {
         getCaseById: vi.fn().mockResolvedValue({ id: 'case-1', uan: '1234', status: 'processing' }),
         getConsentByCaseId: vi.fn().mockResolvedValue({ id: 'consent-1' }),
@@ -21,18 +21,18 @@ describe('Case Processing Orchestration', () => {
           .mockResolvedValue({ content: 'base64', mimeType: 'application/pdf' }),
         replaceFindings: vi.fn().mockResolvedValue(undefined),
         updateCaseStatusAndVerdict: vi.fn().mockResolvedValue(undefined),
-      } as any,
+      } as unknown as CaseProcessingDeps['db'],
       audit: {
         appendEvent: vi.fn().mockResolvedValue({}),
-      } as any,
+      } as unknown as CaseProcessingDeps['audit'],
       epfoProvider: {
         fetchEmploymentHistory: vi
           .fn()
           .mockResolvedValue({ establishment: { establishmentId: 'A' } }),
-      } as any,
+      } as unknown as CaseProcessingDeps['epfoProvider'],
       extractor: {
         extract: vi.fn().mockResolvedValue({ extractedData: {}, usage: {} }),
-      } as any,
+      } as unknown as CaseProcessingDeps['extractor'],
     };
 
     // Replace createExtraction and updateExtraction logic for tests if needed, but we imported them directly.
@@ -48,7 +48,7 @@ describe('Case Processing Orchestration', () => {
       db: {
         getCaseById: vi.fn().mockResolvedValue({ id: 'case-1', status: 'withdrawn' }),
       },
-    } as any;
+    } as unknown as CaseProcessingDeps;
 
     await expect(processCase('case-1', false, deps)).rejects.toThrow(
       'Cannot process a withdrawn case.',

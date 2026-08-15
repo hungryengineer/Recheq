@@ -25,9 +25,9 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
       verdict: string,
       riskScore: number,
     ) => Promise<void>;
-    replaceFindings: (caseId: string, findings: any[]) => Promise<void>;
+    replaceFindings: (caseId: string, findings: unknown[]) => Promise<void>;
     createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
-    updateRecordSuccess: (id: string, history: any) => Promise<void>;
+    updateRecordSuccess: (id: string, history: unknown) => Promise<void>;
     updateRecordFailure: (id: string, error: string) => Promise<void>;
     getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
   };
@@ -64,7 +64,7 @@ export async function processCase(
     .filter((doc) => !extractedDocIds.has(doc.id))
     .map(async (doc) => {
       // Create pending extraction
-      const extId = await createExtraction(deps.db as any, doc.id, {
+      const extId = await createExtraction(deps.db as unknown as Database, doc.id, {
         modelId: 'default',
         schemaVersion: doc.kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
       });
@@ -85,10 +85,10 @@ export async function processCase(
             ? await deps.extractor.extractPayslip(req)
             : await deps.extractor.extractForm16(req);
 
-        await updateExtractionSuccess(deps.db as any, extId, result.data, result.usage);
+        await updateExtractionSuccess(deps.db as unknown as Database, extId, result.data, result.usage);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        await updateExtractionFailure(deps.db as any, extId, msg);
+        await updateExtractionFailure(deps.db as unknown as Database, extId, msg);
       }
     });
 
@@ -111,8 +111,8 @@ export async function processCase(
   const findings = runAllChecks(ctx);
 
   // 6. Calculate Verdict
-  const score = calculateRiskScore(findings as any);
-  const verdict = calculateVerdict(findings as any, ctx.assembly.origins.length);
+  const score = calculateRiskScore(findings as unknown as Parameters<typeof calculateRiskScore>[0]);
+  const verdict = calculateVerdict(findings as unknown as Parameters<typeof calculateVerdict>[0], ctx.assembly.origins.length);
 
   // 7. Transactional Commit
   await deps.db.replaceFindings(caseId, findings);
