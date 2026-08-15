@@ -348,11 +348,21 @@ components:
 
     CaseCreateInput:
       type: object
-      required: [candidate_name, candidate_email, employer_name, title, claimed_ctc, employment_start, employment_end]
+      required:
+        [
+          candidate_name,
+          candidate_email,
+          employer_name,
+          title,
+          claimed_ctc,
+          employment_start,
+          employment_end,
+        ]
       properties:
         candidate_name: { type: string, minLength: 1, maxLength: 500, example: Arun Kumar }
         candidate_email: { type: string, format: email, example: arun@example.com }
-        employer_name: { type: string, minLength: 1, maxLength: 500, example: Acme Technologies Pvt Ltd }
+        employer_name:
+          { type: string, minLength: 1, maxLength: 500, example: Acme Technologies Pvt Ltd }
         title: { type: string, minLength: 1, maxLength: 1000, example: Senior Analyst }
         claimed_ctc: { type: number, minimum: 1, example: 1800000 }
         employment_start: { type: string, format: date, example: '2023-04-01' }
@@ -440,7 +450,13 @@ components:
         severity: { type: string, enum: [high, medium, low], example: high }
         status: { type: string, enum: [open, disputed, resolved], example: open }
         title: { type: string, example: PF deduction inconsistent with declared basic }
-        explanation: { type: string, example: PF employee share of Rs 3,600 implies a basic of Rs 30,000 at the statutory 12% rate. }
+        explanation:
+          {
+            type: string,
+            example: PF employee share of Rs 3,
+            600 implies a basic of Rs 30,
+            000 at the statutory 12% rate.,
+          }
         expected: { type: string, nullable: true, example: 'Rs 30,000' }
         observed: { type: string, nullable: true, example: 'Rs 52,000' }
         source_document_ids:
@@ -459,7 +475,17 @@ components:
 
     PublicCaseContext:
       type: object
-      required: [candidate_name, employer_name, status, documents_required, documents_provided, consent_text, consent_version, retention_days]
+      required:
+        [
+          candidate_name,
+          employer_name,
+          status,
+          documents_required,
+          documents_provided,
+          consent_text,
+          consent_version,
+          retention_days,
+        ]
       properties:
         case_id: { type: string }
         candidate_name: { type: string, example: Arun Kumar }
@@ -470,7 +496,11 @@ components:
           enum: [awaiting_consent, awaiting_documents, processing, complete, withdrawn]
           example: awaiting_consent
         consent_required: { type: boolean, example: true }
-        consent_text: { type: string, example: Acme Corp has asked us to verify your employment at Acme Technologies. }
+        consent_text:
+          {
+            type: string,
+            example: Acme Corp has asked us to verify your employment at Acme Technologies.,
+          }
         consent_version: { type: string, example: '1.0' }
         retention_days: { type: integer, example: 180 }
         documents_required:
