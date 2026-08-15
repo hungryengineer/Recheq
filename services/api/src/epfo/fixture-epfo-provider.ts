@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { EpfoProvider, EpfoHistory } from './epfo-provider.js';
+import { EpfoHistorySchema, type EpfoProvider, type EpfoHistory } from './epfo-provider.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, '../../../../fixtures/epfo');
@@ -18,7 +18,11 @@ export class FixtureEpfoProvider implements EpfoProvider {
   private async loadFixture(filename: string): Promise<EpfoHistory> {
     const fixturePath = path.join(FIXTURES_DIR, filename);
     const content = await fs.readFile(fixturePath, 'utf-8');
-    return JSON.parse(content) as EpfoHistory;
+    const parsed = EpfoHistorySchema.safeParse(JSON.parse(content));
+    if (!parsed.success) {
+      throw new Error(`Invalid EPFO fixture ${filename}: ${parsed.error.message}`);
+    }
+    return parsed.data;
   }
 
   async fetchEmploymentHistory(uan: string, _consentId: string): Promise<EpfoHistory | null> {

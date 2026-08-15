@@ -22,19 +22,18 @@ import { PAYSLIP_ARITHMETIC_TOLERANCE } from '../constants.js';
  * month is found (e.g. payslip month field is null).
  */
 export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
-  const NOT_ASSESSED = (reason: string) =>
-    [
-      {
-        rule_id: 'pf-matches-epfo',
-        severity: 'high' as const,
-        status: 'not_assessed' as const,
-        title: 'PF vs EPFO Match Unverified',
-        explanation: reason,
-        expected: null,
-        observed: null,
-        source_document_ids: [],
-      },
-    ] as FindingInput[];
+  const NOT_ASSESSED = (reason: string): FindingInput[] => [
+    {
+      rule_id: 'pf-matches-epfo',
+      severity: 'high',
+      status: 'not_assessed',
+      title: 'PF vs EPFO Match Unverified',
+      explanation: reason,
+      expected: null,
+      observed: null,
+      source_document_ids: [],
+    },
+  ];
 
   if (!ctx.assembly.has_epfo || !ctx.epfoHistory || !ctx.assembly.has_payslip || !ctx.payslip) {
     return NOT_ASSESSED(
@@ -51,6 +50,12 @@ export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
   // ── Employer match ───────────────────────────────────────────────
   const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
   const payslipEmployer = normalize(p.employer_name ?? '');
+
+  if (payslipEmployer === '') {
+    return NOT_ASSESSED(
+      'Payslip does not specify an employer name; cannot match against EPFO records.',
+    );
+  }
 
   const matchedPeriods = ctx.epfoHistory.periods.filter((period) => {
     const epfoEmployer = normalize(period.employerName);
@@ -75,10 +80,9 @@ export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
   }
 
   // ── Contribution month match ────────────────────────────────────
+  const month = p.month !== null ? monthNumber(p.month) : null;
   const payslipMonth =
-    p.year !== null && p.month !== null
-      ? `${p.year}-${String(monthNumber(p.month)).padStart(2, '0')}`
-      : null;
+    p.year !== null && month !== null ? `${p.year}-${String(month).padStart(2, '0')}` : null;
 
   const contribution = payslipMonth
     ? (contributions.find((c) => c.month === payslipMonth) ??
@@ -105,7 +109,7 @@ export const checkPfMatchesEpfo: RuleFunction = (ctx) => {
   return findings;
 };
 
-function monthNumber(name: string): number {
+function monthNumber(name: string): number | null {
   const months: Record<string, number> = {
     january: 1,
     february: 2,
@@ -120,5 +124,5 @@ function monthNumber(name: string): number {
     november: 11,
     december: 12,
   };
-  return months[name.toLowerCase()] ?? 1;
+  return months[name.toLowerCase()] ?? null;
 }

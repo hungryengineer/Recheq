@@ -112,6 +112,7 @@ describe('pf-implies-basic', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0]!.rule_id).toBe('pf-implies-basic');
     expect(findings[0]!.status).toBe('open');
+    expect(findings[0]!.severity).toBe('high');
     expect(findings[0]!.expected).toBe('Rs. 30,000');
     expect(findings[0]!.observed).toBe('Rs. 52,000');
   });
@@ -185,6 +186,7 @@ describe('pf-matches-epfo', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0]!.rule_id).toBe('pf-matches-epfo');
     expect(findings[0]!.status).toBe('open');
+    expect(findings[0]!.severity).toBe('high');
     expect(findings[0]!.expected).toBe('1800');
     expect(findings[0]!.observed).toBe('3600');
   });
@@ -211,6 +213,37 @@ describe('pf-matches-epfo', () => {
     const findings = checkPfMatchesEpfo(ctx);
     expect(findings[0]!.status).toBe('not_assessed');
   });
+
+  it('not_assessed when employer name is null (empty employer must not match every period)', () => {
+    const ctx: CheckContext = {
+      assembly: baseAssembly,
+      payslip: { ...cleanPayslip, employer_name: null },
+      form16: null,
+      epfoHistory: arunClean,
+      forensics: null,
+    };
+    const findings = checkPfMatchesEpfo(ctx);
+    expect(findings[0]!.status).toBe('not_assessed');
+    expect(findings).toHaveLength(1);
+  });
+
+  it.each(['Feb', '01', 'March!'])(
+    'unsupported month %s is not coerced to January (compares latest contribution instead)',
+    (month) => {
+      const ctx: CheckContext = {
+        assembly: baseAssembly,
+        payslip: { ...cleanPayslip, month },
+        form16: null,
+        epfoHistory: arunDoctored,
+        forensics: null,
+      };
+      const findings = checkPfMatchesEpfo(ctx);
+      expect(findings).toHaveLength(1);
+      expect(findings[0]!.status).toBe('open');
+      expect(findings[0]!.expected).toBe('1800');
+      expect(findings[0]!.explanation).toContain('2026-03');
+    },
+  );
 
   it('not_assessed when multiple EPFO periods match same employer (dual establishment)', () => {
     const ctx: CheckContext = {
