@@ -206,7 +206,7 @@ export function CreateCaseForm() {
           <button
             type="submit"
             disabled={isSubmitting || !!successLink}
-            className="inline-flex justify-center rounded-[var(--radius-control)] border border-transparent bg-[var(--color-fg)] py-2 px-6 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex justify-center rounded-[var(--radius-control)] border border-transparent bg-[var(--color-fg)] py-2 px-6 text-sm font-medium text-[var(--color-surface)] hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting ? 'Creating...' : 'Create and invite'}
           </button>
@@ -224,12 +224,12 @@ export function CreateCaseForm() {
           <div className="flex space-x-2">
             <button
               onClick={handleCopy}
-              className="rounded-[var(--radius-control)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-gray-50"
+              className="rounded-[var(--radius-control)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-[var(--color-page)] transition-colors"
             >
               {copied ? 'Copied!' : 'Copy'}
             </button>
             <button
-              className="rounded-[var(--radius-control)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-[var(--radius-control)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-[var(--color-page)] disabled:opacity-50 transition-colors"
               disabled
             >
               QR
