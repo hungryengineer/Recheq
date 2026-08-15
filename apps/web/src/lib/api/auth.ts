@@ -26,10 +26,12 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, rememberMe } = parsed.data;
 
-    // Hardcode a mock failure to demonstrate error handling if desired, 
-    // or pass through to the Prism mock server.
-    if (email === 'fail@recheq.com') {
-      return { success: false, error: 'Invalid credentials. Please try again.' };
+    // Strict admin credential enforcement for the mock environment
+    const ADMIN_EMAIL = 'admin@recheq.com';
+    const ADMIN_PASS = 'Admin@123!';
+
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASS) {
+      return { success: false, error: 'Invalid credentials. Please use the correct admin credentials.' };
     }
 
     const response = await fetch('http://localhost:4010/api/auth/login', {
