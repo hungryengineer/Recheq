@@ -13,16 +13,30 @@ export class FixtureEpfoProvider implements EpfoProvider {
   }
 
   async fetchEmploymentHistory(uan: string, _consentId: string): Promise<EpfoHistory | null> {
-    // We only simulate specific UANs for testing deterministic rules
     if (uan === '100000000001') {
       return this.loadFixture('clean-history.json');
     }
-
     if (uan === '100000000002') {
       return this.loadFixture('anomalous-history.json');
     }
+    if (uan === '100123456789') {
+      return this.loadFixture('arun-doctored.json');
+    }
+    if (uan === '100123456799') {
+      return this.loadFixture('dual-employment.json');
+    }
 
-    // For any unknown UAN, simulate an unavailable result
-    return null;
+    // Deterministic synthetic history for any unknown UAN — never crashes the demo
+    return {
+      uan,
+      periods: [
+        {
+          employerName: 'Unknown Employer',
+          establishmentId: 'XX/XXX/00000',
+          startDate: '2023-01-01',
+          endDate: null,
+        },
+      ],
+    };
   }
 }

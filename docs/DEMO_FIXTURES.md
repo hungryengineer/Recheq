@@ -51,20 +51,22 @@ The money moment. One edit, two independent rule fires.
 
 Basic salary inflated **Rs. 30,000 → Rs. 52,000**. PF deduction left unchanged at Rs. 3,600.
 
-| Component              | Value on document         | What it implies               |
-| ---------------------- | ------------------------- | ----------------------------- |
-| Basic Salary           | **Rs. 52,000** ← tampered | —                             |
-| PF (employee)          | Rs. 3,600 ← unchanged     | 3,600 ÷ 0.12 = **Rs. 30,000** |
-| EPFO record (Mar 2026) | employee_share = 1,800    | employer filed Rs. 1,800      |
+| Component     | Value on document         | What it implies               |
+| ------------- | ------------------------- | ----------------------------- |
+| Basic Salary  | **Rs. 52,000** ← tampered | —                             |
+| PF (employee) | Rs. 3,600 ← unchanged     | 3,600 ÷ 0.12 = **Rs. 30,000** |
 
 Rules that fire:
 
-| Rule ID            | Why                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `pf-implies-basic` | PF of Rs. 3,600 implies basic of Rs. 30,000; document shows Rs. 52,000                                   |
-| `pf-matches-epfo`  | EPFO employee share (Rs. 1,800) × 2 = Rs. 3,600 → implies basic of Rs. 30,000; document shows Rs. 52,000 |
+| Rule ID            | Why                                                                    |
+| ------------------ | ---------------------------------------------------------------------- |
+| `pf-implies-basic` | PF of Rs. 3,600 implies basic of Rs. 30,000; document shows Rs. 52,000 |
 
-Both are high severity. Two independent sources (payslip arithmetic + employer-filed EPFO) contradict the same claimed number. Verdict: `needs_review`, score ≥ 80.
+`pf-matches-epfo` emits `not_assessed` — the current `EpfoHistory` schema records
+employment periods only; contribution amounts (`employee_share`) are not yet captured.
+`pf-implies-basic` is the primary arithmetic contradiction for this fixture.
+
+High severity. Verdict: `needs_review`, score ≥ 40.
 
 ### form16.pdf
 
@@ -87,26 +89,27 @@ Net salary tampered. Gross and deductions are unchanged; the printed net does no
 
 Rule that fires:
 
-| Rule ID              | Why                                                                 |
-| -------------------- | ------------------------------------------------------------------- |
-| `payslip-arithmetic` | Gross (54,600) − Deductions (8,600) = 46,000 ≠ printed net (58,000) |
+| Rule ID                  | Why                                                                 |
+| ------------------------ | ------------------------------------------------------------------- |
+| `payslip-arithmetic-net` | Gross (54,600) − Deductions (8,600) = 46,000 ≠ printed net (58,000) |
 
 High severity. Verdict: `needs_review`.
 
 ---
 
-## EPFO fixtures (OPS-2)
+## EPFO fixtures
 
-The EPFO provider must be loaded with `arun-doctored.json` for UAN `100123456789`.
-The `pf-matches-epfo` rule uses `employee_share` from the March 2026 contribution row.
+`fixture-epfo-provider.ts` resolves UAN `100123456789` to `arun-doctored.json` (employment
+period at Acme Technologies). For unknown UANs it returns a deterministic synthetic record
+rather than `null`, so a live-typed UAN never crashes the demo.
 
-- **arun-clean.json** — `employee_share: 3600` — consistent with clean payslip
-- **arun-doctored.json** — `employee_share: 1800` — consistent with true basic of Rs. 15,000 (half-month filing edge case, used to create the contradiction)
+- **arun-clean.json** — UAN `100123456789`, single period at Acme Technologies (consistent)
+- **arun-doctored.json** — UAN `100123456789`, same period data (EPFO confirms employer name)
+- **dual-employment.json** — UAN `100123456799`, two overlapping periods (fires `dual-employment`)
 
-> The doctored payslip shows basic=52,000 and PF=3,600.
-> The EPFO record shows employee_share=1,800.
-> 1,800 × 2 = 3,600 → implies basic = 30,000.
-> Two data points, one contradiction, zero ambiguity.
+> `pf-matches-epfo` requires contribution amounts (`employee_share`) which the current
+> `EpfoHistory` schema does not include. The rule emits `not_assessed` for all fixtures today.
+> EPFO period data is still used by `dates-within-epfo-period` and `dual-employment`.
 
 ---
 
