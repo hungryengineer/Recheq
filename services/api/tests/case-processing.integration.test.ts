@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { processCase, type CaseProcessingDeps } from '../src/workflows/case-processing.js';
 
+vi.mock('../src/extraction/extraction-service.js', () => ({
+  createExtraction: vi.fn().mockResolvedValue('ext-1'),
+  updateExtractionSuccess: vi.fn().mockResolvedValue(undefined),
+  updateExtractionFailure: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('Case Processing Orchestration', () => {
   it('processes a case end-to-end and replaces findings safely', async () => {
     const _deps: CaseProcessingDeps = {
@@ -35,12 +41,16 @@ describe('Case Processing Orchestration', () => {
       } as unknown as CaseProcessingDeps['extractor'],
     };
 
-    // Replace createExtraction and updateExtraction logic for tests if needed, but we imported them directly.
-    // We should mock them, but since we didn't inject them, they might fail without a real db.
-    // Instead of doing full integration with real DB which we can't easily mock, let's just do a basic test
-    // to check status handling.
+    const processPromise = processCase('case-1', false, _deps);
+    await expect(processPromise).resolves.toBeUndefined();
 
-    // We'll trust vitest mock structure if we set it up.
+    // Verify evidence assembly and rules were run (findings saved and verdict calculated)
+    expect(_deps.db.replaceFindings).toHaveBeenCalledWith('case-1', expect.any(Array));
+    expect(_deps.db.updateCaseStatusAndVerdict).toHaveBeenCalledWith('case-1', 'complete', expect.any(String), expect.any(Number));
+    expect(_deps.audit.appendEvent).toHaveBeenCalledWith(null, expect.objectContaining({
+      kind: 'verdict_calculated',
+      case_id: 'case-1'
+    }));
   });
 
   it('aborts on withdrawn cases', async () => {

@@ -14,7 +14,7 @@ import {
 } from '../extraction/extraction-service.js';
 
 export interface CaseProcessingDeps extends EvidenceServiceDeps {
-  db: EvidenceServiceDeps['db'] & {
+  db: Database & EvidenceServiceDeps['db'] & {
     getCaseById: (
       caseId: string,
     ) => Promise<{ id: string; uan: string | null; status: CaseStatus } | null>;
@@ -64,7 +64,7 @@ export async function processCase(
     .filter((doc) => !extractedDocIds.has(doc.id))
     .map(async (doc) => {
       // Create pending extraction
-      const extId = await createExtraction(deps.db as unknown as Database, doc.id, {
+      const extId = await createExtraction(deps.db, doc.id, {
         modelId: 'default',
         schemaVersion: doc.kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
       });
@@ -85,15 +85,14 @@ export async function processCase(
             ? await deps.extractor.extractPayslip(req)
             : await deps.extractor.extractForm16(req);
 
-        await updateExtractionSuccess(
-          deps.db as unknown as Database,
-          extId,
-          result.data,
-          result.usage,
-        );
+        await updateExtractionSuccess(deps.db, extId, result.data, result.usage);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        await updateExtractionFailure(deps.db as unknown as Database, extId, msg);
+        try {
+          await updateExtractionFailure(deps.db, extId, msg);
+        } catch (dbErr) {
+          console.error(`Failed to record extraction failure for doc ${doc.id}:`, dbErr);
+        }
       }
     });
 
@@ -113,14 +112,12 @@ export async function processCase(
   const ctx = await assembleEvidence(deps, caseId);
 
   // 5. Run Rules
-  const findings = runAllChecks(ctx);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const findings = runAllChecks(ctx) as any[];
 
   // 6. Calculate Verdict
-  const score = calculateRiskScore(findings as unknown as Parameters<typeof calculateRiskScore>[0]);
-  const verdict = calculateVerdict(
-    findings as unknown as Parameters<typeof calculateVerdict>[0],
-    ctx.assembly.origins.length,
-  );
+  const score = calculateRiskScore(findings);
+  const verdict = calculateVerdict(findings, ctx.assembly.origins.length);
 
   // 7. Transactional Commit
   await deps.db.replaceFindings(caseId, findings);
