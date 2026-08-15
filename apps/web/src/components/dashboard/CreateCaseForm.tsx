@@ -30,8 +30,8 @@ export function CreateCaseForm() {
     try {
       const newCase = await createCase(input);
       router.push(`/cases/${newCase.id}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create case');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create case');
       setIsSubmitting(false);
     }
   }
