@@ -30,7 +30,7 @@ const services: ServiceCheck[] = [
 ];
 
 async function checkPostgres(url: string, timeout: number): Promise<boolean> {
-  const { createConnection } = await import('postgres');
+  const { default: createConnection } = await import('postgres');
   const start = Date.now();
 
   while (Date.now() - start < timeout) {

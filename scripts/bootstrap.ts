@@ -40,7 +40,7 @@ const versionChecks: VersionReq[] = [
     check: () => {
       const output = execSync('docker --version', { encoding: 'utf-8' });
       const match = output.match(/Docker version ([\d.]+)/);
-      return match ? match[1] : '0.0.0';
+      return match?.[1] ?? '0.0.0';
     },
   },
 ];
