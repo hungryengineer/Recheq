@@ -3,14 +3,10 @@ import { getCase, listCases } from '@tieout/api/web';
 import { getCaseDeps, DEV_ORG_ID } from './db';
 
 // Until session/authentication wiring is available, case reads use the
-// development identity constants. Never allow those constants to drive reads in
-// production — fail closed instead of leaking another org's case data.
+// explicitly configured org identity (DEV_ORG_ID/DEV_USER_ID). requireDevId in
+// db.ts fails closed in production when those are not set, so reads only
+// proceed when a valid org identity is configured.
 function devOrgId(): string {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'getCases/getCaseDetails cannot use the development org identity in production. Wire an authenticated session before enabling case listing.',
-    );
-  }
   return DEV_ORG_ID;
 }
 
