@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createCase, isCreateCaseError } from '../../lib/api/actions';
+import { createCase } from '../../lib/api/actions';
+import { isCreateCaseError } from '../../lib/api/actions-types';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, QrCode } from 'lucide-react';
 

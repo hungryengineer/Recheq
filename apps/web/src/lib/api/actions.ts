@@ -5,9 +5,8 @@ import { CaseCreateInput } from '@tieout/schema';
 import { apiClient } from './client';
 import type { CreateCaseResult, CreateCaseError } from './actions-types';
 
-// Re-export types and guard so consumers have a single import point
+// Re-export types only — value exports (non-async functions) are not allowed in 'use server' files
 export type { CreateCaseResult, CreateCaseSuccess, CreateCaseError } from './actions-types';
-export { isCreateCaseError } from './actions-types';
 
 export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
