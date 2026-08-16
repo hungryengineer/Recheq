@@ -103,12 +103,15 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
         throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
-      rawOutput = data.choices[0]?.message?.content || '';
+      const data = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+        usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+      };
+      rawOutput = data.choices?.[0]?.message?.content ?? '';
       usage = {
-        promptTokens: data.usage?.prompt_tokens || 0,
-        completionTokens: data.usage?.completion_tokens || 0,
-        totalTokens: data.usage?.total_tokens || 0,
+        promptTokens: data.usage?.prompt_tokens ?? 0,
+        completionTokens: data.usage?.completion_tokens ?? 0,
+        totalTokens: data.usage?.total_tokens ?? 0,
       };
 
       // Parse the JSON response

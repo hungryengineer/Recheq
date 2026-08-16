@@ -16,7 +16,7 @@ export type ApiKeyCreated = ApiKey & {
 async function getAuthHeader() {
   const cookieStore = await cookies();
   const token = cookieStore.get('recheq_session')?.value;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return (token ? { Authorization: `Bearer ${token}` } : {}) as Record<string, string>;
 }
 
 export async function getApiKeysAction(): Promise<ApiKey[]> {

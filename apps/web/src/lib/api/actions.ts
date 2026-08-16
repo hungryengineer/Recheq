@@ -3,8 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
 import { apiClient } from './client';
+import type { CreateCaseResult, CreateCaseError } from './actions-types';
 
-export async function createCase(rawInput: unknown): Promise<unknown> {
+// Re-export types only — value exports (non-async functions) are not allowed in 'use server' files
+export type { CreateCaseResult, CreateCaseSuccess, CreateCaseError } from './actions-types';
+
+export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
   const parsed = CaseCreateInput.safeParse(rawInput);
 
@@ -14,7 +18,7 @@ export async function createCase(rawInput: unknown): Promise<unknown> {
         code: 'VALIDATION_ERROR',
         details: {
           fields: parsed.error.issues.map((issue) => ({
-            path: issue.path[0]?.toString() || 'unknown',
+            path: issue.path[0]?.toString() ?? 'unknown',
             message: issue.message,
           })),
         },
@@ -25,22 +29,24 @@ export async function createCase(rawInput: unknown): Promise<unknown> {
   const input = parsed.data;
 
   try {
-    const result = await apiClient('/cases', {
+    const result = (await apiClient('/cases', {
       method: 'POST',
       body: JSON.stringify(input),
-    });
+    })) as CreateCaseSuccess;
 
     // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
     revalidatePath('/cases');
 
     return result;
   } catch (err: unknown) {
-    const error = err as Record<string, unknown>;
+    const isAppError = typeof err === 'object' && err !== null;
+    const error = isAppError ? (err as Record<string, unknown>) : {};
     return {
       error: {
-        code: error.code || 'VALIDATION_ERROR',
-        message: error.message,
-        details: error.details,
+        code: typeof error.code === 'string' ? error.code : 'UNKNOWN_ERROR',
+        message:
+          typeof error.message === 'string' ? error.message : 'An unexpected error occurred.',
+        details: error.details as CreateCaseError['error']['details'],
       },
     };
   }

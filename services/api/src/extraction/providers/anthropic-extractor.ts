@@ -116,12 +116,15 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
         throw new Error(`Anthropic API error: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
-      rawOutput = data.content[0]?.text || '';
+      const data = (await response.json()) as {
+        content?: Array<{ text?: string }>;
+        usage?: { input_tokens?: number; output_tokens?: number };
+      };
+      rawOutput = data.content?.[0]?.text ?? '';
       usage = {
-        promptTokens: data.usage?.input_tokens || 0,
-        completionTokens: data.usage?.output_tokens || 0,
-        totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
+        promptTokens: data.usage?.input_tokens ?? 0,
+        completionTokens: data.usage?.output_tokens ?? 0,
+        totalTokens: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
       };
 
       // Parse the JSON response

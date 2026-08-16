@@ -1,13 +1,13 @@
 import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
 import { getCase, listCases } from '@tieout/api/web';
-import { getCaseDeps, DEV_ORG_ID } from './db';
+import { getCaseDeps, getDevOrgId } from './db';
 
 // Until session/authentication wiring is available, case reads use the
-// explicitly configured org identity (DEV_ORG_ID/DEV_USER_ID). requireDevId in
+// explicitly configured org identity (getDevOrgId/getDevUserId). requireDevId in
 // db.ts fails closed in production when those are not set, so reads only
 // proceed when a valid org identity is configured.
 function devOrgId(): string {
-  return DEV_ORG_ID;
+  return getDevOrgId();
 }
 
 export async function getCases(): Promise<CaseSummary[]> {
