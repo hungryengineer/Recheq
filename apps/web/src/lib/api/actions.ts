@@ -3,27 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
 import { apiClient } from './client';
+import type { CreateCaseResult, CreateCaseError } from './actions-types';
 
-type CreateCaseError = {
-  error: {
-    code: string;
-    message?: string;
-    details?: {
-      fields?: Array<{ path: string; message: string }>;
-    };
-  };
-};
-
-type CreateCaseSuccess = {
-  candidate_link?: string;
-  id?: string;
-};
-
-export type CreateCaseResult = CreateCaseSuccess | CreateCaseError;
-
-export function isCreateCaseError(result: CreateCaseResult): result is CreateCaseError {
-  return 'error' in result;
-}
+// Re-export types and guard so consumers have a single import point
+export type { CreateCaseResult, CreateCaseSuccess, CreateCaseError } from './actions-types';
+export { isCreateCaseError } from './actions-types';
 
 export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
