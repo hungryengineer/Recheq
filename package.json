@@ -6,7 +6,7 @@
   "description": "Tieout hackathon monorepo",
   "packageManager": "pnpm@10.12.4",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "22.x"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
