@@ -77,9 +77,12 @@ export default async function CaseDetailsPage({ params }: PageProps) {
 
   try {
     const data = await getCaseDetails(id);
-    caseRecord = data.caseRecord;
-    findings = data.findings;
-    notAssessed = data.notAssessed;
+    if (!data.found) {
+      throw new Error('Not found');
+    }
+    caseRecord = data.caseRecord as unknown as Record<string, unknown>;
+    findings = data.findings as unknown as UI_Finding[];
+    notAssessed = data.notAssessed as Array<{ rule_id: string; title: string; reason: string }>;
   } catch {
     return (
       <div className="py-20 text-center animate-fade-in">
