@@ -1,56 +1,49 @@
 import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
-import { mockCases, delay } from './store';
+import { getCase, listCases } from '@tieout/api/web';
+import { getCaseDeps, DEV_ORG_ID } from './db';
 
-export async function getCases(): Promise<CaseSummary[]> {
-  await delay(300);
-  return mockCases.map((c) => ({
-    id: c.id,
-    employer_name: c.employer_name,
-    candidate_name: c.candidate_name,
-    title: c.title,
-    status: c.status,
-    verdict: c.verdict,
-    risk_score: c.risk_score,
-    created_at: c.created_at,
-  }));
+// Until session/authentication wiring is available, case reads use the
+// explicitly configured org identity (DEV_ORG_ID/DEV_USER_ID). requireDevId in
+// db.ts fails closed in production when those are not set, so reads only
+// proceed when a valid org identity is configured.
+function devOrgId(): string {
+  return DEV_ORG_ID;
 }
 
-export async function getCaseDetails(id: string): Promise<{
-  caseRecord: CaseRecord;
-  findings: FindingRecord[];
-  notAssessed: string[];
-}> {
-  await delay(400);
-  const caseRecord = mockCases.find((c) => c.id === id);
+export async function getCases(): Promise<CaseSummary[]> {
+  return await listCases(devOrgId(), getCaseDeps());
+}
 
-  if (!caseRecord) {
-    throw new Error('Case not found');
+export type CaseDetailsResult =
+  | { found: true; caseRecord: CaseRecord; findings: FindingRecord[]; notAssessed: string[] }
+  | { found: false };
+
+export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
+  try {
+    const caseRecord = await getCase(id, devOrgId(), getCaseDeps());
+
+    return {
+      found: true,
+      caseRecord,
+      // TODO: populate findings from the findings table once FindingsRepository is wired.
+      // See services/api/src/db/findings-deps.ts (to be created as part of BE-15).
+      findings: [],
+      notAssessed: [],
+    };
+  } catch (err: unknown) {
+    // Map not-found / foreign-org errors to a clean not-found result.
+    // Propagate unexpected infrastructure errors so they surface correctly.
+    const isNotFound =
+      typeof err === 'object' &&
+      err !== null &&
+      'statusCode' in err &&
+      typeof (err as { statusCode: unknown }).statusCode === 'number' &&
+      (err as { statusCode: number }).statusCode === 404;
+
+    if (isNotFound) {
+      return { found: false };
+    }
+
+    throw err;
   }
-
-  const mockFindings: FindingRecord[] =
-    id === 'case-001'
-      ? [
-          {
-            id: 'finding-1',
-            case_id: 'case-001',
-            rule_id: 'CHK-PAYSLIP-ARITH',
-            severity: 'high',
-            status: 'open',
-            title: 'Payslip Arithmetic Mismatch',
-            explanation:
-              'The sum of all earnings and deductions does not match the stated net pay.',
-            expected: '85000',
-            observed: '92000',
-            source_document_ids: ['doc-1'],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]
-      : [];
-
-  return {
-    caseRecord,
-    findings: mockFindings,
-    notAssessed: id === 'case-001' ? ['CHK-PF-IMPLIES-BASIC'] : [],
-  };
 }

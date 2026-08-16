@@ -8,11 +8,41 @@ import type { IAuditRepository } from './audit-service.js';
 type DB = PostgresJsDatabase<any>;
 type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
 
+/** Union of the two query-capable handles this repository accepts. */
+type Handle = DB | Tx;
+
+/** Type guard: true when the value looks like a Drizzle transaction handle. */
+function isTx(value: unknown): value is Tx {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'insert' in value &&
+    'select' in value &&
+    'update' in value &&
+    'delete' in value
+  );
+}
+
+/** Resolve the correct query handle — transaction when provided, db otherwise. */
+function resolveHandle(db: DB, tx: unknown): Handle {
+  return isTx(tx) ? tx : db;
+}
+
 export class DbAuditRepository implements IAuditRepository {
   constructor(private readonly db: DB) {}
 
-  async getLastEvent(caseId: string): Promise<EventRecord | null> {
-    const records = await this.db
+  /**
+   * Reads the most recent event for the case.
+   *
+   * When `tx` is supplied the query executes inside the same transaction as the
+   * caller's subsequent insert, so both the read and the write share the same
+   * database snapshot and connection. This keeps the seq computation consistent
+   * with the insert; the uq_events_case_seq constraint is the final backstop
+   * against a concurrent append, which AuditService handles via retry.
+   */
+  async getLastEvent(caseId: string, tx?: unknown): Promise<EventRecord | null> {
+    const handle = resolveHandle(this.db, tx);
+    const records = await handle
       .select()
       .from(events)
       .where(eq(events.case_id, caseId))
@@ -23,8 +53,8 @@ export class DbAuditRepository implements IAuditRepository {
   }
 
   async appendEvent(tx: unknown, event: EventRecord): Promise<void> {
-    const dbtx = tx as Tx;
-    await dbtx.insert(events).values({
+    const handle = resolveHandle(this.db, tx);
+    await handle.insert(events).values({
       id: event.id,
       case_id: event.case_id,
       seq: event.seq,

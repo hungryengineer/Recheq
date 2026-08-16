@@ -11,11 +11,29 @@ const envSchema = z.object({
   S3_ENDPOINT: z.string().url('S3_ENDPOINT must be a valid URL').optional(),
   S3_ACCESS_KEY_ID: z.string().optional(),
   S3_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_REGION: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  S3_FORCE_PATH_STYLE: z
+    .enum(['true', 'false'], {
+      errorMap: () => ({
+        message: 'S3_FORCE_PATH_STYLE must be exactly "true" or "false"',
+      }),
+    })
+    .optional(),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().positive().optional(),
+  APP_BASE_URL: z.string().url('APP_BASE_URL must be a valid URL').optional(),
+  // Development-only identity constants. Required in non-production environments
+  // that use them; must never fall back to hardcoded UUIDs in production.
+  DEV_USER_ID: z.string().uuid().optional(),
+  DEV_ORG_ID: z.string().uuid().optional(),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
   OPENAI_MODEL: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  EXTRACTION_MODEL: z.string().optional(),
+  EXTRACTION_FALLBACK: z.string().optional(),
+  EPFO_PROVIDER: z.string().optional(),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   DEMO_MODE: z
     .string()

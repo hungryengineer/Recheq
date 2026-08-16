@@ -1,64 +1,56 @@
 import { NextResponse } from 'next/server';
-import { uploadDocumentHandler } from '@tieout/api/src/routes/public/documents.js';
-import { createRequestContext } from '@tieout/api/src/observability/request-context.js';
-import { buildDeps } from '../../../../../lib/server/deps';
-import { toErrorResponse } from '@tieout/api/src/http/errors.js';
+import { uploadDocumentHandler, toErrorResponse } from '@tieout/api/web';
+import { getDocumentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
 
-export async function POST(request: Request, context: { params: Promise<{ token: string }> }) {
-  const requestId = crypto.randomUUID();
+/** Must stay in sync with the service-layer MAX_UPLOAD_BYTES (10 MB). */
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+
+  let file: File | null = null;
+  let kind: unknown = null;
+
   try {
     const formData = await request.formData();
-    const fileNode = formData.get('file');
-    const kind = formData.get('kind');
-
-    if (!fileNode || typeof fileNode === 'string') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_REQUEST',
-            message: 'Missing or invalid file',
-            request_id: requestId,
-          },
-        },
-        { status: 400 },
-      );
+    const fileEntry = formData.get('file');
+    if (fileEntry instanceof File) {
+      file = fileEntry;
     }
+    kind = formData.get('kind') ?? null;
+  } catch {
+    return NextResponse.json({ success: false, message: 'Invalid request body' }, { status: 400 });
+  }
 
-    // Convert file to Buffer
-    const arrayBuffer = await fileNode.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+  if (!file) {
+    return NextResponse.json({ success: false, message: 'Missing file' }, { status: 400 });
+  }
 
-    const reqCtx = createRequestContext({
-      requestId,
-      service: 'api',
-    });
+  // Validate size before reading the full body into memory.
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { success: false, message: 'File exceeds the 10 MB limit' },
+      { status: 413 },
+    );
+  }
 
-    const { token } = await context.params;
-
-    const handlerReq = {
-      params: { token },
-      file: buffer,
-      metadata: {
-        kind,
-        original_filename: fileNode.name,
+  try {
+    const result = await uploadDocumentHandler(
+      {
+        params: { token },
+        file: Buffer.from(await file.arrayBuffer()),
+        metadata: { kind, original_filename: file.name },
+        context: createRequestContext(),
       },
-      context: reqCtx,
-    };
-
-    const deps = buildDeps();
-    const result = await uploadDocumentHandler(handlerReq, deps);
-
-    if (result.status >= 400 && result.body && result.body.error) {
-      result.body.error.request_id = requestId;
-    }
+      {
+        ...getDocumentDeps(),
+        tokenVerifier: getTokenVerifier(),
+      },
+    );
 
     return NextResponse.json(result.body, { status: result.status });
-  } catch (err) {
-    console.error('Unhandled upload document error:', err);
-    const errorResponse = toErrorResponse(err);
-    if (errorResponse.body && errorResponse.body.error) {
-      (errorResponse.body.error as Record<string, unknown>).request_id = requestId;
-    }
-    return NextResponse.json(errorResponse.body, { status: errorResponse.status });
+  } catch (error) {
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }

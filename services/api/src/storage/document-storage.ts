@@ -4,6 +4,14 @@ import { createHash, createHmac } from 'node:crypto';
 // Abstraction over S3-compatible object storage for document files.
 // Routes and services depend on this interface, not the transport.
 
+export interface ObjectHead {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  /** Content-Length of the object, when the provider reports it */
+  size?: number | null;
+}
+
 export interface DocumentStorage {
   /**
    * Uploads a document to the private storage bucket.
@@ -14,12 +22,28 @@ export interface DocumentStorage {
   putObject(key: string, content: Buffer, contentType: string): Promise<void>;
 
   /**
+  /**
    * Retrieves a document from the private storage bucket.
    */
   getObject(key: string): Promise<Buffer>;
+
+  /**
+   * Checks whether an object exists and reports its size.
+   * @param key - The storage path
+   */
+  headObject(key: string): Promise<ObjectHead>;
+
+  /**
+   * Deletes an object from the private storage bucket. Used to remove orphaned
+   * objects (e.g. the losing upload in a dedup race) and test artifacts.
+   * @param key - The storage path
+   */
+  deleteObject(key: string): Promise<void>;
 }
 
 // ─── S3 Configuration ───────────────────────────────────────────
+
+const EMPTY_BODY_SHA256 = createHash('sha256').update('').digest('hex');
 
 export interface DocumentStorageConfig {
   endpoint: string;
@@ -32,7 +56,16 @@ export interface DocumentStorageConfig {
 
 // ─── Transport ──────────────────────────────────────────────────
 
-export type DocumentStorageTransport = (url: URL, init: RequestInit) => Promise<Response>;
+export type DocumentStorageTransport = (
+  url: URL,
+  init: RequestInit,
+) => Promise<{
+  ok: boolean;
+  status: number;
+  statusText: string;
+  size?: number | null;
+  arrayBuffer?: () => Promise<ArrayBuffer>;
+}>;
 
 // ─── Factory ────────────────────────────────────────────────────
 
@@ -50,6 +83,7 @@ export function createDocumentStorage(
       const bodyHash = createHash('sha256').update(content).digest('hex');
       const headers = signObjectRequest(
         config,
+        'PUT',
         url,
         bodyHash,
         contentType,
@@ -57,11 +91,18 @@ export function createDocumentStorage(
         new Date(),
       );
 
-      const response = await transport(url, {
-        method: 'PUT',
-        headers,
-        body: new Uint8Array(content),
-      });
+      let response: Awaited<ReturnType<DocumentStorageTransport>>;
+      try {
+        response = await transport(url, {
+          method: 'PUT',
+          headers,
+          body: new Uint8Array(content),
+        });
+      } catch (cause) {
+        throw new Error(`Failed to upload document (key=${key}): network or transport error`, {
+          cause,
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to upload document: ${response.status} ${response.statusText}`);
@@ -70,16 +111,78 @@ export function createDocumentStorage(
     async getObject(key: string): Promise<Buffer> {
       const url = getObjectUrl(config, key);
       const emptyHash = createHash('sha256').update('').digest('hex');
-      const headers = signObjectRequest(config, url, emptyHash, '', 0, new Date(), 'GET');
+      const headers = signObjectRequest(config, 'GET', url, emptyHash, undefined, 0, new Date());
 
       try {
         const response = await transport(url, { method: 'GET', headers });
         if (!response.ok) {
           throw new Error(`Failed to get document: ${response.status} ${response.statusText}`);
         }
+        if (!response.arrayBuffer) {
+          throw new Error('Transport does not support arrayBuffer');
+        }
         return Buffer.from(await response.arrayBuffer());
       } catch (err) {
         throw new Error(`Storage retrieval failed for ${key}`, { cause: err });
+      }
+    },
+    async headObject(key: string): Promise<ObjectHead> {
+      const url = getObjectUrl(config, key);
+      const headers = signObjectRequest(
+        config,
+        'HEAD',
+        url,
+        EMPTY_BODY_SHA256,
+        undefined,
+        0,
+        new Date(),
+      );
+
+      let response: Awaited<ReturnType<DocumentStorageTransport>>;
+      try {
+        response = await transport(url, {
+          method: 'HEAD',
+          headers,
+        });
+      } catch (cause) {
+        throw new Error(`Failed to HEAD object (key=${key}): network or transport error`, {
+          cause,
+        });
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        size: response.size ?? null,
+      };
+    },
+    async deleteObject(key: string): Promise<void> {
+      const url = getObjectUrl(config, key);
+      const headers = signObjectRequest(
+        config,
+        'DELETE',
+        url,
+        EMPTY_BODY_SHA256,
+        undefined,
+        0,
+        new Date(),
+      );
+
+      let response: Awaited<ReturnType<DocumentStorageTransport>>;
+      try {
+        response = await transport(url, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (cause) {
+        throw new Error(`Failed to delete document (key=${key}): network or transport error`, {
+          cause,
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete document: ${response.status} ${response.statusText}`);
       }
     },
   };
@@ -91,13 +194,17 @@ export function createDocumentStorage(
 export function createDocumentStorageFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): DocumentStorage {
+  const raw = env.S3_FORCE_PATH_STYLE;
+  if (raw !== undefined && raw !== 'true' && raw !== 'false') {
+    throw new Error(`S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`);
+  }
   return createDocumentStorage({
     endpoint: requireEnv(env, 'S3_ENDPOINT'),
     region: env.S3_REGION ?? 'us-east-1',
     accessKeyId: requireEnv(env, 'S3_ACCESS_KEY_ID'),
     secretAccessKey: requireEnv(env, 'S3_SECRET_ACCESS_KEY'),
     bucket: env.S3_BUCKET ?? env.MINIO_BUCKET ?? 'tieout-local',
-    forcePathStyle: env.S3_FORCE_PATH_STYLE !== 'false',
+    forcePathStyle: raw !== 'false',
   });
 }
 
@@ -121,12 +228,12 @@ function getObjectUrl(config: DocumentStorageConfig, key: string): URL {
 
 function signObjectRequest(
   config: DocumentStorageConfig,
+  method: 'GET' | 'HEAD' | 'PUT' | 'DELETE',
   url: URL,
   bodyHash: string,
-  contentType: string,
+  contentType: string | undefined,
   contentLength: number,
   now: Date,
-  method: 'GET' | 'PUT' | 'HEAD' = 'PUT',
 ): Headers {
   const amzDate = toAmzDate(now);
   const dateStamp = amzDate.slice(0, 8);
@@ -138,9 +245,11 @@ function signObjectRequest(
     'x-amz-date': amzDate,
   });
 
+  if (contentType !== undefined) {
+    headers.set('content-type', contentType);
+  }
   if (contentLength > 0 || method === 'PUT') {
     headers.set('content-length', String(contentLength));
-    if (contentType) headers.set('content-type', contentType);
   }
 
   const canonicalHeaders = getCanonicalHeaders(headers);
@@ -170,12 +279,7 @@ function signObjectRequest(
 
   headers.set(
     'authorization',
-    [
-      'AWS4-HMAC-SHA256',
-      `Credential=${config.accessKeyId}/${credentialScope}`,
-      `SignedHeaders=${signedHeaders}`,
-      `Signature=${signature}`,
-    ].join(', '),
+    `AWS4-HMAC-SHA256 Credential=${config.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
   );
 
   return headers;
@@ -213,11 +317,36 @@ function hmac(key: string | Buffer, value: string, encoding?: 'hex'): Buffer | s
 }
 
 function toAmzDate(date: Date): string {
-  return date.toISOString().replace(/[:-]|\.\\d{3}/g, '');
+  return date.toISOString().replace(/[:-]|\.\d{3}/g, '');
 }
 
-async function defaultTransport(url: URL, init: RequestInit): Promise<Response> {
-  return await fetch(url, init);
+async function defaultTransport(
+  url: URL,
+  init: RequestInit,
+): Promise<{
+  ok: boolean;
+  status: number;
+  statusText: string;
+  size?: number | null;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}> {
+  const response = await fetch(url, init);
+  const contentLength = response.headers.get('content-length');
+  let size: number | null = null;
+  if (contentLength !== null) {
+    const parsed = Number(contentLength);
+    // Only expose size when it's a finite, non-negative safe integer.
+    if (Number.isSafeInteger(parsed) && parsed >= 0) {
+      size = parsed;
+    }
+  }
+  return {
+    ok: response.ok,
+    status: response.status,
+    statusText: response.statusText,
+    size,
+    arrayBuffer: () => response.arrayBuffer(),
+  };
 }
 
 function requireEnv(env: NodeJS.ProcessEnv, key: string): string {

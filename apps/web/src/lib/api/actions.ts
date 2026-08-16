@@ -1,33 +1,41 @@
 'use server';
 
+import { ZodError } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
 import type { CaseRecord } from '@tieout/schema';
-import { mockCases, delay } from './store';
+import { createCase as persistCase, AppError } from '@tieout/api/web';
+import { getCaseDeps, DEV_ORG_ID, DEV_USER_ID } from './db';
 
-export async function createCase(rawInput: unknown): Promise<CaseRecord> {
-  await delay(500);
+export type CreateCaseResult =
+  { success: true; data: CaseRecord } | { success: false; error: string };
 
-  // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
-  const input = CaseCreateInput.parse(rawInput);
+export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
+  try {
+    // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment
+    const input = CaseCreateInput.parse(rawInput);
 
-  const newCase: CaseRecord = {
-    ...input,
-    id: `case-${Math.random().toString(36).substring(2, 9)}`,
-    org_id: 'org-001',
-    created_by: 'user-001',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    status: 'processing',
-    verdict: null,
-    risk_score: null,
-    uan: input.uan ?? null, // Ensure uan is nullable
-  };
+    const caseRecord = await persistCase(input, DEV_USER_ID, DEV_ORG_ID, getCaseDeps());
 
-  mockCases.unshift(newCase);
+    // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
+    revalidatePath('/cases');
 
-  // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
-  revalidatePath('/cases');
-
-  return newCase;
+    return { success: true, data: caseRecord };
+  } catch (err) {
+    // Validation failures surface the specific field issues rather than a
+    // generic message. ZodError is not an AppError, so it must be handled
+    // explicitly before the fallback.
+    if (err instanceof ZodError) {
+      const messages = err.issues.map((issue) => issue.message);
+      return { success: false, error: messages.join('. ') || 'Please check the form fields.' };
+    }
+    // Validation and domain errors carry a user-safe message — expose it directly.
+    if (err instanceof AppError) {
+      return { success: false, error: err.message };
+    }
+    // For all other failures log the full error server-side but return a stable,
+    // non-leaking message to the client.
+    console.error('[createCase] unexpected error:', err);
+    return { success: false, error: 'An unexpected error occurred. Please try again.' };
+  }
 }
