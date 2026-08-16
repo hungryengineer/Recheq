@@ -11,6 +11,10 @@ export function SecurityTab() {
   const [isEnabling2FA, setIsEnabling2FA] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [activeSessions, setActiveSessions] = useState([
     { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true }
   ]);
@@ -38,11 +42,23 @@ export function SecurityTab() {
     }
   }, []);
 
-  const handleUpdatePassword = async () => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
     setIsUpdatingPassword(true);
     await new Promise(resolve => setTimeout(resolve, 800));
     setIsUpdatingPassword(false);
-    toast.success('Password update email sent. Check your inbox.');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    toast.success('Password updated successfully.');
   };
 
   const handleToggle2FA = async () => {
@@ -84,14 +100,51 @@ export function SecurityTab() {
             <p className="text-xs text-[var(--color-fg-muted)] mt-1">Last changed 3 months ago.</p>
           </div>
           <div className="w-full md:w-2/3">
-            <button 
-              onClick={handleUpdatePassword}
-              disabled={isUpdatingPassword}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 disabled:opacity-70 active:scale-95 transition-all"
-            >
-              {isUpdatingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {isUpdatingPassword ? 'Processing...' : 'Update password'}
-            </button>
+            <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-sm">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[var(--color-fg-subtle)]" htmlFor="currentPassword">Current password</label>
+                <input 
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[var(--color-fg-subtle)]" htmlFor="newPassword">New password</label>
+                <input 
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[var(--color-fg-subtle)]" htmlFor="confirmPassword">Confirm new password</label>
+                <input 
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  disabled={isUpdatingPassword}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 disabled:opacity-70 active:scale-95 transition-all"
+                >
+                  {isUpdatingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isUpdatingPassword ? 'Processing...' : 'Update password'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
