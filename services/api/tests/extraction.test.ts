@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type {
   LlmDocumentExtractor,
   ExtractionRequest,
@@ -10,6 +10,11 @@ import { withSchemaRetry } from '../src/extraction/schema-retry.js';
 import { createAnthropicExtractor } from '../src/extraction/providers/anthropic-extractor.js';
 import { createOpenAiCompatibleExtractor } from '../src/extraction/providers/openai-compatible-extractor.js';
 import { createOllamaExtractor } from '../src/extraction/providers/ollama-extractor.js';
+import {
+  GeminiExtractor,
+  GeminiWithFallback,
+  createGeminiExtractor,
+} from '../src/extraction/providers/gemini-extractor.js';
 
 describe('DOC-01 — Provider-Independent Document Extraction', () => {
   describe('FixtureExtractor', () => {
@@ -785,6 +790,475 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       expect(result1.data).toEqual(result2.data);
       expect(result1.status).toBe(result2.status);
       expect(result1.retryCount).toBe(result2.retryCount);
+    });
+  });
+});
+
+describe('GeminiExtractor', () => {
+  // ─── Unit tests ──────────────────────────────────────────────
+
+  describe('constructor', () => {
+    it('creates extractor with a valid API key', () => {
+      expect(() => createGeminiExtractor({ apiKey: 'test-key' })).not.toThrow();
+    });
+
+    it('throws without an API key', () => {
+      expect(() => new GeminiExtractor({ apiKey: '' } as never)).toThrow('GEMINI_API_KEY is required');
+    });
+
+    it('exposes provider = "gemini"', () => {
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      expect(extractor.provider).toBe('gemini');
+    });
+
+    it('supportsStreaming is false', () => {
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      expect(extractor.supportsStreaming).toBe(false);
+    });
+  });
+
+  describe('getMetadata', () => {
+    it('returns Flash-tier cost and image support', () => {
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      const meta = extractor.getMetadata();
+
+      expect(meta.maxContentSize).toBe(20 * 1024 * 1024);
+      expect(meta.supportsImages).toBe(true);
+      expect(meta.supportsPdfText).toBe(true);
+      // Flash cost is well under $0.001 per 1k tokens
+      expect(meta.costPer1kTokens).toBeLessThan(0.001);
+    });
+  });
+
+  describe('extractPayslip — network mocked', () => {
+    let fetchMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('returns success with parsed payslip on a valid Gemini response', async () => {
+      const payslipJson: PayslipExtraction = {
+        employee_name: 'Arun Kumar',
+        employee_id: 'EMP-001',
+        employer_name: 'Acme Technologies',
+        month: 'March',
+        year: 2026,
+        basic: { raw_label: 'Basic Salary', amount: 52000 }, // doctored value
+        hra: { raw_label: 'HRA', amount: 20800 },
+        da: { raw_label: 'DA', amount: null },
+        special_allowance: { raw_label: 'Special Allowance', amount: 10000 },
+        other_allowances: [],
+        gross_salary: 82800,
+        pf_deduction: 3600, // unchanged — contradiction is for rules engine
+        professional_tax: 200,
+        income_tax: 5000,
+        other_deductions: null,
+        total_deductions: 8800,
+        net_salary: 74000,
+        uan: '100123456789',
+        pf_account_number: null,
+        extraction_notes: null,
+        schema_version: 'payslip-v1',
+      };
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(payslipJson) }] } }],
+          usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 200, totalTokenCount: 700 },
+        }),
+      });
+
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      const result = await extractor.extractPayslip({
+        documentId: 'doctored-01',
+        documentKind: 'payslip',
+        documentContent: 'JVBER', // base64 stub
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('success');
+      // Model reads doctored numbers faithfully — contradiction is the rules engine's job
+      expect(result.data.basic?.amount).toBe(52000);
+      expect(result.data.pf_deduction).toBe(3600);
+      expect(result.modelId).toBe('gemini-2.5-flash');
+      expect(result.usage.totalTokens).toBe(700);
+    });
+
+    it('sends PDF as inlineData part', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      employee_name: null,
+                      employee_id: null,
+                      employer_name: null,
+                      month: null,
+                      year: null,
+                      basic: { raw_label: null, amount: null },
+                      hra: { raw_label: null, amount: null },
+                      da: { raw_label: null, amount: null },
+                      special_allowance: { raw_label: null, amount: null },
+                      other_allowances: [],
+                      gross_salary: null,
+                      pf_deduction: null,
+                      professional_tax: null,
+                      income_tax: null,
+                      other_deductions: null,
+                      total_deductions: null,
+                      net_salary: null,
+                      uan: null,
+                      pf_account_number: null,
+                      extraction_notes: 'test',
+                      schema_version: 'payslip-v1',
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 },
+        }),
+      });
+
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      await extractor.extractPayslip({
+        documentId: 'test-pdf',
+        documentKind: 'payslip',
+        documentContent: 'BASE64PDF',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const callBody = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+      const userParts = callBody.contents[0].parts;
+      expect(userParts[0].inlineData.mimeType).toBe('application/pdf');
+      expect(userParts[0].inlineData.data).toBe('BASE64PDF');
+      expect(userParts[1]).toHaveProperty('text');
+    });
+
+    it('forces JSON output via responseMimeType', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: '{}' }] } }],
+          usageMetadata: {},
+        }),
+      });
+
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      await extractor.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'content',
+        mimeType: 'text/plain',
+        schemaVersion: 'payslip-v1',
+      });
+
+      const callBody = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+      expect(callBody.generationConfig.responseMimeType).toBe('application/json');
+    });
+
+    it('returns failure on Gemini API error', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: async () => ({
+          error: { code: 429, message: 'RESOURCE_EXHAUSTED', status: 'RESOURCE_EXHAUSTED' },
+        }),
+      });
+
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      const result = await extractor.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'content',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('failure');
+      expect(result.error).toContain('RESOURCE_EXHAUSTED');
+    });
+
+    it('returns failure on network error', async () => {
+      fetchMock.mockRejectedValue(new Error('Network unreachable'));
+
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      const result = await extractor.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'content',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('failure');
+      expect(result.error).toContain('Network unreachable');
+    });
+  });
+
+  // ─── Schema retry integration ─────────────────────────────────
+
+  describe('with SchemaRetryWrapper', () => {
+    let fetchMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const validPayslip: PayslipExtraction = {
+      employee_name: 'Arun Kumar',
+      employee_id: 'EMP-001',
+      employer_name: 'Acme Technologies',
+      month: 'March',
+      year: 2026,
+      basic: { raw_label: 'Basic Salary', amount: 52000 },
+      hra: { raw_label: 'HRA', amount: 20800 },
+      da: { raw_label: 'DA', amount: null },
+      special_allowance: { raw_label: 'Special Allowance', amount: 10000 },
+      other_allowances: [],
+      gross_salary: 82800,
+      pf_deduction: 3600,
+      professional_tax: 200,
+      income_tax: 5000,
+      other_deductions: null,
+      total_deductions: 8800,
+      net_salary: 74000,
+      uan: '100123456789',
+      pf_account_number: null,
+      extraction_notes: null,
+      schema_version: 'payslip-v1',
+    };
+
+    it('passes through valid extraction without retry', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(validPayslip) }] } }],
+          usageMetadata: { promptTokenCount: 400, candidatesTokenCount: 150, totalTokenCount: 550 },
+        }),
+      });
+
+      const extractor = withSchemaRetry(createGeminiExtractor({ apiKey: 'test-key' }));
+      const result = await extractor.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'BASE64',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('success');
+      expect(result.retryCount).toBe(0);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries once on schema validation failure and succeeds', async () => {
+      // First response: invalid (missing required fields)
+      const invalidJson = { employee_name: 'Arun' }; // many fields missing
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: JSON.stringify(invalidJson) }] } }],
+            usageMetadata: { promptTokenCount: 400, candidatesTokenCount: 50, totalTokenCount: 450 },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: JSON.stringify(validPayslip) }] } }],
+            usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 150, totalTokenCount: 650 },
+          }),
+        });
+
+      const extractor = withSchemaRetry(createGeminiExtractor({ apiKey: 'test-key' }));
+      const result = await extractor.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'BASE64',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('success');
+      expect(result.retryCount).toBe(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      // Retry request must include retryContext (validation error injected by SchemaRetryWrapper)
+      const retryBody = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string);
+      // PDF is in parts[0] (inlineData), extraction prompt is in parts[1] (text)
+      const retryUserText = (retryBody.contents[0].parts[1]?.text ?? retryBody.contents[0].parts[0]?.text) as string;
+      expect(retryUserText).toContain('PREVIOUS ATTEMPT FAILED SCHEMA VALIDATION');
+    });
+
+    it('marks failure after both attempts produce invalid schema', async () => {
+      const invalidJson = { employee_name: 'Arun' };
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(invalidJson) }] } }],
+          usageMetadata: {},
+        }),
+      });
+
+      const extractor = withSchemaRetry(createGeminiExtractor({ apiKey: 'test-key' }));
+      const result = await extractor.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'BASE64',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('failure');
+      expect(result.error).toContain('Schema validation failed after 2 attempts');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ─── Fixture fallback ─────────────────────────────────────────
+
+  describe('GeminiWithFallback', () => {
+    it('activates fixture fallback when wrapped Gemini fails and rewrites model_id', async () => {
+      const failingGemini: LlmDocumentExtractor = {
+        provider: 'gemini',
+        supportsStreaming: false,
+        extractPayslip: vi.fn().mockResolvedValue({
+          data: {} as PayslipExtraction,
+          rawOutput: '',
+          modelId: 'gemini-2.5-flash',
+          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+          extractionDurationMs: 10,
+          status: 'failure',
+          error: 'Schema validation failed after 2 attempts',
+          retryCount: 1,
+        } satisfies ExtractionResult<PayslipExtraction>),
+        extractForm16: vi.fn(),
+        getMetadata: vi.fn().mockReturnValue({ maxContentSize: 0, supportsImages: true, supportsPdfText: true, costPer1kTokens: 0 }),
+        isAvailable: vi.fn().mockResolvedValue(true),
+      };
+
+      const fixture = createFixtureExtractor();
+      const wrapped = new GeminiWithFallback(failingGemini, fixture, 'gemini-2.5-flash');
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = await wrapped.extractPayslip({
+        documentId: 'clean-payslip-1', // known fixture key
+        documentKind: 'payslip',
+        documentContent: 'BASE64',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('success');
+      // model_id must be the honest fallback label
+      expect(result.modelId).toBe('fixture-fallback:gemini-2.5-flash');
+      // Fallback must log loudly
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('FALLBACK ACTIVATED'));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('fixture-fallback:gemini-2.5-flash'));
+
+      warnSpy.mockRestore();
+    });
+
+    it('does NOT activate fallback when Gemini succeeds', async () => {
+      const validPayslip: PayslipExtraction = {
+        employee_name: 'Test',
+        employee_id: null,
+        employer_name: 'Corp',
+        month: 'Jan',
+        year: 2026,
+        basic: { raw_label: 'Basic', amount: 50000 },
+        hra: { raw_label: 'HRA', amount: 20000 },
+        da: { raw_label: 'DA', amount: null },
+        special_allowance: { raw_label: 'SA', amount: 10000 },
+        other_allowances: [],
+        gross_salary: 80000,
+        pf_deduction: 6000,
+        professional_tax: 200,
+        income_tax: 0,
+        other_deductions: null,
+        total_deductions: 6200,
+        net_salary: 73800,
+        uan: null,
+        pf_account_number: null,
+        extraction_notes: null,
+        schema_version: 'payslip-v1',
+      };
+
+      const succeedingGemini: LlmDocumentExtractor = {
+        provider: 'gemini',
+        supportsStreaming: false,
+        extractPayslip: vi.fn().mockResolvedValue({
+          data: validPayslip,
+          rawOutput: JSON.stringify(validPayslip),
+          modelId: 'gemini-2.5-flash',
+          usage: { promptTokens: 400, completionTokens: 150, totalTokens: 550 },
+          extractionDurationMs: 500,
+          status: 'success',
+          retryCount: 0,
+        } satisfies ExtractionResult<PayslipExtraction>),
+        extractForm16: vi.fn(),
+        getMetadata: vi.fn().mockReturnValue({ maxContentSize: 0, supportsImages: true, supportsPdfText: true, costPer1kTokens: 0 }),
+        isAvailable: vi.fn().mockResolvedValue(true),
+      };
+
+      const fixtureSpy = vi.spyOn(createFixtureExtractor(), 'extractPayslip');
+      const fixture = createFixtureExtractor();
+      const wrapped = new GeminiWithFallback(succeedingGemini, fixture, 'gemini-2.5-flash');
+
+      const result = await wrapped.extractPayslip({
+        documentId: 'test',
+        documentKind: 'payslip',
+        documentContent: 'BASE64',
+        mimeType: 'application/pdf',
+        schemaVersion: 'payslip-v1',
+      });
+
+      expect(result.status).toBe('success');
+      expect(result.modelId).toBe('gemini-2.5-flash'); // not the fallback label
+      fixtureSpy.mockRestore();
+    });
+
+    it('createGeminiExtractor with fixturesFallback=true returns GeminiWithFallback', () => {
+      const extractor = createGeminiExtractor({
+        apiKey: 'test-key',
+        fixturesFallback: true,
+      });
+      // GeminiWithFallback forwards the provider string from the wrapped Gemini
+      expect(extractor.provider).toBe('gemini');
+      expect(extractor).toBeInstanceOf(GeminiWithFallback);
+    });
+
+    it('createGeminiExtractor without fallback returns plain GeminiExtractor', () => {
+      const extractor = createGeminiExtractor({ apiKey: 'test-key' });
+      expect(extractor).toBeInstanceOf(GeminiExtractor);
     });
   });
 });
