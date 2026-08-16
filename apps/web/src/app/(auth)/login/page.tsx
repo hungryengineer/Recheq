@@ -2,15 +2,39 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, ShieldCheck, Zap, Server, Shield } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Zap, Server, Shield, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { loginAction } from '@/lib/api/auth';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [authMode, setAuthMode] = useState<'password' | 'sso'>('password');
+  const [ssoDomain, setSsoDomain] = useState('');
+  const [isSsoLoading, setIsSsoLoading] = useState(false);
+
+  const handleSsoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!ssoDomain.trim()) {
+      setErrors({ sso: 'Please enter your organization domain or work email.' });
+      return;
+    }
+    setErrors({});
+    setIsSsoLoading(true);
+    
+    const { ssoLoginAction } = await import('@/lib/api/auth');
+    toast.loading('Redirecting to Identity Provider...', { id: 'sso' });
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    toast.success('Authenticated successfully via SSO!', { id: 'sso' });
+    
+    await ssoLoginAction();
+    router.push('/cases');
+  };
   
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -161,118 +185,155 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Dev Hint */}
-            <div className="mb-6 p-3 bg-blue-50/50 text-blue-800 text-xs rounded-lg border border-blue-100/50 flex flex-col gap-1 text-center">
-              <span className="font-semibold text-blue-900">Development Credentials</span>
-              <span>Email: <span className="font-mono font-bold">admin@gmail.com</span></span>
-              <span>Password: <span className="font-mono font-bold">Admin123</span></span>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700" htmlFor="email">Email address</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Enter your email"
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
-                  />
+            {authMode === 'password' ? (
+              <>
+                {/* Dev Hint */}
+                <div className="mb-6 p-3 bg-blue-50/50 text-blue-800 text-xs rounded-lg border border-blue-100/50 flex flex-col gap-1 text-center">
+                  <span className="font-semibold text-blue-900">Development Credentials</span>
+                  <span>Email: <span className="font-mono font-bold">admin@gmail.com</span></span>
+                  <span>Password: <span className="font-mono font-bold">Admin123</span></span>
                 </div>
-                {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
-              </div>
+                
+                <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700" htmlFor="email">Email address</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="Enter your email"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
+                      />
+                    </div>
+                    {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-gray-700" htmlFor="password">Password</label>
-                  <Link href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</Link>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-gray-700" htmlFor="password">Password</label>
+                      <Link href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</Link>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </div>
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        placeholder="Enter your password"
+                        className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
                   </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
-                  />
+
+                  <div className="flex items-center">
+                    <input
+                      id="rememberMe"
+                      name="rememberMe"
+                      type="checkbox"
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500"
+                    />
+                    <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 cursor-pointer select-none">
+                      Remember me
+                    </label>
+                  </div>
+
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {isLoading ? 'Signing in...' : 'Sign in'}
+                  </button>
+                </form>
+
+                <div className="mt-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-4 bg-white text-gray-400 text-xs uppercase tracking-wider">or continue with</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setErrors({});
+                        setAuthMode('sso');
+                      }}
+                      className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors"
+                    >
+                      <ShieldCheck className="w-5 h-5 text-blue-600 mr-2" />
+                      Sign in with SSO
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <form onSubmit={handleSsoSubmit} className="space-y-6 animate-fade-in">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700" htmlFor="ssoDomain">Organization Domain</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                      <Building2 className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="ssoDomain"
+                      name="ssoDomain"
+                      type="text"
+                      placeholder="e.g. acme.com or user@acme.com"
+                      value={ssoDomain}
+                      onChange={(e) => setSsoDomain(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSsoLoading}
+                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 transition-colors"
+                >
+                  {isSsoLoading ? 'Redirecting to IdP...' : 'Continue to Identity Provider'}
+                </button>
+                
+                <div className="mt-6 text-center">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setErrors({});
+                      setAuthMode('password');
+                    }}
+                    className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    ← Back to password login
                   </button>
                 </div>
-                {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500"
-                />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 cursor-pointer select-none">
-                  Remember me
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </form>
-
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-400 text-xs uppercase tracking-wider">or continue with</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button 
-                  onClick={async () => {
-                    const { ssoLoginAction } = await import('@/lib/api/auth');
-                    const toast = (await import('sonner')).toast;
-                    
-                    toast.loading('Redirecting to Identity Provider...', { id: 'sso' });
-                    // Simulate redirect delay
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    toast.success('Authenticated successfully via SSO!', { id: 'sso' });
-                    
-                    await ssoLoginAction();
-                    router.push('/cases');
-                  }}
-                  className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors"
-                >
-                  <ShieldCheck className="w-5 h-5 text-blue-600 mr-2" />
-                  Sign in with SSO
-                </button>
-              </div>
-            </div>
+              </form>
+            )}
             
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
