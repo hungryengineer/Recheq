@@ -40,7 +40,7 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
         if (errorData.error?.message) {
           return { success: false, error: errorData.error.message };
         }
-      } catch (e) {
+      } catch {
         // Fallback for non-JSON or missing error body
       }
       return { success: false, error: 'Authentication failed. Please verify your credentials.' };
@@ -82,7 +82,7 @@ export async function ssoLoginAction(): Promise<AuthActionResult> {
         if (errorData.error?.message) {
           return { success: false, error: errorData.error.message };
         }
-      } catch (e) {
+      } catch {
         // Fallback for non-JSON or missing error body
       }
       return { success: false, error: 'SSO Login failed.' };
@@ -121,7 +121,7 @@ export async function forgotPasswordAction(email: string): Promise<AuthActionRes
         if (errorData.error?.message) {
           return { success: false, error: errorData.error.message };
         }
-      } catch (e) {
+      } catch {
         // Fallback
       }
       return { success: false, error: 'Failed to request password reset.' };
@@ -152,7 +152,7 @@ export async function resetPasswordAction(
         if (errorData.error?.message) {
           return { success: false, error: errorData.error.message };
         }
-      } catch (e) {
+      } catch {
         // Fallback
       }
       return { success: false, error: 'Failed to reset password.' };
@@ -193,7 +193,7 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
         if (errorData.error?.message) {
           return { success: false, error: errorData.error.message };
         }
-      } catch (e) {
+      } catch {
         // Fallback for non-JSON or missing error body
       }
       return { success: false, error: 'Registration failed. Please try again.' };

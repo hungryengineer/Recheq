@@ -38,7 +38,7 @@ export function ProfileTab() {
       setName(formData.name);
       setEmail(formData.email);
       toast.success('Profile updated successfully');
-    } catch (err: unknown) {
+    } catch {
       toast.error('Failed to update profile');
     } finally {
       setIsSaving(false);

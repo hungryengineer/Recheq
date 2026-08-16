@@ -36,7 +36,7 @@ interface DocumentViewerProps {
 
 export function DocumentViewer({ sourceLabel, caseId, docId, onClose }: DocumentViewerProps) {
   const [isThumbnailsOpen, setIsThumbnailsOpen] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [_isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
     setIsDownloading(true);

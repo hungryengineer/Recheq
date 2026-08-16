@@ -119,7 +119,7 @@ export function ApiKeysTab() {
                       </code>
                       {/* If fullSecret isn't in the object, they can only copy the masked version, but we just use secret for standard view */}
                       <button
-                        onClick={() => handleCopy(key.id, (key as any).fullSecret || key.secret)}
+                        onClick={() => handleCopy(key.id, (key as Record<string, string>).fullSecret || key.secret)}
                         className="ml-2 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors"
                         title="Copy full secret key"
                       >

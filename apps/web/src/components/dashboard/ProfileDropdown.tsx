@@ -38,7 +38,7 @@ export function ProfileDropdown() {
     try {
       await signoutAction();
       router.push('/login');
-    } catch (err: unknown) {
+    } catch {
       toast.error('Sign out failed');
     }
   };

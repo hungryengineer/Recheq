@@ -12,7 +12,7 @@ export function BillingTab() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
       toast.info('Billing portal integration pending');
-    } catch (err: unknown) {
+    } catch {
       toast.error('Failed to load billing portal');
     } finally {
       setIsManaging(false);

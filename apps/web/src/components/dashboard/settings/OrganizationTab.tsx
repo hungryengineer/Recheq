@@ -35,7 +35,7 @@ export function OrganizationTab() {
       await new Promise((resolve) => setTimeout(resolve, 800));
       setCompanyName(localCompanyName);
       toast.success('Organization updated successfully');
-    } catch (err: unknown) {
+    } catch {
       toast.error('Failed to update organization');
     } finally {
       setIsUpdating(false);

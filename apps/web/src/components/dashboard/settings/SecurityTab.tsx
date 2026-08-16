@@ -35,7 +35,9 @@ export function SecurityTab() {
           location =
             parts[parts.length - 1].replace(/_/g, ' ') + (parts.length > 1 ? `, ${parts[0]}` : '');
         }
-      } catch (e) {}
+      } catch {
+        // Ignore JSON parse error
+      }
 
       setActiveSessions([{ id: 'current', device: deviceName, location, isCurrent: true }]);
     }
@@ -58,7 +60,7 @@ export function SecurityTab() {
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Password updated successfully.');
-    } catch (err: unknown) {
+    } catch {
       toast.error('Failed to update password');
     } finally {
       setIsUpdatingPassword(false);
@@ -76,7 +78,7 @@ export function SecurityTab() {
         setIs2FAEnabled(true);
         toast.success('Two-factor authentication successfully enabled');
       }
-    } catch (err: unknown) {
+    } catch {
       toast.error('Failed to toggle two-factor authentication');
     } finally {
       setIsEnabling2FA(false);
@@ -89,7 +91,7 @@ export function SecurityTab() {
       await new Promise((resolve) => setTimeout(resolve, 600));
       setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
       toast.success('Successfully signed out of all other devices');
-    } catch (err: unknown) {
+    } catch {
       toast.error('Failed to sign out of other devices');
     } finally {
       setIsSigningOut(false);

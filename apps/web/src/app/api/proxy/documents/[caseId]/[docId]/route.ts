@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 export async function GET(
@@ -34,7 +35,7 @@ export async function GET(
         'Content-Disposition': `attachment; filename="document-${docId}.pdf"`,
       },
     });
-  } catch (error) {
+  } catch {
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
