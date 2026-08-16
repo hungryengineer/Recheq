@@ -194,7 +194,7 @@ export default function LoginPage() {
                   <span>Password: <span className="font-mono font-bold">Admin123</span></span>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700" htmlFor="email">Email address</label>
                     <div className="relative">
@@ -293,7 +293,7 @@ export default function LoginPage() {
                 </div>
               </>
             ) : (
-              <form onSubmit={handleSsoSubmit} className="space-y-6 animate-fade-in">
+              <form onSubmit={handleSsoSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-700" htmlFor="ssoDomain">Organization Domain</label>
                   <div className="relative">
