@@ -8,6 +8,18 @@ import type { IAuditRepository } from './audit-service.js';
 type DB = PostgresJsDatabase<any>;
 type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
 
+/** Type guard: true when the value looks like a Drizzle transaction handle. */
+function isTx(value: unknown): value is Tx {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'insert' in value &&
+    'select' in value &&
+    'update' in value &&
+    'delete' in value
+  );
+}
+
 export class DbAuditRepository implements IAuditRepository {
   constructor(private readonly db: DB) {}
 
@@ -23,7 +35,7 @@ export class DbAuditRepository implements IAuditRepository {
   }
 
   async appendEvent(tx: unknown, event: EventRecord): Promise<void> {
-    const target = ((tx as Tx | null | undefined) ?? this.db) as DB;
+    const target: DB = isTx(tx) ? (tx as unknown as DB) : this.db;
     await target.insert(events).values({
       id: event.id,
       case_id: event.case_id,

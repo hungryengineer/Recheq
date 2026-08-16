@@ -1,5 +1,5 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { CaseSummary, CaseStatus, Verdict } from '@tieout/schema';
+import { CaseStatus, Verdict, type CaseSummary } from '@tieout/schema';
 import { cases } from './schema/cases.js';
 import { toCaseRecord } from './case-queries.js';
 import type { Database } from './client.js';
@@ -13,8 +13,8 @@ function toCaseSummary(row: CaseRow): CaseSummary {
     employer_name: row.employer_name,
     candidate_name: row.candidate_name,
     title: row.title,
-    status: row.status as CaseStatus,
-    verdict: row.verdict as Verdict | null,
+    status: CaseStatus.parse(row.status),
+    verdict: row.verdict !== null ? Verdict.parse(row.verdict) : null,
     risk_score: row.risk_score,
     created_at: row.created_at.toISOString(),
   };

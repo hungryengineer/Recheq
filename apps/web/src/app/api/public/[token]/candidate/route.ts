@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCandidateView, resolveToken, listDocumentKindsByCase } from '@tieout/api/web';
+import { getCandidateView, resolveToken, listDocumentKindsByCase, toErrorResponse } from '@tieout/api/web';
 import type { CandidateSafeView } from '@tieout/api/web';
 import { getDb } from '@/lib/api/db';
 import { getConsentDeps, getTokenVerifier } from '@/lib/api/public';
@@ -8,11 +8,12 @@ const REQUIRED_DOCUMENTS = ['payslip', 'form_16'] as const;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const db = getDb();
-  const consentDeps = getConsentDeps();
-  const tokenVerifier = getTokenVerifier();
 
   try {
+    const db = getDb();
+    const consentDeps = getConsentDeps();
+    const tokenVerifier = getTokenVerifier();
+
     const caseId = await resolveToken(token, 'consent', tokenVerifier);
     const view: CandidateSafeView = await getCandidateView(caseId, consentDeps);
     const documentsProvided = await listDocumentKindsByCase(db, caseId);
@@ -28,14 +29,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       documentsProvided,
     });
   } catch (error) {
-    const status =
-      typeof error === 'object' && error !== null && 'status' in error
-        ? Number((error as { status: number }).status)
-        : 401;
-    const message =
-      typeof error === 'object' && error !== null && 'code' in error
-        ? String((error as { code: string }).code)
-        : 'INVALID_TOKEN';
-    return NextResponse.json({ success: false, message }, { status });
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }

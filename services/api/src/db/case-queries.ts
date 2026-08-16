@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { CaseRecord, CaseStatus, Verdict } from '@tieout/schema';
+import { CaseStatus, Verdict, type CaseRecord } from '@tieout/schema';
 import { cases } from './schema/cases.js';
 import type { Database } from './client.js';
 
@@ -16,8 +16,8 @@ export function toCaseRecord(row: (typeof cases)['$inferSelect']): CaseRecord {
     employment_start: row.employment_start,
     employment_end: row.employment_end,
     uan: row.uan,
-    status: row.status as CaseStatus,
-    verdict: row.verdict as Verdict | null,
+    status: CaseStatus.parse(row.status),
+    verdict: row.verdict !== null ? Verdict.parse(row.verdict) : null,
     risk_score: row.risk_score,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),

@@ -8,11 +8,16 @@
  * Creates a case through the real service code path (case-service + drizzle
  * deps adapter backed by createDb) and verifies the row is retrievable from
  * the database. Reads DATABASE_URL (local Postgres or Neon).
+ *
+ * The created case is deleted in the finally block regardless of outcome so
+ * repeated runs do not accumulate test rows.
  */
 
+import { eq } from 'drizzle-orm';
 import { createDb } from '../services/api/src/db/client.js';
 import { createCaseDeps } from '../services/api/src/db/case-deps.js';
 import { createCase, getCase, listCases } from '../services/api/src/services/cases/case-service.js';
+import { cases } from '../services/api/src/db/schema/cases.js';
 import { loadEnvFile } from './lib/load-env.js';
 
 loadEnvFile();
@@ -20,7 +25,8 @@ loadEnvFile();
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error('❌ DATABASE_URL is not set');
-  process.exit(1);
+  process.exitCode = 1;
+  process.exit();
 }
 
 const DEV_ORG_ID = process.env.DEV_ORG_ID ?? '00000000-0000-0000-0000-000000000002';
@@ -45,8 +51,11 @@ const input = {
   uan: '123456789012',
 };
 
+let createdId: string | undefined;
+
 try {
   const created = await createCase(input, DEV_USER_ID, DEV_ORG_ID, deps);
+  createdId = created.id;
   console.log(`✅ createCase -> ${created.id} (${created.status})`);
 
   const fetched = await getCase(created.id, DEV_ORG_ID, deps);
@@ -64,6 +73,17 @@ try {
   console.log(`✅ listCases includes ${created.id} (${listed.length} total)`);
 
   console.log('✅ Case persisted in database — dummy check passed');
+} catch (err) {
+  console.error(`❌ Check failed: ${err instanceof Error ? err.message : String(err)}`);
+  process.exitCode = 1;
 } finally {
+  if (createdId) {
+    try {
+      await db.delete(cases).where(eq(cases.id, createdId));
+      console.log(`🧹 Cleaned up test case ${createdId}`);
+    } catch (cleanupErr) {
+      console.error(`⚠  Cleanup failed: ${String(cleanupErr)}`);
+    }
+  }
   await db.$client.end();
 }

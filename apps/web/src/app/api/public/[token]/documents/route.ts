@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import { uploadDocumentHandler } from '@tieout/api/web';
+import { uploadDocumentHandler, toErrorResponse } from '@tieout/api/web';
 import { getDocumentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
+
+/** Must stay in sync with the service-layer MAX_UPLOAD_BYTES (10 MB). */
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -23,18 +26,31 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     return NextResponse.json({ success: false, message: 'Missing file' }, { status: 400 });
   }
 
-  const result = await uploadDocumentHandler(
-    {
-      params: { token },
-      file: Buffer.from(await file.arrayBuffer()),
-      metadata: { kind, original_filename: file.name },
-      context: createRequestContext(),
-    },
-    {
-      ...getDocumentDeps(),
-      tokenVerifier: getTokenVerifier(),
-    },
-  );
+  // Validate size before reading the full body into memory.
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { success: false, message: 'File exceeds the 10 MB limit' },
+      { status: 413 },
+    );
+  }
 
-  return NextResponse.json(result.body, { status: result.status });
+  try {
+    const result = await uploadDocumentHandler(
+      {
+        params: { token },
+        file: Buffer.from(await file.arrayBuffer()),
+        metadata: { kind, original_filename: file.name },
+        context: createRequestContext(),
+      },
+      {
+        ...getDocumentDeps(),
+        tokenVerifier: getTokenVerifier(),
+      },
+    );
+
+    return NextResponse.json(result.body, { status: result.status });
+  } catch (error) {
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
+  }
 }

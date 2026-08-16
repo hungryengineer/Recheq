@@ -20,7 +20,8 @@ loadEnvFile();
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error('❌ DATABASE_URL is not set');
-  process.exit(1);
+  process.exitCode = 1;
+  process.exit();
 }
 
 const DEV_ORG_ID = process.env.DEV_ORG_ID ?? '00000000-0000-0000-0000-000000000002';
@@ -28,24 +29,29 @@ const DEV_USER_ID = process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-00000000
 
 const db = createDb(connectionString);
 
-await db
-  .insert(organizations)
-  .values({ id: DEV_ORG_ID, name: 'Tieout Demo Org', slug: 'tieout-demo' })
-  .onConflictDoNothing()
-  .execute();
+try {
+  await db
+    .insert(organizations)
+    .values({ id: DEV_ORG_ID, name: 'Tieout Demo Org', slug: 'tieout-demo' })
+    .onConflictDoNothing()
+    .execute();
 
-await db
-  .insert(users)
-  .values({
-    id: DEV_USER_ID,
-    org_id: DEV_ORG_ID,
-    email: 'demo@tieout.local',
-    name: 'Tieout Demo User',
-    role: 'verifier',
-  })
-  .onConflictDoNothing()
-  .execute();
+  await db
+    .insert(users)
+    .values({
+      id: DEV_USER_ID,
+      org_id: DEV_ORG_ID,
+      email: 'demo@tieout.local',
+      name: 'Tieout Demo User',
+      role: 'verifier',
+    })
+    .onConflictDoNothing()
+    .execute();
 
-console.log(`✅ Seeded org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);
-
-await db.$client.end();
+  console.log(`✅ Seeded org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);
+} catch (err) {
+  console.error(`❌ Seed failed: ${err instanceof Error ? err.message : String(err)}`);
+  process.exitCode = 1;
+} finally {
+  await db.$client.end();
+}
