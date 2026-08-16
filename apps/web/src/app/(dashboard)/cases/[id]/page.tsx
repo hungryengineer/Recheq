@@ -79,8 +79,8 @@ export default async function CaseDetailsPage({ params }: PageProps) {
 
   const origins: string[] = [];
 
-  const highCount = findings.filter((f: any) => f.severity === 'high').length;
-  const mediumCount = findings.filter((f: any) => f.severity === 'medium').length;
+  const highCount = findings.filter((f) => f.severity === 'high').length;
+  const mediumCount = findings.filter((f) => f.severity === 'medium').length;
 
   return (
     <div className="animate-fade-in pb-12">
@@ -180,8 +180,8 @@ export default async function CaseDetailsPage({ params }: PageProps) {
           <div className="text-sm text-[var(--color-fg-muted)] py-4">No findings.</div>
         ) : (
           <div className="space-y-4 mb-6">
-            {findings.map((f: any, i: number) => (
-              <FindingCard key={i} finding={f as UI_Finding} caseId={id} />
+            {findings.map((f, i) => (
+              <FindingCard key={i} finding={f} caseId={id} />
             ))}
           </div>
         )}

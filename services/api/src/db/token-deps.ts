@@ -56,10 +56,12 @@ export function createTokenVerifier(db: Database): TokenVerifier {
         }
         try {
           const result = await db.select().from(cases).limit(1);
-          if (result.length > 0) return result[0].id;
+          const first = result[0];
+          if (first) return first.id;
         } catch(e) {
           console.error(e);
         }
+        throw new Error('Mock token failed to find a valid case');
       }
       return service.verifyAndGetCaseId(rawToken, purpose);
     }

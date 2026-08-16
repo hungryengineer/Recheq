@@ -9,10 +9,10 @@ export interface UI_Finding {
   rule_id: string;
   severity: string;
   explanation: string;
-  expected: string | number;
-  observed: string | number;
-  source_label?: string;
-  source_document_ids?: string[];
+  expected: string | number | null;
+  observed: string | number | null;
+  source_label?: string | null;
+  source_document_ids?: string[] | null;
 }
 
 export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: string }) {
