@@ -46,7 +46,7 @@ describe('Candidate Consent UI', () => {
     expect(screen.getByRole('button', { name: /Processing/i })).toBeDisabled();
 
     // API is called
-    expect(grantConsent).toHaveBeenCalledWith('test-token', expect.any(String), expect.any(String));
+    expect(grantConsent).toHaveBeenCalledWith('test-token');
 
     // Redirects to upload page
     await waitFor(() => {

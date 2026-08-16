@@ -63,11 +63,13 @@ export function createDocumentDeps(db: Database, storage: DocumentStorage): Docu
           // Postgres unique-violation code: 23505
           // Catches the uq_documents_case_sha256 constraint race where a
           // concurrent upload committed between our dedup check and this insert.
+          // After 'code' in err narrowing, TypeScript knows err has a `code`
+          // property — read it directly without an explicit type assertion.
           const isUniqueViolation =
             typeof err === 'object' &&
             err !== null &&
             'code' in err &&
-            (err as { code: string }).code === '23505';
+            err.code === '23505';
 
           if (isUniqueViolation) {
             const existing = await db
@@ -76,6 +78,10 @@ export function createDocumentDeps(db: Database, storage: DocumentStorage): Docu
               .where(and(eq(documents.case_id, input.case_id), eq(documents.sha256, input.sha256)))
               .limit(1);
             if (existing[0]) {
+              // TODO: the object already uploaded to input.storage_path is now
+              // orphaned — the winning record carries a different storage_path.
+              // Callers should delete the losing object after receiving this
+              // record, or a background cleanup job should reconcile orphans.
               return toDocumentRecord(existing[0]);
             }
           }

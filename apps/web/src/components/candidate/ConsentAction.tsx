@@ -13,9 +13,7 @@ export function ConsentAction({ token }: { token: string }) {
     setLoading(true);
     setError(null);
     try {
-      // In a real implementation we would collect IP and User Agent server-side,
-      // but we pass dummy values to match the signature.
-      await grantConsent(token, '127.0.0.1', navigator.userAgent);
+      await grantConsent(token);
       router.push(`/c/${token}/upload`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
