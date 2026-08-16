@@ -14,6 +14,7 @@ import { createDb } from '../services/api/src/db/client.js';
 import { organizations } from '../services/api/src/db/schema/organizations.js';
 import { users } from '../services/api/src/db/schema/users.js';
 import { loadEnvFile } from './lib/load-env.js';
+import bcrypt from 'bcryptjs';
 
 loadEnvFile();
 
@@ -36,16 +37,22 @@ try {
     .onConflictDoNothing()
     .execute();
 
+  const password_hash = await bcrypt.hash('password123', 10);
+
   await db
     .insert(users)
     .values({
       id: DEV_USER_ID,
       org_id: DEV_ORG_ID,
       email: 'demo@tieout.local',
+      password_hash,
       name: 'Tieout Demo User',
-      role: 'verifier',
+      role: 'admin',
     })
-    .onConflictDoNothing()
+    .onConflictDoUpdate({
+      target: users.id,
+      set: { password_hash, role: 'admin' },
+    })
     .execute();
 
   console.log(`✅ Seeded org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);

@@ -8,7 +8,7 @@ import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processi
 export function toHandler<TReq = unknown>(
   fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>,
 ) {
-  return async function (request: Request, _context: unknown) {
+  return async function (request: Request, context: { params?: Promise<Record<string, string>> }) {
     const requestId = crypto.randomUUID();
     try {
       let body: unknown = {};
@@ -33,17 +33,37 @@ export function toHandler<TReq = unknown>(
         service: 'api',
       });
 
-      const isLocalDev = process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === 'true';
-      const userId =
-        request.headers.get('x-user-id') || (isLocalDev ? process.env.DEV_USER_ID : null);
-      const orgId = request.headers.get('x-org-id') || (isLocalDev ? process.env.DEV_ORG_ID : null);
+      let userId: string | null = null;
+      let orgId: string | null = null;
+      let role: string | null = null;
+
+      const authHeader = request.headers.get('authorization');
+      let token = '';
+
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      } else {
+        const cookieHeader = request.headers.get('cookie') || '';
+        const match = cookieHeader.match(/recheq_session=([^;]+)/);
+        if (match) token = match[1];
+      }
+
+      if (token) {
+        const { verifyToken } = await import('@tieout/api/src/security/jwt.js');
+        const payload = await verifyToken(token);
+        if (payload) {
+          userId = payload.userId;
+          orgId = payload.orgId;
+          role = payload.role;
+        }
+      }
 
       if (!userId || !orgId) {
         return NextResponse.json(
           {
             error: {
               code: 'UNAUTHORIZED',
-              message: 'Missing authentication headers',
+              message: 'Missing or invalid authentication token',
               request_id: requestId,
             },
           },
@@ -51,12 +71,15 @@ export function toHandler<TReq = unknown>(
         );
       }
 
-      const auth = { userId, orgId };
+      const auth = { userId, orgId, role: role || 'verifier' };
+
+      const params = context?.params ? await context.params : undefined;
 
       const handlerReq = {
         body,
         context: reqCtx,
         auth,
+        params,
         raw: request,
       };
 

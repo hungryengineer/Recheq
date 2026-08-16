@@ -18,9 +18,8 @@ export class ApiError extends Error {
 }
 
 export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  // Hit Prism mock server directly on port 4010 for backend integration (FE-6)
   const baseUrl =
-    process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4010';
+    process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const url = `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   const headers: Record<string, string> = {

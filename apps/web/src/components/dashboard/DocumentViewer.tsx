@@ -41,7 +41,7 @@ export function DocumentViewer({ sourceLabel, caseId, docId, onClose }: Document
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      const res = await fetch(`/api/proxy/documents/${caseId}/${docId}`);
+      const res = await fetch(`/api/cases/${caseId}/documents/${docId}`);
       if (!res.ok) {
         throw new Error('Failed to fetch document');
       }

@@ -1,15 +1,13 @@
-// ─── @tieout/api Database Schema ────────────────────────────────
-// Barrel re-export of all Drizzle table definitions.
-
-export { organizations } from './organizations.js';
-export { users } from './users.js';
-export { cases } from './cases.js';
-export { consents } from './consents.js';
-export { documents } from './documents.js';
-export { extractions } from './extractions.js';
-export { forensics } from './forensics.js';
-export { epfoRecords } from './epfo-records.js';
-export { findings } from './findings.js';
-export { employerRequests } from './employer-requests.js';
-export { events } from './events.js';
-export { tokens } from './tokens.js';
+export * from './users.js';
+export * from './tokens.js';
+export * from './api_keys.js';
+export * from './organizations.js';
+export * from './cases.js';
+export * from './documents.js';
+export * from './employer-requests.js';
+export * from './events.js';
+export * from './findings.js';
+export * from './epfo-records.js';
+export * from './extractions.js';
+export * from './consents.js';
+export * from './forensics.js';
