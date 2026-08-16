@@ -51,8 +51,8 @@ export function loadEnvFile(file = '.env.local') {
   }
 
   if (missing.length > 0) {
-    console.warn(
-      `⚠  ${file} has unset placeholders for: ${missing.join(', ')} — paste real values first.`,
+    throw new Error(
+      `${file} has unset placeholders for: ${missing.join(', ')} — paste real values before running this script.`,
     );
   }
 }

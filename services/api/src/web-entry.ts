@@ -16,3 +16,5 @@ export { uploadDocumentHandler } from './routes/public/documents.js';
 export { grantConsentHandler, withdrawConsentHandler } from './routes/public/consent.js';
 export { getCandidateHandler } from './routes/public/candidate.js';
 export { resolveToken } from './routes/public/token-auth.js';
+export { toErrorResponse, AppError } from './http/errors.js';
+export type { ApiError } from './http/errors.js';

@@ -72,11 +72,19 @@ export function createDocumentStorage(
         new Date(),
       );
 
-      const response = await transport(url, {
-        method: 'PUT',
-        headers,
-        body: new Uint8Array(content),
-      });
+      let response: Awaited<ReturnType<DocumentStorageTransport>>;
+      try {
+        response = await transport(url, {
+          method: 'PUT',
+          headers,
+          body: new Uint8Array(content),
+        });
+      } catch (cause) {
+        throw new Error(
+          `Failed to upload document (key=${key}): network or transport error`,
+          { cause },
+        );
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to upload document: ${response.status} ${response.statusText}`);
@@ -94,10 +102,18 @@ export function createDocumentStorage(
         new Date(),
       );
 
-      const response = await transport(url, {
-        method: 'HEAD',
-        headers,
-      });
+      let response: Awaited<ReturnType<DocumentStorageTransport>>;
+      try {
+        response = await transport(url, {
+          method: 'HEAD',
+          headers,
+        });
+      } catch (cause) {
+        throw new Error(
+          `Failed to HEAD object (key=${key}): network or transport error`,
+          { cause },
+        );
+      }
 
       return {
         ok: response.ok,
@@ -115,13 +131,19 @@ export function createDocumentStorage(
 export function createDocumentStorageFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): DocumentStorage {
+  const raw = env.S3_FORCE_PATH_STYLE;
+  if (raw !== undefined && raw !== 'true' && raw !== 'false') {
+    throw new Error(
+      `S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`,
+    );
+  }
   return createDocumentStorage({
     endpoint: requireEnv(env, 'S3_ENDPOINT'),
     region: env.S3_REGION ?? 'us-east-1',
     accessKeyId: requireEnv(env, 'S3_ACCESS_KEY_ID'),
     secretAccessKey: requireEnv(env, 'S3_SECRET_ACCESS_KEY'),
     bucket: env.S3_BUCKET ?? env.MINIO_BUCKET ?? 'tieout-local',
-    forcePathStyle: env.S3_FORCE_PATH_STYLE !== 'false',
+    forcePathStyle: raw !== 'false',
   });
 }
 
@@ -243,11 +265,19 @@ async function defaultTransport(
 ): Promise<{ ok: boolean; status: number; statusText: string; size?: number | null }> {
   const response = await fetch(url, init);
   const contentLength = response.headers.get('content-length');
+  let size: number | null = null;
+  if (contentLength !== null) {
+    const parsed = Number(contentLength);
+    // Only expose size when it's a finite, non-negative safe integer.
+    if (Number.isSafeInteger(parsed) && parsed >= 0) {
+      size = parsed;
+    }
+  }
   return {
     ok: response.ok,
     status: response.status,
     statusText: response.statusText,
-    size: contentLength !== null ? Number(contentLength) : null,
+    size,
   };
 }
 

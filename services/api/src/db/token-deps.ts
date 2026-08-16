@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { TokenPurpose } from '@tieout/schema';
+import { TokenPurpose } from '@tieout/schema';
 import type { TokenRecord } from '../tokens/verify-token.js';
 import type { ITokenRepository } from '../tokens/token-service.js';
 import { TokenService } from '../tokens/token-service.js';
@@ -31,7 +31,7 @@ export function createTokenRepository(db: Database): ITokenRepository {
       return {
         hash: row.hash,
         case_id: row.case_id,
-        purpose: row.purpose as TokenPurpose,
+        purpose: TokenPurpose.parse(row.purpose),
         expires_at: row.expires_at.toISOString(),
       };
     },

@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { DocumentKind, DocumentRecord, DocumentStatus } from '@tieout/schema';
+import { DocumentKind, DocumentStatus, type DocumentRecord } from '@tieout/schema';
 import type { DocumentServiceDeps } from '../services/documents/document-service.js';
 import type { DocumentStorage } from '../storage/document-storage.js';
 import type { Database } from './client.js';
@@ -12,8 +12,8 @@ function toDocumentRecord(row: DocumentRow): DocumentRecord {
   return {
     id: row.id,
     case_id: row.case_id,
-    kind: row.kind as DocumentKind,
-    status: row.status as DocumentStatus,
+    kind: DocumentKind.parse(row.kind),
+    status: DocumentStatus.parse(row.status),
     original_filename: row.original_filename,
     mime_type: row.mime_type,
     sha256: row.sha256,
@@ -40,24 +40,47 @@ export function createDocumentDeps(db: Database, storage: DocumentStorage): Docu
         return rows[0] ? toDocumentRecord(rows[0]) : null;
       },
       async createDocument(input) {
-        const [row] = await db
-          .insert(documents)
-          .values({
-            id: input.id,
-            case_id: input.case_id,
-            kind: input.kind,
-            status: input.status,
-            original_filename: input.original_filename,
-            mime_type: input.mime_type,
-            sha256: input.sha256,
-            size_bytes: input.size_bytes,
-            storage_path: input.storage_path,
-          })
-          .returning();
-        if (!row) {
-          throw new Error('createDocument failed: no row returned');
+        try {
+          const [row] = await db
+            .insert(documents)
+            .values({
+              id: input.id,
+              case_id: input.case_id,
+              kind: input.kind,
+              status: input.status,
+              original_filename: input.original_filename,
+              mime_type: input.mime_type,
+              sha256: input.sha256,
+              size_bytes: input.size_bytes,
+              storage_path: input.storage_path,
+            })
+            .returning();
+          if (!row) {
+            throw new Error('createDocument failed: no row returned');
+          }
+          return toDocumentRecord(row);
+        } catch (err: unknown) {
+          // Postgres unique-violation code: 23505
+          // Catches the uq_documents_case_sha256 constraint race where a
+          // concurrent upload committed between our dedup check and this insert.
+          const isUniqueViolation =
+            typeof err === 'object' &&
+            err !== null &&
+            'code' in err &&
+            (err as { code: string }).code === '23505';
+
+          if (isUniqueViolation) {
+            const existing = await db
+              .select()
+              .from(documents)
+              .where(and(eq(documents.case_id, input.case_id), eq(documents.sha256, input.sha256)))
+              .limit(1);
+            if (existing[0]) {
+              return toDocumentRecord(existing[0]);
+            }
+          }
+          throw err;
         }
-        return toDocumentRecord(row);
       },
     },
     storage,
@@ -73,5 +96,5 @@ export async function listDocumentKindsByCase(
     .select({ kind: documents.kind })
     .from(documents)
     .where(eq(documents.case_id, caseId));
-  return rows.map((row) => row.kind as DocumentKind);
+  return rows.map((row) => DocumentKind.parse(row.kind));
 }

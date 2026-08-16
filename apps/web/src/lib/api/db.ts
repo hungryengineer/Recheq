@@ -1,8 +1,28 @@
 import { createDb, createCaseDeps } from '@tieout/api/web';
 import type { CaseServiceDeps } from '@tieout/api/web';
 
-export const DEV_ORG_ID = process.env.DEV_ORG_ID ?? '00000000-0000-0000-0000-000000000002';
-export const DEV_USER_ID = process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001';
+/**
+ * Development identity constants. Never fall back to hardcoded UUIDs in
+ * production — require explicitly configured values and fail closed.
+ */
+function requireDevId(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        `${name} is not set. In production, all identity constants must be explicitly configured.`,
+      );
+    }
+    // Documented defaults for local development only.
+    return name === 'DEV_ORG_ID'
+      ? '00000000-0000-0000-0000-000000000002'
+      : '00000000-0000-0000-0000-000000000001';
+  }
+  return value;
+}
+
+export const DEV_ORG_ID = requireDevId('DEV_ORG_ID');
+export const DEV_USER_ID = requireDevId('DEV_USER_ID');
 
 const globalForDb = globalThis as unknown as { __tieoutDb?: ReturnType<typeof createDb> };
 

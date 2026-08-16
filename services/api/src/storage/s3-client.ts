@@ -70,12 +70,18 @@ function createBucketBody(region: string): Buffer | undefined {
 }
 
 export function createS3ClientFromEnv(env: NodeJS.ProcessEnv = process.env): S3Client {
+  const raw = env.S3_FORCE_PATH_STYLE;
+  if (raw !== undefined && raw !== 'true' && raw !== 'false') {
+    throw new Error(
+      `S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`,
+    );
+  }
   return createS3Client({
     endpoint: requireEnv(env, 'S3_ENDPOINT'),
     region: env.S3_REGION ?? 'us-east-1',
     accessKeyId: requireEnv(env, 'S3_ACCESS_KEY_ID'),
     secretAccessKey: requireEnv(env, 'S3_SECRET_ACCESS_KEY'),
-    forcePathStyle: env.S3_FORCE_PATH_STYLE !== 'false',
+    forcePathStyle: raw !== 'false',
   });
 }
 
@@ -96,11 +102,18 @@ export async function sendSignedS3Request(
     headers.set('content-type', request.contentType ?? 'application/octet-stream');
   }
 
-  return transport(url, {
-    method: request.method,
-    headers,
-    ...(request.body ? { body: new Uint8Array(request.body) } : {}),
-  });
+  try {
+    return await transport(url, {
+      method: request.method,
+      headers,
+      ...(request.body ? { body: new Uint8Array(request.body) } : {}),
+    });
+  } catch (cause) {
+    throw new Error(
+      `S3 request failed (method=${request.method}, bucket=${request.bucket}): network or transport error`,
+      { cause },
+    );
+  }
 }
 
 function getBucketUrl(config: S3ClientConfig, bucket: string): URL {
