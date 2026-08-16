@@ -36,8 +36,6 @@ import { employerRequests } from '../services/api/src/db/schema/employer-request
 import { AuditService } from '../services/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '../services/api/src/audit/db-audit-repository.js';
 import { loadEnvFile } from './lib/load-env.js';
-import bcrypt from 'bcryptjs';
-import type { EventInput } from '@tieout/schema';
 
 // Seed the identity/credentials the dev app authenticates as, which live in the
 // web app's env file. The repo-root .env.local may carry unrelated placeholders
@@ -90,51 +88,33 @@ const db = createDb(connectionString);
 const FIXTURES = path.join(ROOT, 'fixtures', 'extraction');
 const EPFO_FIXTURES = path.join(ROOT, 'fixtures', 'epfo');
 
-/**
- * Reads a JSON fixture file and returns the parsed object. Throws when the
- * file does not contain a non-null, non-array object.
- */
-function readJson(filePath: string): Record<string, unknown> {
-  const value: unknown = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`Fixture ${filePath} must contain a JSON object`);
-  }
-  return value as Record<string, unknown>;
+function readJson<T>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 }
-const CLEAN_PAYSLIP = readJson(path.join(FIXTURES, 'payslip-clean-01.json'));
-const CLEAN_FORM16 = readJson(path.join(FIXTURES, 'form16-clean-01.json'));
-const FORGED_PAYSLIP = readJson(path.join(FIXTURES, 'payslip-arun-doctored.json'));
-const EPFO_CLEAN = readJson(path.join(EPFO_FIXTURES, 'arun-clean.json'));
-const EPFO_DOCTORED = readJson(path.join(EPFO_FIXTURES, 'arun-doctored.json'));
 
-/**
- * Computes a content fingerprint for a demo document PDF. When the file is
- * missing (ENOENT), falls back to a hash of the relative path and warns so the
- * operator can tell which fixture was absent. All other filesystem errors are
- * rethrown.
- */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CLEAN_PAYSLIP: any = readJson(path.join(FIXTURES, 'payslip-clean-01.json'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CLEAN_FORM16: any = readJson(path.join(FIXTURES, 'form16-clean-01.json'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const FORGED_PAYSLIP: any = readJson(path.join(FIXTURES, 'payslip-arun-doctored.json'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const EPFO_CLEAN: any = readJson(path.join(EPFO_FIXTURES, 'arun-clean.json'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const EPFO_DOCTORED: any = readJson(path.join(EPFO_FIXTURES, 'arun-doctored.json'));
+
 function docFingerprint(relPath: string): { sha256: string; sizeBytes: number } {
   const abs = path.join(ROOT, relPath);
   try {
     const buf = fs.readFileSync(abs);
     return { sha256: crypto.createHash('sha256').update(buf).digest('hex'), sizeBytes: buf.length };
-  } catch (err) {
-    if (!isErrnoError(err) || err.code !== 'ENOENT') {
-      throw err;
-    }
-    console.warn(`  ⚠️  Missing demo document ${relPath}; seeding a placeholder fingerprint.`);
+  } catch {
     return { sha256: crypto.createHash('sha256').update(relPath).digest('hex'), sizeBytes: 0 };
   }
 }
 
-/** Returns true when the thrown value is a Node.js errno (filesystem) error. */
-function isErrnoError(err: unknown): err is NodeJS.ErrnoException {
-  return err instanceof Error && 'code' in err;
-}
-
 // ─── Idempotency helper ─────────────────────────────────────────
 
-/** Returns true when a case with the given id already exists in the database. */
 async function caseExists(dbHandle: Database, caseId: string): Promise<boolean> {
   const rows = await dbHandle.select({ id: cases.id }).from(cases).where(eq(cases.id, caseId));
   return rows.length > 0;
@@ -142,11 +122,6 @@ async function caseExists(dbHandle: Database, caseId: string): Promise<boolean> 
 
 // ─── Demo case seeding ──────────────────────────────────────────
 
-/**
- * Seeds one demo case (documents, extractions, EPFO record, findings, and a
- * hash-chained audit trail) inside a single transaction. Skips the case if it
- * already exists so re-running `pnpm seed` is a no-op.
- */
 async function seedCase(opts: {
   caseId: string;
   consentId: string;
@@ -170,10 +145,7 @@ async function seedCase(opts: {
   };
   epfo: { recordId: string; history: Record<string, unknown> };
   findingRows: Array<typeof findings.$inferInsert>;
-  eventInputs: Array<{
-    kind: EventInput['kind'];
-    payload: Record<string, unknown>;
-  }>;
+  eventInputs: Array<{ kind: string; payload: Record<string, unknown> }>;
 }): Promise<void> {
   if (await caseExists(db, opts.caseId)) {
     console.log(`  ⏭  Skipping case ${opts.caseId} (already seeded)`);
@@ -274,7 +246,7 @@ async function seedCase(opts: {
     for (const input of opts.eventInputs) {
       await audit.appendEvent(tx, {
         case_id: opts.caseId,
-        kind: input.kind,
+        kind: input.kind as never,
         payload: input.payload,
         actor: 'system',
       });
@@ -286,39 +258,31 @@ async function seedCase(opts: {
 
 // ─── Reset (seed:reset) ─────────────────────────────────────────
 
-/**
- * Drops all rows belonging to the demo cases (events, findings, extractions,
- * documents, EPFO records, consents, employer requests, cases) in one
- * transaction. The shared dev org/user are left in place; the seed re-creates
- * them idempotently.
- */
 async function resetDemo() {
   const demoCaseIds = [CLEAN_CASE_ID, FORGED_CASE_ID];
 
-  await db.transaction(async (tx) => {
-    for (const caseId of demoCaseIds) {
-      await tx.delete(events).where(eq(events.case_id, caseId));
-      await tx.delete(findings).where(eq(findings.case_id, caseId));
-      const docRows = await tx
-        .select({ id: documents.id })
-        .from(documents)
-        .where(eq(documents.case_id, caseId));
-      for (const row of docRows) {
-        await tx.delete(extractions).where(eq(extractions.document_id, row.id));
-      }
-      await tx.delete(documents).where(eq(documents.case_id, caseId));
-      const consentRows = await tx
-        .select({ id: consents.id })
-        .from(consents)
-        .where(eq(consents.case_id, caseId));
-      for (const row of consentRows) {
-        await tx.delete(epfoRecords).where(eq(epfoRecords.consent_id, row.id));
-      }
-      await tx.delete(consents).where(eq(consents.case_id, caseId));
-      await tx.delete(employerRequests).where(eq(employerRequests.case_id, caseId));
-      await tx.delete(cases).where(eq(cases.id, caseId));
+  for (const caseId of demoCaseIds) {
+    await db.delete(events).where(eq(events.case_id, caseId));
+    await db.delete(findings).where(eq(findings.case_id, caseId));
+    const docRows = await db
+      .select({ id: documents.id })
+      .from(documents)
+      .where(eq(documents.case_id, caseId));
+    for (const row of docRows) {
+      await db.delete(extractions).where(eq(extractions.document_id, row.id));
     }
-  });
+    await db.delete(documents).where(eq(documents.case_id, caseId));
+    const consentRows = await db
+      .select({ id: consents.id })
+      .from(consents)
+      .where(eq(consents.case_id, caseId));
+    for (const row of consentRows) {
+      await db.delete(epfoRecords).where(eq(epfoRecords.consent_id, row.id));
+    }
+    await db.delete(consents).where(eq(consents.case_id, caseId));
+    await db.delete(employerRequests).where(eq(employerRequests.case_id, caseId));
+    await db.delete(cases).where(eq(cases.id, caseId));
+  }
 
   // The dev org/user are the shared dev identity used by other (non-demo) rows,
   // so they are left in place; the seed re-creates them idempotently anyway.
@@ -341,22 +305,16 @@ try {
     .onConflictDoNothing()
     .execute();
 
-  const password_hash = await bcrypt.hash('password123', 10);
-
   await db
     .insert(users)
     .values({
       id: DEV_USER_ID,
       org_id: DEV_ORG_ID,
       email: 'demo@tieout.local',
-      password_hash,
       name: 'Tieout Demo User',
-      role: 'admin',
+      role: 'verifier',
     })
-    .onConflictDoUpdate({
-      target: users.id,
-      set: { password_hash, role: 'admin' },
-    })
+    .onConflictDoNothing()
     .execute();
 
   console.log(`  ✓ Org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);
