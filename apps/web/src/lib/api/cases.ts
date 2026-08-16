@@ -2,8 +2,20 @@ import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
 import { getCase, listCases } from '@tieout/api/web';
 import { getCaseDeps, DEV_ORG_ID } from './db';
 
+// Until session/authentication wiring is available, case reads use the
+// development identity constants. Never allow those constants to drive reads in
+// production — fail closed instead of leaking another org's case data.
+function devOrgId(): string {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'getCases/getCaseDetails cannot use the development org identity in production. Wire an authenticated session before enabling case listing.',
+    );
+  }
+  return DEV_ORG_ID;
+}
+
 export async function getCases(): Promise<CaseSummary[]> {
-  return await listCases(DEV_ORG_ID, getCaseDeps());
+  return await listCases(devOrgId(), getCaseDeps());
 }
 
 export type CaseDetailsResult =
@@ -12,7 +24,7 @@ export type CaseDetailsResult =
 
 export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
   try {
-    const caseRecord = await getCase(id, DEV_ORG_ID, getCaseDeps());
+    const caseRecord = await getCase(id, devOrgId(), getCaseDeps());
 
     return {
       found: true,

@@ -36,8 +36,9 @@ export class DbAuditRepository implements IAuditRepository {
    *
    * When `tx` is supplied the query executes inside the same transaction as the
    * caller's subsequent insert, so both the read and the write share the same
-   * database snapshot and connection. This prevents two concurrent appends from
-   * reading the same seq and then racing on the uq_events_case_seq constraint.
+   * database snapshot and connection. This keeps the seq computation consistent
+   * with the insert; the uq_events_case_seq constraint is the final backstop
+   * against a concurrent append, which AuditService handles via retry.
    */
   async getLastEvent(caseId: string, tx?: unknown): Promise<EventRecord | null> {
     const handle = resolveHandle(this.db, tx);

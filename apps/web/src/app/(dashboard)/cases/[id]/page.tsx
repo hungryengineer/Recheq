@@ -13,7 +13,23 @@ export default async function CaseDetailsPage({ params }: PageProps) {
   const { id } = await params;
 
   try {
-    const { caseRecord, findings, notAssessed } = await getCaseDetails(id);
+    const result = await getCaseDetails(id);
+
+    if (!result.found) {
+      return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Case Not Found</h2>
+          <p className="text-gray-500 mb-6">
+            The case you are looking for does not exist or you do not have permission to view it.
+          </p>
+          <Link href="/cases" className="text-blue-600 hover:text-blue-800 font-medium">
+            Return to Dashboard
+          </Link>
+        </div>
+      );
+    }
+
+    const { caseRecord, findings, notAssessed } = result;
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

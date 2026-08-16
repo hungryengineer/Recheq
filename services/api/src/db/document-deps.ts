@@ -75,10 +75,9 @@ export function createDocumentDeps(db: Database, storage: DocumentStorage): Docu
               .where(and(eq(documents.case_id, input.case_id), eq(documents.sha256, input.sha256)))
               .limit(1);
             if (existing[0]) {
-              // TODO: the object already uploaded to input.storage_path is now
-              // orphaned — the winning record carries a different storage_path.
-              // Callers should delete the losing object after receiving this
-              // record, or a background cleanup job should reconcile orphans.
+              // A concurrent upload won the race: our object at input.storage_path
+              // is now orphaned. Delete it so no garbage accumulates in the bucket.
+              await storage.deleteObject(input.storage_path);
               return toDocumentRecord(existing[0]);
             }
           }

@@ -32,6 +32,7 @@ import { cases } from '../services/api/src/db/schema/cases.js';
 import { consents } from '../services/api/src/db/schema/consents.js';
 import { documents } from '../services/api/src/db/schema/documents.js';
 import { tokens } from '../services/api/src/db/schema/tokens.js';
+import { events } from '../services/api/src/db/schema/events.js';
 import { loadEnvFile } from './lib/load-env.js';
 
 loadEnvFile();
@@ -161,15 +162,27 @@ try {
   process.exitCode = 1;
 } finally {
   // Clean up only resources created by this run.
+  // Order: remove the bucket object first, then DB rows in dependency order
+  // (documents, tokens, consents, cases) to avoid FK violations.
+  if (cleanup.storagePath) {
+    try {
+      await storage.deleteObject(cleanup.storagePath);
+      console.log(`🧹 Cleaned up bucket object ${cleanup.storagePath}`);
+    } catch (cleanupErr) {
+      console.error(`⚠  Bucket cleanup failed: ${String(cleanupErr)}`);
+    }
+  }
   if (cleanup.caseId) {
     try {
-      // Cascading deletes: documents, consents, tokens all reference case_id.
-      // Delete in dependency order to avoid FK violations on DBs without CASCADE.
+      // Cascading deletes: documents, consents, tokens, events all reference
+      // case_id. Delete in dependency order to avoid FK violations on DBs
+      // without CASCADE.
       await db.delete(documents).where(eq(documents.case_id, cleanup.caseId));
       if (cleanup.rawToken) {
         await db.delete(tokens).where(eq(tokens.case_id, cleanup.caseId));
       }
       await db.delete(consents).where(eq(consents.case_id, cleanup.caseId));
+      await db.delete(events).where(eq(events.case_id, cleanup.caseId));
       await db.delete(cases).where(eq(cases.id, cleanup.caseId));
       console.log(`🧹 Cleaned up test case ${cleanup.caseId}`);
     } catch (cleanupErr) {

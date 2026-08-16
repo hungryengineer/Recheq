@@ -36,6 +36,47 @@ if (!connectionString) {
 }
 
 const migrationsDir = path.resolve(process.cwd(), 'db/migrations');
+
+/**
+ * Decides whether a migration must run in autocommit mode (outside the wrapping
+ * transaction). Two categories qualify:
+ *
+ * 1. Files that manage their own transaction (top-level BEGIN / START TRANSACTION).
+ * 2. Files containing statements PostgreSQL rejects inside a transaction block:
+ *    CREATE/DROP INDEX CONCURRENTLY, REINDEX CONCURRENTLY, VACUUM,
+ *    CREATE DATABASE, DROP DATABASE.
+ *
+ * The scan strips comments and dollar-quoted bodies first so transaction-control
+ * words inside DO blocks, function bodies, or comments cannot trip the classifier,
+ * and it detects all CONCURRENTLY variants (including CREATE UNIQUE INDEX
+ * CONCURRENTLY and REINDEX TABLE ... CONCURRENTLY).
+ */
+function needsAutocommit(sql: string): boolean {
+  const scrubbed = scrubSql(sql);
+
+  if (/^\s*(BEGIN|START\s+TRANSACTION)\b/im.test(scrubbed)) {
+    return true;
+  }
+
+  return (
+    /(CREATE|DROP)\s+(UNIQUE\s+)?INDEX\s+CONCURRENTLY\b/im.test(scrubbed) ||
+    /\bREINDEX\s+(INDEX\s+)?CONCURRENTLY\b/im.test(scrubbed) ||
+    /\bVACUUM\b/im.test(scrubbed) ||
+    /(CREATE|DROP)\s+DATABASE\b/im.test(scrubbed)
+  );
+}
+
+/**
+ * Removes SQL comments (-- line and /* * / block) and dollar-quoted bodies
+ * ($$...$$ or $tag$...$tag$) so classification sees only executable SQL.
+ */
+function scrubSql(sql: string): string {
+  return sql
+    .replace(/\$[A-Za-z_][A-Za-z0-9_]*\$[\s\S]*?\$[A-Za-z_][A-Za-z0-9_]*\$|\$\$[\s\S]*?\$\$/g, '')
+    .replace(/--[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
 let files: string[];
 try {
   files = (await fs.readdir(migrationsDir)).filter((f) => f.endsWith('.sql')).sort();
@@ -72,21 +113,7 @@ try {
 
     const content = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
 
-    // Detect whether the file requires autocommit — i.e. it must NOT be wrapped
-    // in a transaction. Two categories:
-    //
-    // 1. Files that manage their own transaction (explicit BEGIN / START TRANSACTION).
-    // 2. Files that contain statements that are illegal inside a transaction block:
-    //    CREATE INDEX CONCURRENTLY, VACUUM, CREATE DATABASE, DROP DATABASE.
-    //
-    // In both cases we fall through to the autocommit path and run as-is.
-    const needsAutocommit =
-      /^\s*(BEGIN|START\s+TRANSACTION)/im.test(content) ||
-      /\b(CREATE\s+INDEX\s+CONCURRENTLY|VACUUM|CREATE\s+DATABASE|DROP\s+DATABASE)\b/im.test(
-        content,
-      );
-
-    if (needsAutocommit) {
+    if (needsAutocommit(content)) {
       // Run as-is; the file's own transaction wraps the DDL.
       await sql.unsafe(content);
       await sql`INSERT INTO tieout_migrations (name) VALUES (${file})`;
