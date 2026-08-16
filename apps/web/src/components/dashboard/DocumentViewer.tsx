@@ -74,16 +74,16 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
           </div>
           
           <div className="flex items-center gap-6">
-            <div className="flex items-center bg-gray-50 border border-gray-200 rounded">
-              <button className="p-2 text-gray-500 hover:bg-gray-100"><Minus className="w-4 h-4" /></button>
-              <span className="px-3 text-sm font-medium text-gray-700 border-x border-gray-200 py-1.5">100%</span>
-              <button className="p-2 text-gray-500 hover:bg-gray-100"><Plus className="w-4 h-4" /></button>
+            <div className="flex items-center bg-[var(--color-page)] border border-[var(--color-border)] rounded">
+              <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors"><Minus className="w-4 h-4" /></button>
+              <span className="px-3 text-sm font-medium text-[var(--color-fg)] border-x border-[var(--color-border)] py-1.5">100%</span>
+              <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors"><Plus className="w-4 h-4" /></button>
             </div>
-            <div className="flex items-center gap-3 text-gray-500">
-              <button className="p-2 hover:bg-gray-50 rounded"><Maximize className="w-5 h-5" /></button>
-              <button onClick={handleDownload} className="p-2 hover:bg-gray-50 rounded"><Download className="w-5 h-5" /></button>
-              <div className="w-px h-6 bg-gray-200 mx-1"></div>
-              <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded"><X className="w-6 h-6" /></button>
+            <div className="flex items-center gap-3 text-[var(--color-fg-muted)]">
+              <button className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"><Maximize className="w-5 h-5" /></button>
+              <button onClick={handleDownload} className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"><Download className="w-5 h-5" /></button>
+              <div className="w-px h-6 bg-[var(--color-border)] mx-1"></div>
+              <button onClick={onClose} className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"><X className="w-6 h-6" /></button>
             </div>
           </div>
         </div>
@@ -129,11 +129,11 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-400 hover:bg-gray-100 rounded border border-transparent hover:border-gray-200"><ChevronsLeft className="w-4 h-4" /></button>
-            <button className="p-2 text-gray-400 hover:bg-gray-100 rounded border border-transparent hover:border-gray-200"><ChevronLeft className="w-4 h-4" /></button>
-            <div className="px-3 text-sm font-medium border border-gray-200 rounded py-1 bg-white shadow-sm">1</div>
-            <button className="p-2 text-gray-400 hover:bg-gray-100 rounded border border-transparent hover:border-gray-200"><ChevronRight className="w-4 h-4" /></button>
-            <button className="p-2 text-gray-400 hover:bg-gray-100 rounded border border-transparent hover:border-gray-200"><ChevronsRight className="w-4 h-4" /></button>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronsLeft className="w-4 h-4" /></button>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <div className="px-3 text-sm font-medium border border-[var(--color-border)] rounded py-1 bg-[var(--color-page)] text-[var(--color-fg)] shadow-sm">1</div>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronRight className="w-4 h-4" /></button>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronsRight className="w-4 h-4" /></button>
           </div>
 
           <div>
