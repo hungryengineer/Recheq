@@ -102,10 +102,7 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
                 toCaseRecord(caseRow).status,
                 'consent_granted',
               );
-              await tx
-                .update(cases)
-                .set({ status: newStatus })
-                .where(eq(cases.id, input.case_id));
+              await tx.update(cases).set({ status: newStatus }).where(eq(cases.id, input.case_id));
             }
 
             // Append audit event inside the same transaction so the read and
@@ -128,7 +125,11 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
         }
 
         if (!result) {
-          throw new AppError(500, 'INTERNAL_ERROR', 'createConsent transaction did not produce a result');
+          throw new AppError(
+            500,
+            'INTERNAL_ERROR',
+            'createConsent transaction did not produce a result',
+          );
         }
         return result;
       },
@@ -196,7 +197,12 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
           });
         } catch (cause) {
           if (cause instanceof AppError) throw cause;
-          throw new AppError(500, 'INTERNAL_ERROR', `Failed to update consent status for ${consentId}`, { cause });
+          throw new AppError(
+            500,
+            'INTERNAL_ERROR',
+            `Failed to update consent status for ${consentId}`,
+            { cause },
+          );
         }
       },
     },
