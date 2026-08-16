@@ -7,8 +7,11 @@ import type { CaseRecord, DocumentRecord } from '@tieout/schema';
 import type { EpfoHistory, ScorableFinding } from '@tieout/rules';
 import { createDocumentStorageFromEnv } from '@tieout/api/src/storage/document-storage.js';
 
-const storage = createDocumentStorageFromEnv();
-
+let _storage: ReturnType<typeof createDocumentStorageFromEnv>;
+function getStorage() {
+  if (!_storage) _storage = createDocumentStorageFromEnv();
+  return _storage;
+}
 export const repository = {
   createCase: async (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => {
     const [result] = await db
@@ -109,7 +112,7 @@ export const repository = {
       .from(schema.documents)
       .where(eq(schema.documents.id, documentId));
     if (!doc) throw new Error(`Document ${documentId} not found`);
-    const buffer = await storage.getObject(doc.storage_path);
+    const buffer = await getStorage().getObject(doc.storage_path);
     return { content: buffer, mimeType: doc.mime_type };
   },
   createExtraction: async (docId: string, args: { modelId: string; schemaVersion: string }) => {
