@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "next build --webpack",
+  "buildCommand": "pnpm --filter @tieout/web... --workspace-concurrency=1 build",
   "installCommand": "pnpm install"
 }
