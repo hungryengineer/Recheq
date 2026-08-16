@@ -16,6 +16,18 @@ import {
   createGeminiExtractor,
 } from '../src/extraction/providers/gemini-extractor.js';
 
+function assertSuccess<T>(
+  result: ExtractionResult<T>,
+): asserts result is ExtractionResult<T> & { status: 'success' } {
+  expect(result.status).toBe('success');
+}
+
+function assertFailure<T>(
+  result: ExtractionResult<T>,
+): asserts result is ExtractionResult<T> & { status: 'failure' } {
+  expect(result.status).toBe('failure');
+}
+
 describe('DOC-01 — Provider-Independent Document Extraction', () => {
   describe('FixtureExtractor', () => {
     let extractor: LlmDocumentExtractor;
@@ -35,7 +47,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data.employee_name).toBe('Priya Sharma');
       expect(result.data.employer_name).toBe('Tech Corp India Pvt Ltd');
       expect(result.data.basic?.amount).toBe(55000);
@@ -54,7 +66,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractForm16(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data.employee_name).toBe('Priya Sharma');
       expect(result.data.employer_name).toBe('Tech Corp India Pvt Ltd');
       expect(result.data.gross_total_income).toBe(1172400);
@@ -73,7 +85,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toContain('No fixture found');
     });
 
@@ -88,7 +100,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data.da?.amount).toBeNull(); // Missing value should be nulluld be null
       expect(result.data.extraction_notes).toContain('DA column not present');
     });
@@ -104,6 +116,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
+      assertSuccess(result);
       expect(result.data.basic?.raw_label).toBe('Basic Salary');
       expect(result.data.basic?.raw_label).not.toBe('basic'); // Should preserve raw label
     });
@@ -122,6 +135,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       // Values are static fixtures, not calculated
+      assertSuccess(result);
       expect(result.data.basic?.amount).toBe(55000);
       expect(result.data.hra?.amount).toBe(22000);
       expect(result.data.gross_salary).toBe(97700);
@@ -212,7 +226,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await wrappedExtractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data).toEqual(validPayslip);
       expect(result.retryCount).toBe(0);
       expect(mockExtractor.extractPayslip).toHaveBeenCalledTimes(1);
@@ -287,7 +301,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await wrappedExtractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data.employer_name).toBe('TechCorp Inc');
       expect(result.retryCount).toBe(1); // One retry
       expect(mockExtractor.extractPayslip).toHaveBeenCalledTimes(2);
@@ -323,14 +337,13 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await wrappedExtractor.extractPayslip(request);
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toContain('Schema validation failed after 2 attempts');
       expect(mockExtractor.extractPayslip).toHaveBeenCalledTimes(2); // Original + 1 retry
     });
 
     it('does not retry on non-schema failures', async () => {
       const mockResult: ExtractionResult<PayslipExtraction> = {
-        data: {} as PayslipExtraction,
         rawOutput: '',
         modelId: 'test',
         usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
@@ -352,7 +365,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await wrappedExtractor.extractPayslip(request);
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toBe('Provider unavailable');
       expect(mockExtractor.extractPayslip).toHaveBeenCalledTimes(1); // No retry for non-schema failures
     });
@@ -548,7 +561,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data.employee_name).toBe('Priya Sharma');
       expect(result.data.basic?.amount).toBe(55000);
       expect(result.retryCount).toBe(0);
@@ -597,7 +610,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.data.employee_name).toBe('Custom Employee');
       expect(result.data.basic?.amount).toBe(100000);
       expect(result.retryCount).toBe(0);
@@ -630,6 +643,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result = await extractor.extractPayslip(request);
 
       // These values should be null in the partial fixture
+      assertSuccess(result);
       expect(result.data.da?.amount).toBeNull();
     });
 
@@ -654,6 +668,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
+      assertSuccess(result);
       expect(result.data.basic.raw_label).toBe('Basic Salary');
       expect(result.data.basic.raw_label).not.toBe('basic');
       expect(result.data.basic.raw_label).not.toBe('Basic');
@@ -728,7 +743,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.retryCount).toBe(1); // Exactly one retry
       expect(mockExtractor.extractPayslip).toHaveBeenCalledTimes(2);
     });
@@ -766,7 +781,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
 
       const result = await extractor.extractPayslip(request);
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toContain('Schema validation failed after 2 attempts');
       expect(mockExtractor.extractPayslip).toHaveBeenCalledTimes(2); // Original + 1 retry
     });
@@ -787,6 +802,8 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
       const result2 = await extractor2.extractPayslip(request);
 
       // Results should be identical and deterministic
+      assertSuccess(result1);
+      assertSuccess(result2);
       expect(result1.data).toEqual(result2.data);
       expect(result1.status).toBe(result2.status);
       expect(result1.retryCount).toBe(result2.retryCount);
@@ -803,9 +820,17 @@ describe('GeminiExtractor', () => {
     });
 
     it('throws without an API key', () => {
-      expect(() => new GeminiExtractor({ apiKey: '' } as never)).toThrow(
-        'GEMINI_API_KEY is required',
-      );
+      expect(
+        () =>
+          new GeminiExtractor({
+            apiKey: '',
+            model: 'gemini-2.5-flash',
+            baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+            maxOutputTokens: 4096,
+            temperature: 0.1,
+            fixturesFallback: false,
+          }),
+      ).toThrow('GEMINI_API_KEY is required');
     });
 
     it('exposes provider = "gemini"', () => {
@@ -887,7 +912,7 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       // Model reads doctored numbers faithfully — contradiction is the rules engine's job
       expect(result.data.basic?.amount).toBe(52000);
       expect(result.data.pf_deduction).toBe(3600);
@@ -975,6 +1000,13 @@ describe('GeminiExtractor', () => {
 
       const callBody = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
       expect(callBody.generationConfig.responseMimeType).toBe('application/json');
+      // Text-only input must not include an inlineData part
+      const userParts = callBody.contents[0].parts as Array<{
+        inlineData?: { mimeType: string; data: string };
+        text?: string;
+      }>;
+      expect(userParts.every((part) => part.inlineData === undefined)).toBe(true);
+      expect(userParts[0]?.text).toBeDefined();
     });
 
     it('returns failure on Gemini API error', async () => {
@@ -995,7 +1027,7 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toContain('RESOURCE_EXHAUSTED');
     });
 
@@ -1011,7 +1043,7 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toContain('Network unreachable');
     });
   });
@@ -1073,7 +1105,7 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.retryCount).toBe(0);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -1116,14 +1148,13 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.retryCount).toBe(1);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       // Retry request must include retryContext (validation error injected by SchemaRetryWrapper)
       const retryBody = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string);
       // PDF is in parts[0] (inlineData), extraction prompt is in parts[1] (text)
-      const retryUserText = (retryBody.contents[0].parts[1]?.text ??
-        retryBody.contents[0].parts[0]?.text) as string;
+      const retryUserText = retryBody.contents[0].parts[1].text as string;
       expect(retryUserText).toContain('PREVIOUS ATTEMPT FAILED SCHEMA VALIDATION');
     });
 
@@ -1147,7 +1178,7 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('failure');
+      assertFailure(result);
       expect(result.error).toContain('Schema validation failed after 2 attempts');
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
@@ -1161,7 +1192,6 @@ describe('GeminiExtractor', () => {
         provider: 'gemini',
         supportsStreaming: false,
         extractPayslip: vi.fn().mockResolvedValue({
-          data: {} as PayslipExtraction,
           rawOutput: '',
           modelId: 'gemini-2.5-flash',
           usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
@@ -1193,7 +1223,7 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       // model_id must be the honest fallback label
       expect(result.modelId).toBe('fixture-fallback:gemini-2.5-flash');
       // Fallback must log loudly
@@ -1252,8 +1282,8 @@ describe('GeminiExtractor', () => {
         isAvailable: vi.fn().mockResolvedValue(true),
       };
 
-      const fixtureSpy = vi.spyOn(createFixtureExtractor(), 'extractPayslip');
       const fixture = createFixtureExtractor();
+      const fixtureSpy = vi.spyOn(fixture, 'extractPayslip');
       const wrapped = new GeminiWithFallback(succeedingGemini, fixture, 'gemini-2.5-flash');
 
       const result = await wrapped.extractPayslip({
@@ -1264,8 +1294,9 @@ describe('GeminiExtractor', () => {
         schemaVersion: 'payslip-v1',
       });
 
-      expect(result.status).toBe('success');
+      assertSuccess(result);
       expect(result.modelId).toBe('gemini-2.5-flash'); // not the fallback label
+      expect(fixtureSpy).not.toHaveBeenCalled();
       fixtureSpy.mockRestore();
     });
 

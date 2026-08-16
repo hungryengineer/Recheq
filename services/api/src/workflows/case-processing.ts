@@ -94,7 +94,11 @@ export async function processCase(
             ? await deps.extractor.extractPayslip(req)
             : await deps.extractor.extractForm16(req);
 
-        await updateExtractionSuccess(deps.db, extId, result.data, result.usage);
+        if (result.status === 'success') {
+          await updateExtractionSuccess(deps.db, extId, result.data, result.usage);
+        } else {
+          await updateExtractionFailure(deps.db, extId, result.error);
+        }
       } catch (err) {
         if (
           err instanceof ProviderUnavailableError ||

@@ -143,7 +143,6 @@ export class OllamaExtractor implements LlmDocumentExtractor {
       };
     } catch (error) {
       return {
-        data: {} as T,
         rawOutput,
         modelId: this.config.model,
         usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },

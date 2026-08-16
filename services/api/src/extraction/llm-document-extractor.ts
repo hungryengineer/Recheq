@@ -5,8 +5,7 @@
 import type { DocumentKind } from '@tieout/schema';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 
-export interface ExtractionResult<T> {
-  data: T;
+interface ExtractionResultBase {
   rawOutput: string;
   modelId: string;
   usage: {
@@ -15,10 +14,18 @@ export interface ExtractionResult<T> {
     totalTokens: number;
   };
   extractionDurationMs: number;
-  status: 'success' | 'failure';
-  error?: string;
   retryCount: number;
 }
+
+export type ExtractionResult<T> =
+  | (ExtractionResultBase & {
+      status: 'success';
+      data: T;
+    })
+  | (ExtractionResultBase & {
+      status: 'failure';
+      error: string;
+    });
 
 export interface ExtractionRequest {
   documentId: string;
