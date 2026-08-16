@@ -6,7 +6,7 @@ export const DEV_USER_ID = process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-0
 
 const globalForDb = globalThis as unknown as { __tieoutDb?: ReturnType<typeof createDb> };
 
-export function getCaseDeps(): CaseServiceDeps {
+export function getDb(): ReturnType<typeof createDb> {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
@@ -16,5 +16,9 @@ export function getCaseDeps(): CaseServiceDeps {
   if (!globalForDb.__tieoutDb) {
     globalForDb.__tieoutDb = createDb(url);
   }
-  return createCaseDeps(globalForDb.__tieoutDb);
+  return globalForDb.__tieoutDb;
+}
+
+export function getCaseDeps(): CaseServiceDeps {
+  return createCaseDeps(getDb());
 }

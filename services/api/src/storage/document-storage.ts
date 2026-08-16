@@ -4,6 +4,14 @@ import { createHash, createHmac } from 'node:crypto';
 // Abstraction over S3-compatible object storage for document files.
 // Routes and services depend on this interface, not the transport.
 
+export interface ObjectHead {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  /** Content-Length of the object, when the provider reports it */
+  size?: number | null;
+}
+
 export interface DocumentStorage {
   /**
    * Uploads a document to the private storage bucket.
@@ -12,9 +20,17 @@ export interface DocumentStorage {
    * @param contentType - MIME type of the file
    */
   putObject(key: string, content: Buffer, contentType: string): Promise<void>;
+
+  /**
+   * Checks whether an object exists and reports its size.
+   * @param key - The storage path
+   */
+  headObject(key: string): Promise<ObjectHead>;
 }
 
 // ─── S3 Configuration ───────────────────────────────────────────
+
+const EMPTY_BODY_SHA256 = createHash('sha256').update('').digest('hex');
 
 export interface DocumentStorageConfig {
   endpoint: string;
@@ -30,7 +46,7 @@ export interface DocumentStorageConfig {
 export type DocumentStorageTransport = (
   url: URL,
   init: RequestInit,
-) => Promise<{ ok: boolean; status: number; statusText: string }>;
+) => Promise<{ ok: boolean; status: number; statusText: string; size?: number | null }>;
 
 // ─── Factory ────────────────────────────────────────────────────
 
@@ -48,6 +64,7 @@ export function createDocumentStorage(
       const bodyHash = createHash('sha256').update(content).digest('hex');
       const headers = signObjectRequest(
         config,
+        'PUT',
         url,
         bodyHash,
         contentType,
@@ -64,6 +81,30 @@ export function createDocumentStorage(
       if (!response.ok) {
         throw new Error(`Failed to upload document: ${response.status} ${response.statusText}`);
       }
+    },
+    async headObject(key: string): Promise<ObjectHead> {
+      const url = getObjectUrl(config, key);
+      const headers = signObjectRequest(
+        config,
+        'HEAD',
+        url,
+        EMPTY_BODY_SHA256,
+        undefined,
+        0,
+        new Date(),
+      );
+
+      const response = await transport(url, {
+        method: 'HEAD',
+        headers,
+      });
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        size: response.size ?? null,
+      };
     },
   };
 }
@@ -104,9 +145,10 @@ function getObjectUrl(config: DocumentStorageConfig, key: string): URL {
 
 function signObjectRequest(
   config: DocumentStorageConfig,
+  method: 'HEAD' | 'PUT',
   url: URL,
   bodyHash: string,
-  contentType: string,
+  contentType: string | undefined,
   contentLength: number,
   now: Date,
 ): Headers {
@@ -115,18 +157,23 @@ function signObjectRequest(
   const credentialScope = `${dateStamp}/${config.region}/s3/aws4_request`;
 
   const headers = new Headers({
-    'content-length': String(contentLength),
-    'content-type': contentType,
     host: url.host,
     'x-amz-content-sha256': bodyHash,
     'x-amz-date': amzDate,
   });
 
+  if (contentType !== undefined) {
+    headers.set('content-type', contentType);
+  }
+  if (contentLength > 0) {
+    headers.set('content-length', String(contentLength));
+  }
+
   const canonicalHeaders = getCanonicalHeaders(headers);
   const signedHeaders = getSignedHeaders(headers);
 
   const canonicalRequest = [
-    'PUT',
+    method,
     encodeURI(url.pathname),
     url.searchParams.toString(),
     canonicalHeaders,
@@ -193,12 +240,14 @@ function toAmzDate(date: Date): string {
 async function defaultTransport(
   url: URL,
   init: RequestInit,
-): Promise<{ ok: boolean; status: number; statusText: string }> {
+): Promise<{ ok: boolean; status: number; statusText: string; size?: number | null }> {
   const response = await fetch(url, init);
+  const contentLength = response.headers.get('content-length');
   return {
     ok: response.ok,
     status: response.status,
     statusText: response.statusText,
+    size: contentLength !== null ? Number(contentLength) : null,
   };
 }
 

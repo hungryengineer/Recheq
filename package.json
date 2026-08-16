@@ -22,6 +22,7 @@
     "storage:setup": "tsx scripts/ensure-bucket.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "check:neon": "tsx scripts/check-neon-persistence.ts",
+    "check:storage": "tsx scripts/check-storage.ts",
     "db:ping": "tsx scripts/check-db-connectivity.ts"
   },
   "devDependencies": {

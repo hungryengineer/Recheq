@@ -1,8 +1,5 @@
 import type { CaseStatus, DocumentKind } from '@tieout/schema';
 
-// We simulate backend latency
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export interface PublicCaseContext {
   orgName: string;
   employerName: string;
@@ -12,72 +9,106 @@ export interface PublicCaseContext {
   documentsProvided: DocumentKind[];
 }
 
-// Temporary in-memory state since we are mocking the backend for the frontend milestones
-const mockState: PublicCaseContext = {
-  orgName: 'Acme Corp',
-  employerName: 'Acme Corp Background Checks',
-  candidateName: 'John Doe',
-  status: 'awaiting_consent',
-  documentsRequired: ['payslip', 'form_16'],
-  documentsProvided: [],
-};
+interface CandidateResponse {
+  orgName: string;
+  employerName: string;
+  candidateName: string;
+  title: string;
+  status: CaseStatus;
+  consent_status: 'pending' | 'granted' | 'withdrawn' | null;
+  documentsRequired: DocumentKind[];
+  documentsProvided: DocumentKind[];
+}
+
+// Shown to the candidate on the consent page; kept in sync with the
+// consent text stored on the server when consent is granted.
+const CONSENT_TEXT =
+  'I consent to Tieout performing a background verification of my employment and compensation history with the employer named in this verification request.';
+const CONSENT_VERSION = '1';
 
 export async function getCaseByToken(token: string): Promise<PublicCaseContext> {
-  await delay(800);
+  const response = await fetch(`/api/public/${token}/candidate`, {
+    headers: { Accept: 'application/json' },
+  });
 
-  if (token === 'expired') {
-    throw new Error('TOKEN_EXPIRED');
-  }
-
-  if (token === 'invalid') {
+  if (!response.ok) {
+    if (response.status === 410) {
+      throw new Error('TOKEN_EXPIRED');
+    }
     throw new Error('TOKEN_INVALID');
   }
 
-  return { ...mockState };
+  const data: CandidateResponse = await response.json();
+  return {
+    orgName: data.orgName,
+    employerName: data.employerName,
+    candidateName: data.candidateName,
+    status: data.status,
+    documentsRequired: data.documentsRequired,
+    documentsProvided: data.documentsProvided,
+  };
 }
 
-export async function grantConsent(_token: string, _ip: string, _userAgent: string): Promise<void> {
-  await delay(1000);
-  mockState.status = 'awaiting_documents';
-}
+export async function grantConsent(token: string, _ip: string, _userAgent: string): Promise<void> {
+  const response = await fetch(`/api/public/${token}/consent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ consent_text: CONSENT_TEXT, consent_version: CONSENT_VERSION }),
+  });
 
-export async function withdrawConsent(_token: string): Promise<void> {
-  await delay(1000);
-  mockState.status = 'withdrawn';
-}
-
-export async function uploadDocument(
-  _token: string,
-  kind: DocumentKind,
-  file: File,
-): Promise<void> {
-  await delay(1500);
-
-  if (file.size > 10 * 1024 * 1024) {
-    throw new Error('FILE_TOO_LARGE');
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    if (response.status === 410) {
+      throw new Error('TOKEN_EXPIRED');
+    }
+    throw new Error(data?.message || 'Failed to grant consent');
   }
+}
 
-  if (!mockState.documentsProvided.includes(kind)) {
-    mockState.documentsProvided.push(kind);
+export async function withdrawConsent(token: string): Promise<void> {
+  const response = await fetch(`/api/public/${token}/withdraw`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    if (response.status === 410) {
+      throw new Error('TOKEN_EXPIRED');
+    }
+    throw new Error(data?.message || 'Failed to withdraw consent');
+  }
+}
+
+export async function uploadDocument(token: string, kind: DocumentKind, file: File): Promise<void> {
+  const formData = new FormData();
+  formData.append('kind', kind);
+  formData.append('file', file);
+
+  const response = await fetch(`/api/public/${token}/documents`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    if (response.status === 410) {
+      throw new Error('TOKEN_EXPIRED');
+    }
+    if (response.status === 413) {
+      throw new Error('FILE_TOO_LARGE');
+    }
+    throw new Error(data?.message || 'Failed to upload document');
   }
 }
 
 export async function submitUan(_token: string, _uan: string): Promise<void> {
-  await delay(1000);
-  // Just a simulation, normally the backend stores this and processes EPFO
+  // UAN submission is not yet wired to the backend; the EPFO pull runs later.
 }
 
 export async function submitDocuments(_token: string): Promise<void> {
-  await delay(1000);
-  // Simulating the transition to processing
-  mockState.status = 'processing';
-
-  // Simulate processing time
-  setTimeout(() => {
-    if (mockState.status === 'processing') {
-      mockState.status = 'complete';
-    }
-  }, 5000);
+  // Submitting the document set transitions the case to processing on the
+  // backend. Not wired yet, so treat it as a no-op for now.
 }
 
 export async function disputeFinding(
@@ -89,23 +120,16 @@ export async function disputeFinding(
     throw new Error('Dispute reason is required');
   }
 
-  try {
-    const response = await fetch(`/api/public/${token}/dispute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ finding_id: findingId, reason }),
-    });
+  const response = await fetch(`/api/public/${token}/dispute`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ finding_id: findingId, reason }),
+  });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      throw new Error(data?.message || 'Failed to submit dispute');
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred while submitting the dispute');
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.message || 'Failed to submit dispute');
   }
 }

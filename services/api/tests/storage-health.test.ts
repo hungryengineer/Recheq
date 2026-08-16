@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { ensureStorageBucket } from '../src/storage/storage-health.js';
 import { createS3Client, type S3Response, type S3Transport } from '../src/storage/s3-client.js';
-import { createDocumentStorage } from '../src/storage/document-storage.js';
+import {
+  createDocumentStorage,
+  type DocumentStorageTransport,
+} from '../src/storage/document-storage.js';
 
 describe('storage health', () => {
   it('creates a missing bucket without applying a public ACL', async () => {
@@ -88,6 +91,65 @@ describe('storage health', () => {
     expect(xAmzDate).not.toContain('.');
     expect(authorization).toMatch(/^AWS4-HMAC-SHA256 Credential=/);
     expect(authorization).not.toMatch(/^AWS4-HMAC-SHA256, /);
+  });
+  it('sends a LocationConstraint body when creating a bucket outside us-east-1 (B2)', async () => {
+    const requests: RequestInit[] = [];
+    const transport: S3Transport = async (_url, init) => {
+      requests.push(init);
+      return response(200, 'OK');
+    };
+    const client = createS3Client({ ...testConfig, region: 'us-west-004' }, transport);
+
+    await client.createBucket('tieout-documents');
+
+    const headers = new Headers(requests[0]?.headers);
+    const body = Buffer.from(requests[0]?.body as Uint8Array);
+    const { createHash } = await import('node:crypto');
+
+    expect(headers.get('content-type')).toBe('application/xml');
+    expect(headers.get('content-length')).toBe(String(body.length));
+    expect(headers.get('x-amz-content-sha256')).toBe(
+      createHash('sha256').update(body).digest('hex'),
+    );
+    expect(body.toString()).toContain('<LocationConstraint>us-west-004</LocationConstraint>');
+  });
+
+  it('sends no body when creating a bucket in us-east-1 (MinIO)', async () => {
+    const requests: RequestInit[] = [];
+    const transport: S3Transport = async (_url, init) => {
+      requests.push(init);
+      return response(200, 'OK');
+    };
+    const client = createS3Client(testConfig, transport);
+
+    await client.createBucket('tieout-local');
+
+    expect(requests[0]?.body).toBeUndefined();
+    expect(new Headers(requests[0]?.headers).get('content-type')).toBeNull();
+  });
+
+  it('returns the reported size from headObject', async () => {
+    const requests: RequestInit[] = [];
+    const transport: DocumentStorageTransport = async (_url, init) => {
+      requests.push(init);
+      return { ok: true, status: 200, statusText: 'OK', size: 4321 };
+    };
+    const storage = createDocumentStorage(
+      {
+        ...testConfig,
+        bucket: 'documents',
+        forcePathStyle: true,
+      },
+      transport,
+    );
+
+    const head = await storage.headObject('cases/1/doc.pdf');
+
+    expect(head).toMatchObject({ ok: true, status: 200, size: 4321 });
+    expect(requests[0]?.method).toBe('HEAD');
+    expect(new Headers(requests[0]?.headers).get('authorization')).toMatch(
+      /^AWS4-HMAC-SHA256 Credential=/,
+    );
   });
 });
 
