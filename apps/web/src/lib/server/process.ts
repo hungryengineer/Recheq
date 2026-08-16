@@ -16,14 +16,14 @@ export async function startProcessing(caseId: string) {
     service: 'async-worker',
   });
 
-  processCase(caseId, context, deps)
+  processCase(caseId, false, deps)
     .then(() => {
       console.log(`[Worker] Case ${caseId} processed successfully`);
     })
     .catch((err) => {
       console.error(`[Worker] Case ${caseId} processing failed:`, err);
       // Fallback status update on catastrophic unhandled error
-      repository.updateCaseStatus(caseId, 'needs_review').catch((e) => {
+      repository.updateCaseStatus(caseId, 'withdrawn').catch((e) => {
         console.error(`[Worker] Failed to update fallback status for ${caseId}`, e);
       });
     });

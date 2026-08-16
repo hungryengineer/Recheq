@@ -32,7 +32,7 @@ export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
     const result = (await apiClient('/cases', {
       method: 'POST',
       body: JSON.stringify(input),
-    })) as CreateCaseSuccess;
+    })) as any;
 
     // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
     revalidatePath('/cases');

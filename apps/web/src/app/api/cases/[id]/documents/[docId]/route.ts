@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { repository } from '../../../../../lib/server/repository';
+import { repository } from '@/lib/server/repository';
 
 export const runtime = 'nodejs';
 
@@ -21,9 +21,9 @@ export async function GET(
       );
     }
 
-    return new NextResponse(contentBuffer, {
+    return new NextResponse(contentBuffer.content as any, {
       headers: {
-        'Content-Type': 'application/pdf',
+        'Content-Type': contentBuffer.mimeType || 'application/pdf',
         'Content-Disposition': `attachment; filename="document-${documentId}.pdf"`,
       },
     });

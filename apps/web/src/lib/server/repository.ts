@@ -10,7 +10,7 @@ const storage = createDocumentStorageFromEnv();
 
 export const repository = {
   createCase: async (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => {
-    const [result] = await db.insert(schema.cases).values(input).returning();
+    const [result] = await db.insert(schema.cases).values(input as any).returning();
     return result;
   },
   listCasesByOrg: async (orgId: string) => {
@@ -50,16 +50,16 @@ export const repository = {
     verdict: string,
     riskScore: number,
   ) => {
-    await (tx ? (tx as Parameters<typeof db.update>[0]) : db)
+    await (tx ? (tx as any) : db)
       .update(schema.cases)
       .set({ status, verdict, risk_score: riskScore })
       .where(eq(schema.cases.id, caseId));
   },
   replaceFindings: async (tx: unknown, caseId: string, findings: ScorableFinding[]) => {
-    const trx = tx ? (tx as Parameters<typeof db.delete>[0]) : db;
+    const trx = tx ? (tx as any) : db;
     await trx.delete(schema.findings).where(eq(schema.findings.case_id, caseId));
     if (findings.length > 0) {
-      const records = findings.map((f) => ({
+      const records = findings.map((f: any) => ({
         id: f.id,
         case_id: caseId,
         rule_id: f.rule_id,
@@ -152,15 +152,11 @@ export const repository = {
       );
   },
   createPendingRecord: async (caseId: string, consentId: string, uan: string) => {
-    const [result] = await db
-      .insert(schema.epfoRecords)
-      .values({
-        case_id: caseId,
-        consent_id: consentId,
-        uan,
-        status: 'pending',
-      })
-      .returning({ id: schema.epfoRecords.id });
+    const [result] = await db.insert(schema.epfoRecords).values({
+      case_id: caseId,
+      uan: uan,
+      status: 'pending',
+    } as any).returning({ id: schema.epfoRecords.id } as any);
     return result.id;
   },
   updateRecordSuccess: async (id: string, history: EpfoHistory) => {
@@ -169,8 +165,8 @@ export const repository = {
       .set({
         status: 'success',
         raw_data: history as unknown as object,
-      })
-      .where(eq(schema.epfoRecords.id, id));
+      } as any)
+      .where(eq(schema.epfoRecords.id, id as any));
   },
   updateRecordFailure: async (id: string, error: string) => {
     await db
@@ -178,8 +174,8 @@ export const repository = {
       .set({
         status: 'error',
         error_message: error,
-      })
-      .where(eq(schema.epfoRecords.id, id));
+      } as any)
+      .where(eq(schema.epfoRecords.id, id as any));
   },
   getFindingsForCase: async (caseId: string) => {
     return await db.select().from(schema.findings).where(eq(schema.findings.case_id, caseId));

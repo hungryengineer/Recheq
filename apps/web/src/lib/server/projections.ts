@@ -25,7 +25,7 @@ export async function projectCaseDetail(caseId: string, orgId: string) {
   const projectedDocs = documents.map((doc) => ({
     id: doc.id,
     kind: doc.kind,
-    uploaded_at: doc.created_at.toISOString(),
+    uploaded_at: doc.uploaded_at.toISOString(),
     extraction_status:
       extractionMap.get(doc.id) === 'success'
         ? 'ok'
@@ -81,9 +81,9 @@ export async function projectCaseDetail(caseId: string, orgId: string) {
 
   const consentInfo = consent
     ? {
-        granted_at: consent.granted_at.toISOString(),
+        granted_at: consent.granted_at ? consent.granted_at.toISOString() : null,
         withdrawn_at: consent.withdrawn_at ? consent.withdrawn_at.toISOString() : null,
-        version: consent.version,
+        version: consent.consent_version,
       }
     : null;
 

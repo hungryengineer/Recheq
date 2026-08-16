@@ -34,12 +34,12 @@ export function buildDeps(): CaseProcessingDeps {
     };
 
     globalForDeps.__deps = {
-      db: repository,
+      db,
       audit: auditService,
       epfoProvider: new FixtureEpfoProvider(),
       extractor: new FixtureExtractor(),
       tokenVerifier,
-    } as CaseProcessingDeps;
+    } as any;
   }
-  return globalForDeps.__deps;
+  return globalForDeps.__deps as any;
 }

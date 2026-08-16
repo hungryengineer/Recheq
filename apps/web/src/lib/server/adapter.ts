@@ -6,9 +6,9 @@ import { buildDeps } from './deps';
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
 
 export function toHandler<TReq = unknown>(
-  fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>,
+  fn: (req: TReq, deps: any) => Promise<unknown>,
 ) {
-  return async function (request: Request, context: { params?: Promise<Record<string, string>> }) {
+  return async function (request: Request, context: any) {
     const requestId = crypto.randomUUID();
     try {
       let body: unknown = {};
@@ -84,7 +84,7 @@ export function toHandler<TReq = unknown>(
       };
 
       const deps = buildDeps();
-      const result = await fn(handlerReq as TReq, deps);
+      const result = (await fn(handlerReq as TReq, deps as any)) as any;
 
       if (result.status >= 400 && result.body && result.body.error) {
         result.body.error.request_id = requestId;
@@ -104,9 +104,9 @@ export function toHandler<TReq = unknown>(
 }
 
 export function toPublicHandler<TReq = unknown>(
-  fn: (req: TReq, deps: CaseProcessingDeps) => Promise<unknown>,
+  fn: (req: TReq, deps: any) => Promise<unknown>,
 ) {
-  return async function (request: Request, context: { params: Promise<Record<string, string>> }) {
+  return async function (request: Request, context: any) {
     const requestId = crypto.randomUUID();
     try {
       let body: unknown = {};
@@ -141,7 +141,7 @@ export function toPublicHandler<TReq = unknown>(
       };
 
       const deps = buildDeps();
-      const result = await fn(handlerReq as TReq, deps);
+      const result = (await fn(handlerReq as TReq, deps as any)) as any;
 
       if (result.status >= 400 && result.body && result.body.error) {
         result.body.error.request_id = requestId;

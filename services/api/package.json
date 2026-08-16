@@ -6,7 +6,9 @@
   "main": "./dist/src/index.js",
   "exports": {
     ".": "./dist/src/index.js",
-    "./web": "./dist/src/web-entry.js"
+    "./web": "./dist/src/web-entry.js",
+    "./src/*": "./dist/src/*.js",
+    "./src/*.js": "./dist/src/*.js"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
