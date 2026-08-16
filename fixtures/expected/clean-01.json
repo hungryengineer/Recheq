@@ -1,0 +1,16 @@
+{
+  "score": 0,
+  "verdict": "verified",
+  "findings": [
+    {
+      "rule_id": "forensics-metadata",
+      "severity": "high",
+      "status": "not_assessed",
+      "title": "Document Forensics Unverified",
+      "explanation": "Forensics analysis data is missing.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    }
+  ]
+}

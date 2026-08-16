@@ -1,6 +1,6 @@
 import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
-import { getCase, listCases } from '@tieout/api/web';
-import { getCaseDeps, DEV_ORG_ID } from './db';
+import { getCase, listCases, getFindingsByCase } from '@tieout/api/web';
+import { getCaseDeps, getDb, DEV_ORG_ID } from './db';
 
 // Until session/authentication wiring is available, case reads use the
 // explicitly configured org identity (DEV_ORG_ID/DEV_USER_ID). requireDevId in
@@ -22,13 +22,19 @@ export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
   try {
     const caseRecord = await getCase(id, devOrgId(), getCaseDeps());
 
+    // Load findings from the findings table so the discrepancy ledger is
+    // populated for seeded demo cases (BE-15).
+    const allFindings = await getFindingsByCase(getDb(), id);
+    const findings = allFindings.filter((f) => f.status !== 'not_assessed');
+    const notAssessed = allFindings
+      .filter((f) => f.status === 'not_assessed')
+      .map((f) => f.rule_id);
+
     return {
       found: true,
       caseRecord,
-      // TODO: populate findings from the findings table once FindingsRepository is wired.
-      // See services/api/src/db/findings-deps.ts (to be created as part of BE-15).
-      findings: [],
-      notAssessed: [],
+      findings,
+      notAssessed,
     };
   } catch (err: unknown) {
     // Map not-found / foreign-org errors to a clean not-found result.

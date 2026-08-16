@@ -7,6 +7,8 @@ export const CaseCreateInput = z.object({
   employer_name: z.string().min(1).max(500),
   /** Candidate full name */
   candidate_name: z.string().min(1).max(500),
+  /** Candidate email */
+  candidate_email: z.string().email(),
   /** Case title / description */
   title: z.string().min(1).max(1000),
   /** Claimed CTC (Cost to Company) in INR */
@@ -27,6 +29,7 @@ export const CaseRecord = z.object({
   created_by: z.string().uuid(),
   employer_name: z.string(),
   candidate_name: z.string(),
+  candidate_email: z.string().email(),
   title: z.string(),
   claimed_ctc: z.number(),
   employment_start: z.string(),
@@ -45,6 +48,7 @@ export const CaseSummary = z.object({
   id: z.string().uuid(),
   employer_name: z.string(),
   candidate_name: z.string(),
+  candidate_email: z.string().email(),
   title: z.string(),
   status: CaseStatus,
   verdict: Verdict.nullable(),

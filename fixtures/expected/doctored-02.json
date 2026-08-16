@@ -1,0 +1,26 @@
+{
+  "score": 40,
+  "verdict": "needs_review",
+  "findings": [
+    {
+      "rule_id": "forensics-metadata",
+      "severity": "high",
+      "status": "not_assessed",
+      "title": "Document Forensics Unverified",
+      "explanation": "Forensics analysis data is missing.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    },
+    {
+      "rule_id": "payslip-arithmetic-net",
+      "severity": "high",
+      "status": "open",
+      "title": "Net Salary Mismatch",
+      "explanation": "Gross salary minus deductions does not equal stated net salary.",
+      "expected": "46000",
+      "observed": "58000",
+      "source_document_ids": []
+    }
+  ]
+}

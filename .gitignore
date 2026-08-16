@@ -87,6 +87,7 @@ known_hosts
 
 # Database dumps and backups
 *.sql
+!db/migrations/*.sql
 *.sqlite
 *.sqlite3
 *.db

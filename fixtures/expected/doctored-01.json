@@ -1,0 +1,56 @@
+{
+  "score": 80,
+  "verdict": "needs_review",
+  "findings": [
+    {
+      "rule_id": "forensics-metadata",
+      "severity": "high",
+      "status": "not_assessed",
+      "title": "Document Forensics Unverified",
+      "explanation": "Forensics analysis data is missing.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    },
+    {
+      "rule_id": "form16-reconciles-payslip",
+      "severity": "high",
+      "status": "not_assessed",
+      "title": "Form 16 / Payslip Reconciliation Unverified",
+      "explanation": "Requires both Payslip and Form 16 extraction data.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    },
+    {
+      "rule_id": "identity-consistent",
+      "severity": "high",
+      "status": "not_assessed",
+      "title": "Identity Consistency Unverified",
+      "explanation": "Requires both Payslip and Form 16 to compare identities.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    },
+    {
+      "rule_id": "pf-implies-basic",
+      "severity": "high",
+      "status": "open",
+      "title": "PF Deduction Inconsistent with Declared Basic",
+      "explanation": "PF employee share of Rs. 3,600 implies a basic salary of Rs. 30,000 at the statutory 12% rate, but the declared basic is Rs. 52,000.",
+      "expected": "Rs. 30,000",
+      "observed": "Rs. 52,000",
+      "source_document_ids": []
+    },
+    {
+      "rule_id": "pf-matches-epfo",
+      "severity": "high",
+      "status": "open",
+      "title": "PF Deduction Does Not Match EPFO Record",
+      "explanation": "The payslip PF deduction (Rs. 3,600) does not match the employee share filed by Acme Technologies Pvt Ltd in EPFO for 2026-03 (Rs. 1,800). The employer files EPFO contributions independently.",
+      "expected": "1800",
+      "observed": "3600",
+      "source_document_ids": []
+    }
+  ]
+}
