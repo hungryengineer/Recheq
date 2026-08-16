@@ -19,4 +19,8 @@ export function getDb(): Database {
   return globalForDb.__db;
 }
 
-export const db = getDb();
+export const db = new Proxy({} as Database, {
+  get(_target, prop) {
+    return getDb()[prop as keyof Database];
+  }
+});
