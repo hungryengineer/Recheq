@@ -101,6 +101,36 @@ describe('Case Service', () => {
         ),
       ).rejects.toThrowError(AppError);
     });
+
+    it('rejects malformed candidate email', async () => {
+      await expect(
+        createCase(
+          {
+            ...validCreateInput,
+            candidate_email: 'not-an-email',
+          },
+          userId,
+          orgId,
+          mockDeps,
+        ),
+      ).rejects.toThrowError(AppError);
+    });
+
+    it('rejects candidate email over 255 characters', async () => {
+      const longEmail = `${'a'.repeat(251)}@x.io`;
+      expect(longEmail.length).toBe(256);
+      await expect(
+        createCase(
+          {
+            ...validCreateInput,
+            candidate_email: longEmail,
+          },
+          userId,
+          orgId,
+          mockDeps,
+        ),
+      ).rejects.toThrowError(AppError);
+    });
   });
 
   describe('listCases', () => {

@@ -36,6 +36,7 @@ import { employerRequests } from '../services/api/src/db/schema/employer-request
 import { AuditService } from '../services/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '../services/api/src/audit/db-audit-repository.js';
 import { loadEnvFile } from './lib/load-env.js';
+import type { EventInput } from '@tieout/schema';
 
 // Seed the identity/credentials the dev app authenticates as, which live in the
 // web app's env file. The repo-root .env.local may carry unrelated placeholders
@@ -88,33 +89,41 @@ const db = createDb(connectionString);
 const FIXTURES = path.join(ROOT, 'fixtures', 'extraction');
 const EPFO_FIXTURES = path.join(ROOT, 'fixtures', 'epfo');
 
+/** Reads a JSON fixture file and returns the parsed value. */
 function readJson<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 }
+const CLEAN_PAYSLIP = readJson<Record<string, unknown>>(
+  path.join(FIXTURES, 'payslip-clean-01.json'),
+);
+const CLEAN_FORM16 = readJson<Record<string, unknown>>(path.join(FIXTURES, 'form16-clean-01.json'));
+const FORGED_PAYSLIP = readJson<Record<string, unknown>>(
+  path.join(FIXTURES, 'payslip-arun-doctored.json'),
+);
+const EPFO_CLEAN = readJson<Record<string, unknown>>(path.join(EPFO_FIXTURES, 'arun-clean.json'));
+const EPFO_DOCTORED = readJson<Record<string, unknown>>(
+  path.join(EPFO_FIXTURES, 'arun-doctored.json'),
+);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CLEAN_PAYSLIP: any = readJson(path.join(FIXTURES, 'payslip-clean-01.json'));
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CLEAN_FORM16: any = readJson(path.join(FIXTURES, 'form16-clean-01.json'));
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const FORGED_PAYSLIP: any = readJson(path.join(FIXTURES, 'payslip-arun-doctored.json'));
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const EPFO_CLEAN: any = readJson(path.join(EPFO_FIXTURES, 'arun-clean.json'));
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const EPFO_DOCTORED: any = readJson(path.join(EPFO_FIXTURES, 'arun-doctored.json'));
-
+/**
+ * Computes a content fingerprint for a demo document PDF. When the file is
+ * missing, falls back to a hash of the relative path and warns so the operator
+ * can tell which fixture was absent.
+ */
 function docFingerprint(relPath: string): { sha256: string; sizeBytes: number } {
   const abs = path.join(ROOT, relPath);
   try {
     const buf = fs.readFileSync(abs);
     return { sha256: crypto.createHash('sha256').update(buf).digest('hex'), sizeBytes: buf.length };
   } catch {
+    console.warn(`  ⚠️  Missing demo document ${relPath}; seeding a placeholder fingerprint.`);
     return { sha256: crypto.createHash('sha256').update(relPath).digest('hex'), sizeBytes: 0 };
   }
 }
 
 // ─── Idempotency helper ─────────────────────────────────────────
 
+/** Returns true when a case with the given id already exists in the database. */
 async function caseExists(dbHandle: Database, caseId: string): Promise<boolean> {
   const rows = await dbHandle.select({ id: cases.id }).from(cases).where(eq(cases.id, caseId));
   return rows.length > 0;
@@ -122,6 +131,11 @@ async function caseExists(dbHandle: Database, caseId: string): Promise<boolean> 
 
 // ─── Demo case seeding ──────────────────────────────────────────
 
+/**
+ * Seeds one demo case (documents, extractions, EPFO record, findings, and a
+ * hash-chained audit trail) inside a single transaction. Skips the case if it
+ * already exists so re-running `pnpm seed` is a no-op.
+ */
 async function seedCase(opts: {
   caseId: string;
   consentId: string;
@@ -145,7 +159,10 @@ async function seedCase(opts: {
   };
   epfo: { recordId: string; history: Record<string, unknown> };
   findingRows: Array<typeof findings.$inferInsert>;
-  eventInputs: Array<{ kind: string; payload: Record<string, unknown> }>;
+  eventInputs: Array<{
+    kind: EventInput['kind'];
+    payload: Record<string, unknown>;
+  }>;
 }): Promise<void> {
   if (await caseExists(db, opts.caseId)) {
     console.log(`  ⏭  Skipping case ${opts.caseId} (already seeded)`);
@@ -246,7 +263,7 @@ async function seedCase(opts: {
     for (const input of opts.eventInputs) {
       await audit.appendEvent(tx, {
         case_id: opts.caseId,
-        kind: input.kind as never,
+        kind: input.kind,
         payload: input.payload,
         actor: 'system',
       });
@@ -258,31 +275,39 @@ async function seedCase(opts: {
 
 // ─── Reset (seed:reset) ─────────────────────────────────────────
 
+/**
+ * Drops all rows belonging to the demo cases (events, findings, extractions,
+ * documents, EPFO records, consents, employer requests, cases) in one
+ * transaction. The shared dev org/user are left in place; the seed re-creates
+ * them idempotently.
+ */
 async function resetDemo() {
   const demoCaseIds = [CLEAN_CASE_ID, FORGED_CASE_ID];
 
-  for (const caseId of demoCaseIds) {
-    await db.delete(events).where(eq(events.case_id, caseId));
-    await db.delete(findings).where(eq(findings.case_id, caseId));
-    const docRows = await db
-      .select({ id: documents.id })
-      .from(documents)
-      .where(eq(documents.case_id, caseId));
-    for (const row of docRows) {
-      await db.delete(extractions).where(eq(extractions.document_id, row.id));
+  await db.transaction(async (tx) => {
+    for (const caseId of demoCaseIds) {
+      await tx.delete(events).where(eq(events.case_id, caseId));
+      await tx.delete(findings).where(eq(findings.case_id, caseId));
+      const docRows = await tx
+        .select({ id: documents.id })
+        .from(documents)
+        .where(eq(documents.case_id, caseId));
+      for (const row of docRows) {
+        await tx.delete(extractions).where(eq(extractions.document_id, row.id));
+      }
+      await tx.delete(documents).where(eq(documents.case_id, caseId));
+      const consentRows = await tx
+        .select({ id: consents.id })
+        .from(consents)
+        .where(eq(consents.case_id, caseId));
+      for (const row of consentRows) {
+        await tx.delete(epfoRecords).where(eq(epfoRecords.consent_id, row.id));
+      }
+      await tx.delete(consents).where(eq(consents.case_id, caseId));
+      await tx.delete(employerRequests).where(eq(employerRequests.case_id, caseId));
+      await tx.delete(cases).where(eq(cases.id, caseId));
     }
-    await db.delete(documents).where(eq(documents.case_id, caseId));
-    const consentRows = await db
-      .select({ id: consents.id })
-      .from(consents)
-      .where(eq(consents.case_id, caseId));
-    for (const row of consentRows) {
-      await db.delete(epfoRecords).where(eq(epfoRecords.consent_id, row.id));
-    }
-    await db.delete(consents).where(eq(consents.case_id, caseId));
-    await db.delete(employerRequests).where(eq(employerRequests.case_id, caseId));
-    await db.delete(cases).where(eq(cases.id, caseId));
-  }
+  });
 
   // The dev org/user are the shared dev identity used by other (non-demo) rows,
   // so they are left in place; the seed re-creates them idempotently anyway.

@@ -48,6 +48,30 @@ describe('CaseCreateInput', () => {
     expect(() => CaseCreateInput.parse({ ...valid, employer_name: '' })).toThrow();
   });
 
+  it('rejects missing candidate email', () => {
+    const { candidate_email: _candidate_email, ...rest } = valid;
+    expect(() => CaseCreateInput.parse(rest)).toThrow();
+  });
+
+  it('rejects malformed candidate email', () => {
+    expect(() => CaseCreateInput.parse({ ...valid, candidate_email: 'not-an-email' })).toThrow();
+  });
+
+  it('accepts a candidate email at the 255-character limit', () => {
+    const local = `${'a'.repeat(250)}@x.io`;
+    expect(local.length).toBe(255);
+    expect(CaseCreateInput.parse({ ...valid, candidate_email: local })).toEqual({
+      ...valid,
+      candidate_email: local,
+    });
+  });
+
+  it('rejects a candidate email over 255 characters', () => {
+    const local = `${'a'.repeat(251)}@x.io`;
+    expect(local.length).toBe(256);
+    expect(() => CaseCreateInput.parse({ ...valid, candidate_email: local })).toThrow();
+  });
+
   it('rejects negative CTC', () => {
     expect(() => CaseCreateInput.parse({ ...valid, claimed_ctc: -1 })).toThrow();
   });
