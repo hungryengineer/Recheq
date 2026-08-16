@@ -46,13 +46,20 @@ export function OrganizationTab() {
     toast.success('Invitation link copied to clipboard!');
   };
 
-  const handleRemoveMember = (id: number) => {
+  const handleRemoveMember = async (id: number) => {
     if (id === 1) {
       toast.error('Cannot remove the organization owner');
       return;
     }
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    toast.success('Member removed');
+
+    // Simulate server-side revocation
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+      toast.success('Member removed');
+    } catch {
+      toast.error('Failed to remove member');
+    }
   };
 
   return (

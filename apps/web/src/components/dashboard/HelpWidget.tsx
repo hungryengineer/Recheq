@@ -11,7 +11,11 @@ export function HelpWidget() {
   // Close when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+      if (
+        widgetRef.current &&
+        event.target instanceof Node &&
+        !widgetRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     }

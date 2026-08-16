@@ -47,7 +47,7 @@ export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: 
                 {finding.severity}
               </span>
               <h3 className="text-[14px] font-medium text-[var(--color-fg)]">
-                {getFriendlyRuleTitle(finding.rule_id as string)}
+                {getFriendlyRuleTitle(finding.rule_id)}
               </h3>
             </div>
             <span className="text-[10px] font-mono text-[var(--color-fg-subtle)]">

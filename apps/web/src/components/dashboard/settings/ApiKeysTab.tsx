@@ -21,11 +21,15 @@ export function ApiKeysTab() {
     loadKeys();
   }, []);
 
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(id);
-    toast.success('API Key copied to clipboard');
-    setTimeout(() => setCopiedKey(null), 2000);
+  const handleCopy = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(id);
+      toast.success('API Key copied to clipboard');
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
   };
 
   const handleGenerate = async () => {
