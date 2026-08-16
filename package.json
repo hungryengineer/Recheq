@@ -21,6 +21,8 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "storage:setup": "tsx scripts/ensure-bucket.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed": "tsx scripts/seed-demo.ts",
+    "seed:reset": "tsx scripts/seed-demo.ts --reset",
     "check:neon": "tsx scripts/check-neon-persistence.ts",
     "check:storage": "tsx scripts/check-storage.ts",
     "db:ping": "tsx scripts/check-db-connectivity.ts"

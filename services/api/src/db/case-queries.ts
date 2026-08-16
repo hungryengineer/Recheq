@@ -25,6 +25,7 @@ export function toCaseRecord(row: (typeof cases)['$inferSelect']): CaseRecord {
   };
 }
 
+/** Loads a single case record by id, or null when no such row exists. */
 export async function getCaseRecordById(db: Database, caseId: string): Promise<CaseRecord | null> {
   const rows = await db.select().from(cases).where(eq(cases.id, caseId)).limit(1);
   return rows[0] ? toCaseRecord(rows[0]) : null;
