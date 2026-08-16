@@ -12,9 +12,7 @@ export function SecurityTab() {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const [activeSessions, setActiveSessions] = useState([
-    { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true },
-    { id: 'iphone', device: 'iPhone 13 • Safari', location: 'New York, America', isCurrent: false },
-    { id: 'windows', device: 'Windows 11 • Edge', location: 'Boston, America', isCurrent: false }
+    { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true }
   ]);
 
   useEffect(() => {
@@ -34,10 +32,8 @@ export function SecurityTab() {
         }
       } catch(e) {}
 
-      setActiveSessions(prev => [
-        { id: 'current', device: deviceName, location, isCurrent: true },
-        prev[1],
-        prev[2]
+      setActiveSessions([
+        { id: 'current', device: deviceName, location, isCurrent: true }
       ]);
     }
   }, []);
