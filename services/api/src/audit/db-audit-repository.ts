@@ -8,6 +8,9 @@ import type { IAuditRepository } from './audit-service.js';
 type DB = PostgresJsDatabase<any>;
 type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
 
+/** Union of the two query-capable handles this repository accepts. */
+type Handle = DB | Tx;
+
 /** Type guard: true when the value looks like a Drizzle transaction handle. */
 function isTx(value: unknown): value is Tx {
   return (
@@ -20,11 +23,25 @@ function isTx(value: unknown): value is Tx {
   );
 }
 
+/** Resolve the correct query handle — transaction when provided, db otherwise. */
+function resolveHandle(db: DB, tx: unknown): Handle {
+  return isTx(tx) ? tx : db;
+}
+
 export class DbAuditRepository implements IAuditRepository {
   constructor(private readonly db: DB) {}
 
-  async getLastEvent(caseId: string): Promise<EventRecord | null> {
-    const records = await this.db
+  /**
+   * Reads the most recent event for the case.
+   *
+   * When `tx` is supplied the query executes inside the same transaction as the
+   * caller's subsequent insert, so both the read and the write share the same
+   * database snapshot and connection. This prevents two concurrent appends from
+   * reading the same seq and then racing on the uq_events_case_seq constraint.
+   */
+  async getLastEvent(caseId: string, tx?: unknown): Promise<EventRecord | null> {
+    const handle = resolveHandle(this.db, tx);
+    const records = await handle
       .select()
       .from(events)
       .where(eq(events.case_id, caseId))
@@ -35,8 +52,8 @@ export class DbAuditRepository implements IAuditRepository {
   }
 
   async appendEvent(tx: unknown, event: EventRecord): Promise<void> {
-    const target: DB = isTx(tx) ? (tx as unknown as DB) : this.db;
-    await target.insert(events).values({
+    const handle = resolveHandle(this.db, tx);
+    await handle.insert(events).values({
       id: event.id,
       case_id: event.case_id,
       seq: event.seq,

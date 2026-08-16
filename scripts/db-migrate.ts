@@ -72,9 +72,19 @@ try {
 
     const content = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
 
-    // Detect whether the file manages its own transaction (autocommit required,
-    // e.g. CREATE DATABASE, VACUUM, or migrations with explicit BEGIN/COMMIT).
-    const needsAutocommit = /^\s*(BEGIN|START\s+TRANSACTION)/im.test(content);
+    // Detect whether the file requires autocommit — i.e. it must NOT be wrapped
+    // in a transaction. Two categories:
+    //
+    // 1. Files that manage their own transaction (explicit BEGIN / START TRANSACTION).
+    // 2. Files that contain statements that are illegal inside a transaction block:
+    //    CREATE INDEX CONCURRENTLY, VACUUM, CREATE DATABASE, DROP DATABASE.
+    //
+    // In both cases we fall through to the autocommit path and run as-is.
+    const needsAutocommit =
+      /^\s*(BEGIN|START\s+TRANSACTION)/im.test(content) ||
+      /\b(CREATE\s+INDEX\s+CONCURRENTLY|VACUUM|CREATE\s+DATABASE|DROP\s+DATABASE)\b/im.test(
+        content,
+      );
 
     if (needsAutocommit) {
       // Run as-is; the file's own transaction wraps the DDL.

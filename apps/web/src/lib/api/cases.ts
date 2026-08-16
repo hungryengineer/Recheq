@@ -29,6 +29,7 @@ export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
       typeof err === 'object' &&
       err !== null &&
       'statusCode' in err &&
+      typeof (err as { statusCode: unknown }).statusCode === 'number' &&
       (err as { statusCode: number }).statusCode === 404;
 
     if (isNotFound) {

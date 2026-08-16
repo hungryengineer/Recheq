@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CaseStatus, DocumentKind } from '@tieout/schema';
+import { CaseStatus, ConsentStatus, DocumentKind } from '@tieout/schema';
 
 export interface PublicCaseContext {
   orgName: string;
@@ -11,15 +11,16 @@ export interface PublicCaseContext {
 }
 
 // ─── Zod schema for the candidate API response ───────────────────
-// Validates the shape returned by GET /api/public/[token]/candidate
-// so unknown DB values are caught at the boundary, not silently cast.
+// Validates the shape returned by GET /api/public/[token]/candidate so unknown
+// DB values are caught at the boundary, not silently cast.
 const CandidateResponseSchema = z.object({
   orgName: z.string(),
   employerName: z.string(),
   candidateName: z.string(),
   title: z.string(),
   status: CaseStatus,
-  consent_status: z.enum(['pending', 'granted', 'withdrawn']).nullable(),
+  // Use the shared ConsentStatus enum rather than a duplicated inline z.enum.
+  consent_status: ConsentStatus.nullable(),
   documentsRequired: z.array(DocumentKind),
   documentsProvided: z.array(DocumentKind),
 });
@@ -47,6 +48,29 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   }
 }
 
+// ─── Shared error-message extractor ──────────────────────────────
+// Safely parses a JSON response body and returns the nested error message or
+// the supplied fallback. Used for all four API error-handling sites below to
+// avoid repeated inline casts.
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.json();
+    if (
+      typeof body === 'object' &&
+      body !== null &&
+      'error' in body &&
+      typeof (body as { error?: unknown }).error === 'object' &&
+      (body as { error: { message?: unknown } }).error !== null &&
+      typeof (body as { error: { message?: unknown } }).error.message === 'string'
+    ) {
+      return (body as { error: { message: string } }).error.message;
+    }
+  } catch {
+    // Ignore parse failures — use fallback.
+  }
+  return fallback;
+}
+
 export async function getCaseByToken(token: string): Promise<PublicCaseContext> {
   const response = await apiFetch(`/api/public/${token}/candidate`, {
     headers: { Accept: 'application/json' },
@@ -58,7 +82,14 @@ export async function getCaseByToken(token: string): Promise<PublicCaseContext> 
   }
 
   const raw = await response.json();
-  const data = CandidateResponseSchema.parse(raw);
+
+  // Use safeParse so a malformed payload produces a clear error rather than an
+  // unhandled ZodError propagating to the UI.
+  const parsed = CandidateResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error('CANDIDATE_API_ERROR: unexpected response shape from server');
+  }
+  const data = parsed.data;
 
   return {
     orgName: data.orgName,
@@ -70,7 +101,9 @@ export async function getCaseByToken(token: string): Promise<PublicCaseContext> 
   };
 }
 
-export async function grantConsent(token: string, _ip: string, _userAgent: string): Promise<void> {
+// ip and userAgent are collected server-side on the consent route; the client
+// does not need to pass them.
+export async function grantConsent(token: string): Promise<void> {
   // Send only the version; the server derives the canonical consent text.
   const response = await apiFetch(`/api/public/${token}/consent`, {
     method: 'POST',
@@ -79,12 +112,8 @@ export async function grantConsent(token: string, _ip: string, _userAgent: strin
   });
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
     if (response.status === 410) throw new Error('TOKEN_EXPIRED');
-    throw new Error(
-      (data as { error?: { message?: string } } | null)?.error?.message ||
-        'Failed to grant consent',
-    );
+    throw new Error(await readErrorMessage(response, 'Failed to grant consent'));
   }
 }
 
@@ -95,12 +124,8 @@ export async function withdrawConsent(token: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
     if (response.status === 410) throw new Error('TOKEN_EXPIRED');
-    throw new Error(
-      (data as { error?: { message?: string } } | null)?.error?.message ||
-        'Failed to withdraw consent',
-    );
+    throw new Error(await readErrorMessage(response, 'Failed to withdraw consent'));
   }
 }
 
@@ -119,13 +144,9 @@ export async function uploadDocument(
   });
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
     if (response.status === 410) throw new Error('TOKEN_EXPIRED');
     if (response.status === 413) throw new Error('FILE_TOO_LARGE');
-    throw new Error(
-      (data as { error?: { message?: string } } | null)?.error?.message ||
-        'Failed to upload document',
-    );
+    throw new Error(await readErrorMessage(response, 'Failed to upload document'));
   }
 }
 
@@ -154,10 +175,6 @@ export async function disputeFinding(
   });
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    throw new Error(
-      (data as { error?: { message?: string } } | null)?.error?.message ||
-        'Failed to submit dispute',
-    );
+    throw new Error(await readErrorMessage(response, 'Failed to submit dispute'));
   }
 }
