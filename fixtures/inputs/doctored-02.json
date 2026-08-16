@@ -1,0 +1,77 @@
+{
+  "id": "doctored-02",
+  "context": {
+    "assembly": {
+      "case_id": "10000000-0000-0000-0000-000000000003",
+      "origins": ["payslip", "form_16", "epfo"],
+      "has_payslip": true,
+      "has_form16": true,
+      "has_epfo": true,
+      "has_employer": false,
+      "has_forensics": false
+    },
+    "payslip": {
+      "employee_name": "Arun Kumar",
+      "employee_id": "ACM-2847",
+      "employer_name": "Acme Technologies Pvt Ltd",
+      "month": "March",
+      "year": 2026,
+      "basic": { "raw_label": "Basic Salary", "amount": 30000 },
+      "hra": { "raw_label": "House Rent Allowance", "amount": 12000 },
+      "da": { "raw_label": "Dearness Allowance", "amount": 3000 },
+      "special_allowance": { "raw_label": "Special Allowance", "amount": 8000 },
+      "other_allowances": [{ "raw_label": "Transport Allowance", "amount": 1600 }],
+      "gross_salary": 54600,
+      "pf_deduction": 3600,
+      "professional_tax": 200,
+      "income_tax": 4800,
+      "other_deductions": 0,
+      "total_deductions": 8600,
+      "net_salary": 58000,
+      "uan": "100123456789",
+      "pf_account_number": "MH/MUM/12345/000/2847",
+      "extraction_notes": null,
+      "schema_version": "payslip-v1"
+    },
+    "form16": {
+      "employee_name": "Arun Kumar",
+      "employee_pan": "ABCAK5678G",
+      "employer_name": "Acme Technologies Pvt Ltd",
+      "employer_tan": "MUMA12345D",
+      "employer_pan": "AAACA5678B",
+      "financial_year": "2025-26",
+      "assessment_year": "2026-27",
+      "total_tax_deducted": 57600,
+      "total_tax_deposited": 57600,
+      "gross_total_income": 655200,
+      "total_salary": 655200,
+      "exempt_allowances": 19200,
+      "standard_deduction": 50000,
+      "professional_tax": 2400,
+      "net_taxable_salary": 583600,
+      "total_income_tax_payable": 57600,
+      "extraction_notes": null,
+      "schema_version": "form16-v1"
+    },
+    "epfoHistory": {
+      "uan": "100123456789",
+      "periods": [
+        {
+          "employerName": "Acme Technologies Pvt Ltd",
+          "establishmentId": "MH/MUM/12345",
+          "startDate": "2023-04-01",
+          "endDate": null,
+          "contributions": [
+            { "month": "2025-10", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2025-11", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2025-12", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2026-01", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2026-02", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2026-03", "employee_share": 3600, "employer_share": 3600 }
+          ]
+        }
+      ]
+    },
+    "forensics": null
+  }
+}

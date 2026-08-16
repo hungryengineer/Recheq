@@ -44,6 +44,7 @@ const deps = createCaseDeps(db);
 const input = {
   employer_name: 'Acme Corp',
   candidate_name: 'Dummy Candidate',
+  candidate_email: 'dummy@example.com',
   title: 'Dummy persistence check',
   claimed_ctc: 1200000,
   employment_start: '2024-01-01',
