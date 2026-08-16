@@ -36,7 +36,7 @@ export function CreateCaseForm() {
 
     try {
       // createCase is a Server Action
-      const result = await createCase(input);
+      const result = (await createCase(input)) as any;
 
       if (result.error) {
         if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {

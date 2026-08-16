@@ -116,7 +116,7 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
         throw new Error(`Anthropic API error: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       rawOutput = data.content[0]?.text || '';
       usage = {
         promptTokens: data.usage?.input_tokens || 0,

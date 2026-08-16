@@ -103,7 +103,7 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
         throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       rawOutput = data.choices[0]?.message?.content || '';
       usage = {
         promptTokens: data.usage?.prompt_tokens || 0,

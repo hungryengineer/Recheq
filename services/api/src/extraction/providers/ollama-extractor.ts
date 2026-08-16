@@ -69,7 +69,7 @@ export class OllamaExtractor implements LlmDocumentExtractor {
         return false;
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       const models = data.models || [];
 
       // Check if the configured model is available
@@ -118,7 +118,7 @@ export class OllamaExtractor implements LlmDocumentExtractor {
         throw new Error(`Ollama API error: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       rawOutput = data.response || '';
 
       // Ollama doesn't provide token usage in standard API
@@ -229,7 +229,7 @@ export class OllamaExtractor implements LlmDocumentExtractor {
         return [];
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       return (data.models || []).map((model: { name: string }) => model.name);
     } catch {
       return [];

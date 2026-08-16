@@ -71,18 +71,18 @@ function Badge({ status, verdict }: { status?: string; verdict?: string | null }
 export default async function CaseDetailsPage({ params }: PageProps) {
   const { id } = await params;
 
-  let caseRecord: Record<string, unknown> = {};
-  let findings: UI_Finding[] = [];
-  let notAssessed: Array<{ rule_id: string; title: string; reason: string }> = [];
+  let caseRecord: any = {};
+  let findings: any[] = [];
+  let notAssessed: any[] = [];
 
   try {
     const data = await getCaseDetails(id);
     if (!data.found) {
       throw new Error('Not found');
     }
-    caseRecord = data.caseRecord as unknown as Record<string, unknown>;
-    findings = data.findings as unknown as UI_Finding[];
-    notAssessed = data.notAssessed as Array<{ rule_id: string; title: string; reason: string }>;
+    caseRecord = data.caseRecord as any;
+    findings = data.findings as any;
+    notAssessed = data.notAssessed as any;
   } catch {
     return (
       <div className="py-20 text-center animate-fade-in">
