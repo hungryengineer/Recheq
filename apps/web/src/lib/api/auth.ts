@@ -26,14 +26,6 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, rememberMe } = parsed.data;
 
-    // Strict admin credential enforcement for the mock environment
-    const ADMIN_EMAIL = 'admin@gmail.com';
-    const ADMIN_PASS = 'Admin123';
-
-    if (email !== ADMIN_EMAIL || password !== ADMIN_PASS) {
-      return { success: false, error: 'Invalid credentials. Please use the correct admin credentials.' };
-    }
-
     const response = await fetch('http://localhost:4010/api/auth/login', {
       method: 'POST',
       headers: {
@@ -43,6 +35,14 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
     });
 
     if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        if (errorData.error?.message) {
+          return { success: false, error: errorData.error.message };
+        }
+      } catch (e) {
+        // Fallback for non-JSON or missing error body
+      }
       return { success: false, error: 'Authentication failed. Please verify your credentials.' };
     }
 
@@ -101,11 +101,6 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, fullName, company } = parsed.data;
 
-    // Hardcode a mock failure to demonstrate error handling
-    if (email === 'fail@gmail.com') {
-      return { success: false, error: 'Registration failed. This email might already be in use.' };
-    }
-
     const response = await fetch('http://localhost:4010/api/auth/signup', {
       method: 'POST',
       headers: {
@@ -115,6 +110,14 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
     });
 
     if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        if (errorData.error?.message) {
+          return { success: false, error: errorData.error.message };
+        }
+      } catch (e) {
+        // Fallback for non-JSON or missing error body
+      }
       return { success: false, error: 'Registration failed. Please try again.' };
     }
 
