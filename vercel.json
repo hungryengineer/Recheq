@@ -1,5 +1,5 @@
 {
   "buildCommand": "pnpm --filter \"@tieout/web\" build",
-  "outputDirectory": ".next",
+  "outputDirectory": "apps/web/.next",
   "framework": "nextjs"
 }
