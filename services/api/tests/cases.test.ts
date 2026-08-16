@@ -44,7 +44,7 @@ describe('Case Service', () => {
         employment_start: validCreateInput.employment_start,
         employment_end: validCreateInput.employment_end,
         uan: null,
-        status: 'draft',
+        status: 'awaiting_consent',
         verdict: null,
         risk_score: null,
         created_at: '2023-10-01T00:00:00Z',
@@ -67,7 +67,7 @@ describe('Case Service', () => {
         employment_start: validCreateInput.employment_start,
         employment_end: validCreateInput.employment_end,
         uan: null,
-        status: 'draft',
+        status: 'awaiting_consent',
         verdict: null,
         risk_score: null,
       });
