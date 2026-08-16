@@ -1,225 +1,87 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-page: var(--bg-page);
+  --color-surface: var(--bg-surface);
+  --color-fg: var(--fg-primary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-border: var(--border-primary);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-bg: var(--accent-bg);
+
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+
+  --color-medium: var(--medium);
+  --color-medium-bg: var(--medium-bg);
+
+  --color-high: var(--high);
+  --color-high-bg: var(--high-bg);
+
+  --radius-card: 16px;
+  --radius-control: 8px;
+
+  --shadow-premium: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-glass: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+}
+
 :root {
-  /* Color Palette - Premium and sleek */
-  --color-bg: #f8f9fa;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f1f3f5;
-  --color-text-main: #212529;
-  --color-text-muted: #6c757d;
-
-  --color-primary: #339af0;
-  --color-primary-hover: #228be6;
-  --color-primary-light: #e7f5ff;
-
-  --color-success: #40c057;
-  --color-danger: #fa5252;
-  --color-danger-hover: #e03131;
-  --color-danger-light: #fff5f5;
-  --color-warning: #fab005;
-
-  --color-border: #dee2e6;
-  --color-border-light: #e9ecef;
-
-  /* Typography */
-  --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
-  /* Radii */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-full: 9999px;
-
-  /* Layout */
-  --container-width: 600px;
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --fg-primary: #0f172a;
+  --fg-muted: #475569;
+  --fg-subtle: #94a3b8;
+  --border-primary: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --accent: #3b82f6;
+  --accent-bg: #eff6ff;
+  --ok: #10b981;
+  --ok-bg: #ecfdf5;
+  --medium: #f59e0b;
+  --medium-bg: #fffbeb;
+  --high: #ef4444;
+  --high-bg: #fef2f2;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #121212;
-    --color-surface: #1e1e1e;
-    --color-surface-hover: #2c2c2c;
-    --color-text-main: #f8f9fa;
-    --color-text-muted: #adb5bd;
-    --color-border: #343a40;
-    --color-border-light: #212529;
-    --color-primary: #4dabf7;
-    --color-primary-light: #183e60;
-    --color-danger-light: #4d1515;
+:root.dark,
+.dark {
+  --bg-page: #020617;
+  --bg-surface: #0f172a;
+  --fg-primary: #f8fafc;
+  --fg-muted: #94a3b8;
+  --fg-subtle: #475569;
+  --border-primary: #1e293b;
+  --border-subtle: #0f172a;
+  --accent: #60a5fa;
+  --accent-bg: #1e3a8a;
+  --ok: #34d399;
+  --ok-bg: #064e3b;
+  --medium: #fbbf24;
+  --medium-bg: #78350f;
+  --high: #f87171;
+  --high-bg: #7f1d1d;
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-premium), var(--shadow-glass);
   }
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--color-bg);
-  color: var(--color-text-main);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 600;
-  line-height: 1.2;
-  margin-bottom: 0.5rem;
-}
-
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: var(--color-primary-hover);
-}
-
-.container {
-  max-width: var(--container-width);
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  transition:
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  font-family: inherit;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-1px);
-}
-
-.btn-danger {
-  background-color: var(--color-danger);
-  color: white;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-hover);
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-main);
-}
-
-.btn-outline:hover:not(:disabled) {
-  background-color: var(--color-surface-hover);
-}
-
-.text-center {
-  text-align: center;
-}
-.text-muted {
-  color: var(--color-text-muted);
-}
-.text-danger {
-  color: var(--color-danger);
-}
-.mt-1 {
-  margin-top: 0.25rem;
-}
-.mt-2 {
-  margin-top: 0.5rem;
-}
-.mt-4 {
-  margin-top: 1rem;
-}
-.mt-6 {
-  margin-top: 1.5rem;
-}
-.mt-8 {
-  margin-top: 2rem;
-}
-.mb-4 {
-  margin-bottom: 1rem;
-}
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-  .glass-panel {
-    background: rgba(30, 30, 30, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
+  background-color: var(--color-page);
+  color: var(--color-fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-image:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 400px),
+    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 400px);
+  background-attachment: fixed;
 }

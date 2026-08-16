@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { REDACTED_VALUE } from '../../../packages/config/src/logging.js';
+import { REDACTED_VALUE } from '@tieout/config/src/logging.js';
 import { createLogger, type LogSink } from '../src/observability/logger.js';
 import { createRequestContext } from '../src/observability/request-context.js';
 

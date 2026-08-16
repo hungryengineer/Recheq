@@ -1,106 +1,204 @@
 import React from 'react';
-import { getCaseDetails } from '../../../../lib/api/cases';
-import { CaseStatusBadge } from '@/components/dashboard/CaseStatusBadge';
-import { DiscrepancyLedger } from '@/components/ledger/DiscrepancyLedger';
 import Link from 'next/link';
+import { getCaseDetails } from '@/lib/api/cases';
+import { FindingCard } from '@/components/dashboard/FindingCard';
+import type {} from '@/components/dashboard/FindingCard';
+import type { CaseRecord, FindingRecord } from '@tieout/schema';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+function Badge({ verdict }: { verdict?: string | null }) {
+  if (!verdict) return null;
+  switch (verdict) {
+    case 'verified':
+    case 'verified_with_notes':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+    case 'needs_review':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-medium-bg)] text-[var(--color-medium)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+    case 'insufficient_evidence':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-[var(--color-fg-muted)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+  }
+}
+
 export default async function CaseDetailsPage({ params }: PageProps) {
-  // Next.js 16/React 19 dynamic params handling
   const { id } = await params;
 
+  let caseRecord: CaseRecord | null = null;
+  let findings: FindingRecord[] = [];
+  let notAssessed: string[] = [];
+
   try {
-    const result = await getCaseDetails(id);
-
-    if (!result.found) {
-      return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Case Not Found</h2>
-          <p className="text-gray-500 mb-6">
-            The case you are looking for does not exist or you do not have permission to view it.
-          </p>
-          <Link href="/cases" className="text-blue-600 hover:text-blue-800 font-medium">
-            Return to Dashboard
-          </Link>
-        </div>
-      );
+    const data = await getCaseDetails(id);
+    if (!data.found) {
+      throw new Error('Not found');
     }
-
-    const { caseRecord, findings, notAssessed } = result;
-
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-4 mb-2">
-                <Link href="/cases" className="text-sm text-blue-600 hover:text-blue-800">
-                  &larr; Back to Cases
-                </Link>
-                <div className="h-4 w-px bg-gray-300"></div>
-                <span className="text-sm text-gray-500 font-mono">{caseRecord.id}</span>
-              </div>
-              <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-                {caseRecord.candidate_name}
-              </h1>
-              <p className="mt-1 text-lg text-gray-500">
-                {caseRecord.title} at {caseRecord.employer_name}
-              </p>
-            </div>
-
-            <div className="flex flex-col items-end gap-2">
-              <CaseStatusBadge status={caseRecord.status} />
-              {caseRecord.verdict && <CaseStatusBadge verdict={caseRecord.verdict} />}
-            </div>
-          </div>
-
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-8">
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Claimed CTC</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  ₹{caseRecord.claimed_ctc.toLocaleString('en-IN')}
-                </dd>
-              </div>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Employment Dates</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {caseRecord.employment_start} to {caseRecord.employment_end}
-                </dd>
-              </div>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">UAN</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {caseRecord.uan || <span className="text-gray-400 italic">Not provided</span>}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-
-        <div className="mt-12">
-          <DiscrepancyLedger
-            findings={findings}
-            notAssessed={notAssessed}
-            riskScore={caseRecord.risk_score}
-          />
-        </div>
-      </div>
-    );
+    caseRecord = data.caseRecord;
+    findings = data.findings;
+    notAssessed = data.notAssessed;
   } catch {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Case Not Found</h2>
-        <p className="text-gray-500 mb-6">
-          The case you are looking for does not exist or you do not have permission to view it.
-        </p>
-        <Link href="/cases" className="text-blue-600 hover:text-blue-800 font-medium">
-          Return to Dashboard
+      <div className="py-20 text-center animate-fade-in">
+        <h2 className="text-xl font-semibold text-[var(--color-high)] mb-2">Failed to load case</h2>
+        <Link href="/cases" className="text-[var(--color-accent)] hover:underline font-medium">
+          &larr; Return to Dashboard
         </Link>
       </div>
     );
   }
+
+  if (!caseRecord) {
+    return (
+      <div className="py-20 text-center animate-fade-in">
+        <h2 className="text-xl font-semibold text-[var(--color-high)] mb-2">Case not found</h2>
+        <Link href="/cases" className="text-[var(--color-accent)] hover:underline font-medium">
+          &larr; Return to Dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  const origins: string[] = [];
+
+  const highCount = findings.filter((f) => f.severity === 'high').length;
+  const mediumCount = findings.filter((f) => f.severity === 'medium').length;
+
+  return (
+    <div className="animate-fade-in pb-12">
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <Link
+            href="/cases"
+            className="text-[13px] text-[var(--color-accent)] hover:underline font-medium"
+          >
+            &larr; Back to cases
+          </Link>
+          <span className="text-[10px] text-[var(--color-fg-subtle)] font-mono tracking-wide">
+            {id}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-[22px] font-semibold text-[var(--color-fg)] leading-tight">
+              {caseRecord.candidate_name}
+            </h1>
+            <p className="text-[13px] text-[var(--color-fg-muted)] mt-1">
+              {caseRecord.title} at {caseRecord.employer_name}
+            </p>
+          </div>
+          <div>{caseRecord.verdict && <Badge verdict={caseRecord.verdict} />}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-4 shadow-sm flex flex-col justify-between">
+          <div className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">Risk score</div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-3xl font-semibold text-[var(--color-fg)]">
+              {caseRecord.risk_score ?? '-'}
+            </span>
+            {caseRecord.risk_score !== null && (
+              <span className="text-[10px] font-mono text-[var(--color-fg-subtle)]">
+                40x{highCount} high + 15x{mediumCount} med
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-4 shadow-sm flex flex-col justify-between">
+          <div className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">High severity</div>
+          <div className="text-3xl font-semibold text-[var(--color-high)]">{highCount}</div>
+        </div>
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-4 shadow-sm flex flex-col justify-between">
+          <div className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">
+            Medium severity
+          </div>
+          <div className="text-3xl font-semibold text-[var(--color-medium)]">{mediumCount}</div>
+        </div>
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-4 shadow-sm flex flex-col justify-between">
+          <div className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">
+            Independent sources
+          </div>
+          <div className="text-3xl font-semibold text-[var(--color-fg)]">{origins.length}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-2 mb-10">
+        <span className="text-sm font-medium text-[var(--color-fg-muted)] mr-2">
+          Evidence sources
+        </span>
+        {['payslip', 'form16', 'epfo'].map((source) => {
+          const hasSource = origins.includes(source);
+          if (hasSource) {
+            return (
+              <span
+                key={source}
+                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]"
+              >
+                ✓{' '}
+                {source === 'form16' ? 'Form 16' : source.charAt(0).toUpperCase() + source.slice(1)}
+              </span>
+            );
+          }
+          return null;
+        })}
+        {!origins.includes('employer') && (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-[var(--color-fg-subtle)]">
+            Employer pending
+          </span>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold text-[var(--color-fg)] mb-4 border-b border-[var(--color-border)] pb-2">
+          Discrepancy ledger
+        </h2>
+
+        {findings.length === 0 ? (
+          <div className="text-sm text-[var(--color-fg-muted)] py-4">No findings.</div>
+        ) : (
+          <div className="space-y-4 mb-6">
+            {findings.map((f, i) => (
+              <FindingCard key={i} finding={f} caseId={id} />
+            ))}
+          </div>
+        )}
+
+        {notAssessed.length > 0 && (
+          <div className="bg-[var(--color-page)] rounded-[var(--radius-card)] border border-[var(--color-border)] p-4 flex flex-col sm:flex-row sm:items-center">
+            <span className="text-[13px] font-medium text-[var(--color-fg-muted)] mr-4 whitespace-nowrap mb-2 sm:mb-0">
+              Not assessed &mdash; {notAssessed.length} rules
+            </span>
+            <div className="flex flex-wrap gap-2 text-[11px] font-mono text-[var(--color-fg-subtle)]">
+              {notAssessed.map((rule) => (
+                <span key={rule}>· {rule}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

@@ -73,6 +73,7 @@ export function toErrorResponse(error: unknown): { status: number; body: ApiErro
   }
 
   // Fallback for unexpected errors
+  console.error('Unexpected Error:', error);
   return {
     status: 500,
     body: {

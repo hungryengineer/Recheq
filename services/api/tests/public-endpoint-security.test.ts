@@ -470,7 +470,7 @@ describe('createRequestValidationMiddleware', () => {
     const response = await middleware(req, next);
 
     expect(response.status).toBe(401);
-    const body = await response.json();
-    expect(body.error.code).toBe('TOKEN_NOT_FOUND');
+    const body = (await response.json()) as { error?: { code?: string } };
+    expect(body.error?.code).toBe('TOKEN_NOT_FOUND');
   });
 });

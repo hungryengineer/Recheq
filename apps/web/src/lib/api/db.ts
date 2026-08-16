@@ -21,8 +21,8 @@ function requireDevId(name: string): string {
   return value;
 }
 
-export const DEV_ORG_ID = requireDevId('DEV_ORG_ID');
-export const DEV_USER_ID = requireDevId('DEV_USER_ID');
+export const getDevOrgId = () => requireDevId('DEV_ORG_ID');
+export const getDevUserId = () => requireDevId('DEV_USER_ID');
 
 const globalForDb = globalThis as unknown as { __tieoutDb?: ReturnType<typeof createDb> };
 

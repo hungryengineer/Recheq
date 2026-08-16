@@ -22,6 +22,12 @@ export interface DocumentStorage {
   putObject(key: string, content: Buffer, contentType: string): Promise<void>;
 
   /**
+  /**
+   * Retrieves a document from the private storage bucket.
+   */
+  getObject(key: string): Promise<Buffer>;
+
+  /**
    * Checks whether an object exists and reports its size.
    * @param key - The storage path
    */
@@ -53,7 +59,13 @@ export interface DocumentStorageConfig {
 export type DocumentStorageTransport = (
   url: URL,
   init: RequestInit,
-) => Promise<{ ok: boolean; status: number; statusText: string; size?: number | null }>;
+) => Promise<{
+  ok: boolean;
+  status: number;
+  statusText: string;
+  size?: number | null;
+  arrayBuffer?: () => Promise<ArrayBuffer>;
+}>;
 
 // ─── Factory ────────────────────────────────────────────────────
 
@@ -94,6 +106,24 @@ export function createDocumentStorage(
 
       if (!response.ok) {
         throw new Error(`Failed to upload document: ${response.status} ${response.statusText}`);
+      }
+    },
+    async getObject(key: string): Promise<Buffer> {
+      const url = getObjectUrl(config, key);
+      const emptyHash = createHash('sha256').update('').digest('hex');
+      const headers = signObjectRequest(config, 'GET', url, emptyHash, undefined, 0, new Date());
+
+      try {
+        const response = await transport(url, { method: 'GET', headers });
+        if (!response.ok) {
+          throw new Error(`Failed to get document: ${response.status} ${response.statusText}`);
+        }
+        if (!response.arrayBuffer) {
+          throw new Error('Transport does not support arrayBuffer');
+        }
+        return Buffer.from(await response.arrayBuffer());
+      } catch (err) {
+        throw new Error(`Storage retrieval failed for ${key}`, { cause: err });
       }
     },
     async headObject(key: string): Promise<ObjectHead> {
@@ -198,7 +228,7 @@ function getObjectUrl(config: DocumentStorageConfig, key: string): URL {
 
 function signObjectRequest(
   config: DocumentStorageConfig,
-  method: 'HEAD' | 'PUT' | 'DELETE',
+  method: 'GET' | 'HEAD' | 'PUT' | 'DELETE',
   url: URL,
   bodyHash: string,
   contentType: string | undefined,
@@ -218,7 +248,7 @@ function signObjectRequest(
   if (contentType !== undefined) {
     headers.set('content-type', contentType);
   }
-  if (contentLength > 0) {
+  if (contentLength > 0 || method === 'PUT') {
     headers.set('content-length', String(contentLength));
   }
 
@@ -293,7 +323,13 @@ function toAmzDate(date: Date): string {
 async function defaultTransport(
   url: URL,
   init: RequestInit,
-): Promise<{ ok: boolean; status: number; statusText: string; size?: number | null }> {
+): Promise<{
+  ok: boolean;
+  status: number;
+  statusText: string;
+  size?: number | null;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}> {
   const response = await fetch(url, init);
   const contentLength = response.headers.get('content-length');
   let size: number | null = null;
@@ -309,6 +345,7 @@ async function defaultTransport(
     status: response.status,
     statusText: response.statusText,
     size,
+    arrayBuffer: () => response.arrayBuffer(),
   };
 }
 

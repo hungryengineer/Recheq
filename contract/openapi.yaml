@@ -9,11 +9,108 @@ servers:
   - url: http://localhost:4010
     description: Prism mock - prism mock contract/openapi.yaml --port 4010 --errors
 tags:
+  - name: auth
+    description: Authentication endpoints for logging in to the platform.
   - name: cases
     description: Verifier routes for managing cases. Requires Bearer authentication.
   - name: public-candidate
     description: Public candidate routes using path tokens.
 paths:
+  /api/auth/signup:
+    post:
+      operationId: signup
+      summary: Register a new account
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SignupInput' }
+      responses:
+        '200':
+          description: Successfully registered and logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: Login with email and password
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+      responses:
+        '200':
+          description: Successfully logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      summary: Request a password reset email
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: 'john@acme.com' }
+      responses:
+        '200':
+          description: Reset instructions sent (if email exists)
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/auth/reset-password:
+    post:
+      operationId: resetPassword
+      summary: Reset password using code
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, newPassword]
+              properties:
+                email: { type: string, format: email, example: 'john@acme.com' }
+                code: { type: string, example: '123456' }
+                newPassword: { type: string, example: 'NewPass123!' }
+      responses:
+        '200':
+          description: Password successfully reset
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/auth/sso:
+    post:
+      operationId: ssoLogin
+      summary: Login via Single Sign-On
+      tags: [auth]
+      responses:
+        '200':
+          description: Successfully initiated SSO
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
   /api/cases:
     post:
       operationId: createCase
@@ -74,6 +171,35 @@ paths:
               schema: { $ref: '#/components/schemas/CaseDetail' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/cases/{id}/documents/{docId}:
+    get:
+      operationId: downloadDocument
+      summary: Download a case document
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          description: Case ID
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string }
+          description: Document ID
+      responses:
+        '200':
+          description: Document binary
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalServerError' }
 
@@ -240,6 +366,64 @@ paths:
         '410': { $ref: '#/components/responses/Gone' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
         '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/settings/keys:
+    get:
+      operationId: listApiKeys
+      summary: List API keys
+      tags: [settings]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: A list of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ApiKey' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    post:
+      operationId: createApiKey
+      summary: Create a new API key
+      tags: [settings]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: 'Production Key' }
+      responses:
+        '201':
+          description: API key created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiKeyCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/settings/keys/{id}:
+    delete:
+      operationId: deleteApiKey
+      summary: Revoke an API key
+      tags: [settings]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          description: API key ID
+      responses:
+        '204':
+          description: API key revoked successfully
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
 
 components:
   securitySchemes:
@@ -380,10 +564,11 @@ components:
 
     CaseSummary:
       type: object
-      required: [id, candidate_name, employer_name, title, status, created_at]
+      required: [id, candidate_name, candidate_email, employer_name, title, status, created_at]
       properties:
         id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
         candidate_name: { type: string, example: Arun Kumar }
+        candidate_email: { type: string, example: arun@example.com }
         employer_name: { type: string, example: Acme Technologies Pvt Ltd }
         title: { type: string, example: Senior Analyst }
         status:
@@ -401,10 +586,22 @@ components:
 
     CaseDetail:
       type: object
-      required: [id, candidate_name, employer_name, title, status, findings, not_assessed, origins]
+      required:
+        [
+          id,
+          candidate_name,
+          candidate_email,
+          employer_name,
+          title,
+          status,
+          findings,
+          not_assessed,
+          origins,
+        ]
       properties:
         id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
         candidate_name: { type: string, example: Arun Kumar }
+        candidate_email: { type: string, example: arun@example.com }
         employer_name: { type: string, example: Acme Technologies Pvt Ltd }
         title: { type: string, example: Senior Analyst }
         claimed_ctc: { type: number, example: 1800000 }
@@ -546,4 +743,54 @@ components:
           nullable: true
           properties:
             code: { type: string, example: EXTRACTION_UNAVAILABLE }
-            message: { type: string, example: One document could not be read automatically. }
+            message: { type: string, example: The requested resource was not found. }
+
+    SignupInput:
+      type: object
+      required: [fullName, email, company, password]
+      properties:
+        fullName: { type: string, example: 'John Doe' }
+        email: { type: string, format: email, example: 'john@acme.com' }
+        company: { type: string, example: 'Acme Corp' }
+        password: { type: string, example: 'securepassword123' }
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: 'admin@recheq.com' }
+        password: { type: string, example: 'securepassword123' }
+        rememberMe: { type: boolean, example: true }
+
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          type: object
+          required: [id, email, role]
+          properties:
+            id: { type: string, example: 'usr_123' }
+            email: { type: string, format: email, example: 'admin@recheq.com' }
+            name: { type: string, example: 'Admin User' }
+            role: { type: string, example: 'admin' }
+
+    ApiKey:
+      type: object
+      required: [id, name, secret, date]
+      properties:
+        id: { type: string, example: 'key_123' }
+        name: { type: string, example: 'Production Key' }
+        secret: { type: string, example: 'req_live_****************a8f9' }
+        date: { type: string, example: 'Oct 12, 2025' }
+
+    ApiKeyCreated:
+      allOf:
+        - $ref: '#/components/schemas/ApiKey'
+        - type: object
+          required: [fullSecret]
+          properties:
+            fullSecret: { type: string, example: 'req_live_fake_key_12345' }
