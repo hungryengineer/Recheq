@@ -22,7 +22,11 @@ export async function getCaseByToken(token: string): Promise<PublicCaseContext> 
   };
 }
 
-export async function grantConsent(token: string, _ip: string = '0.0.0.0', _userAgent: string = 'unknown'): Promise<void> {
+export async function grantConsent(
+  token: string,
+  _ip: string = '0.0.0.0',
+  _userAgent: string = 'unknown',
+): Promise<void> {
   await apiClient(`/public/${token}/consent`, { method: 'POST' });
 }
 

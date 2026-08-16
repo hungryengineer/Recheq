@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createCase } from '../../lib/api/actions';
+import { createCase, isCreateCaseError } from '../../lib/api/actions';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, QrCode } from 'lucide-react';
 
@@ -36,20 +36,21 @@ export function CreateCaseForm() {
 
     try {
       // createCase is a Server Action
-      const result = (await createCase(input)) as any;
+      const result = await createCase(input);
 
-      if (result.error) {
-        if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {
+      if (isCreateCaseError(result)) {
+        const { error } = result;
+        if (error.code === 'VALIDATION_ERROR' && error.details?.fields) {
           const errors: Record<string, string> = {};
-          for (const field of result.error.details.fields) {
+          for (const field of error.details.fields) {
             errors[field.path] = field.message;
           }
           setFieldErrors(errors);
         } else {
-          setGeneralError(result.error.message || 'Failed to create case');
+          setGeneralError(error.message ?? 'Failed to create case');
         }
       } else {
-        setSuccessLink(result.candidate_link);
+        setSuccessLink(result.candidate_link ?? null);
       }
     } catch (err: unknown) {
       const error = err as Error;

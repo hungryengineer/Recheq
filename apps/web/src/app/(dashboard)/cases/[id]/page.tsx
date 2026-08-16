@@ -3,86 +3,58 @@ import Link from 'next/link';
 import { getCaseDetails } from '@/lib/api/cases';
 import { FindingCard } from '@/components/dashboard/FindingCard';
 import type { UI_Finding } from '@/components/dashboard/FindingCard';
+import type { CaseRecord, FindingRecord } from '@tieout/schema';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-function Badge({ status, verdict }: { status?: string; verdict?: string | null }) {
-  if (verdict) {
-    switch (verdict) {
-      case 'verified':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
-            {verdict.replace(/_/g, ' ')}
-          </span>
-        );
-      case 'verified_with_notes':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
-            {verdict.replace(/_/g, ' ')}
-          </span>
-        );
-      case 'needs_review':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-medium-bg)] text-[var(--color-medium)]">
-            {verdict.replace(/_/g, ' ')}
-          </span>
-        );
-      case 'insufficient_evidence':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">
-            {verdict.replace(/_/g, ' ')}
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-[var(--color-fg-muted)]">
-            {verdict.replace(/_/g, ' ')}
-          </span>
-        );
-    }
+function Badge({ verdict }: { verdict?: string | null }) {
+  if (!verdict) return null;
+  switch (verdict) {
+    case 'verified':
+    case 'verified_with_notes':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+    case 'needs_review':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-medium-bg)] text-[var(--color-medium)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+    case 'insufficient_evidence':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-[var(--color-fg-muted)]">
+          {verdict.replace(/_/g, ' ')}
+        </span>
+      );
   }
-  if (status) {
-    switch (status) {
-      case 'complete':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-[var(--color-fg-muted)]">
-            {status}
-          </span>
-        );
-      case 'processing':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-accent-bg)] text-[var(--color-accent)]">
-            {status}
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-[var(--color-fg-muted)]">
-            {status.replace(/_/g, ' ')}
-          </span>
-        );
-    }
-  }
-  return null;
 }
 
 export default async function CaseDetailsPage({ params }: PageProps) {
   const { id } = await params;
 
-  let caseRecord: any = {};
-  let findings: any[] = [];
-  let notAssessed: any[] = [];
+  let caseRecord: CaseRecord | null = null;
+  let findings: FindingRecord[] = [];
+  let notAssessed: string[] = [];
 
   try {
     const data = await getCaseDetails(id);
     if (!data.found) {
       throw new Error('Not found');
     }
-    caseRecord = data.caseRecord as any;
-    findings = data.findings as any;
-    notAssessed = data.notAssessed as any;
+    caseRecord = data.caseRecord;
+    findings = data.findings;
+    notAssessed = data.notAssessed;
   } catch {
     return (
       <div className="py-20 text-center animate-fade-in">
@@ -94,7 +66,18 @@ export default async function CaseDetailsPage({ params }: PageProps) {
     );
   }
 
-  const origins = caseRecord.origins || [];
+  if (!caseRecord) {
+    return (
+      <div className="py-20 text-center animate-fade-in">
+        <h2 className="text-xl font-semibold text-[var(--color-high)] mb-2">Case not found</h2>
+        <Link href="/cases" className="text-[var(--color-accent)] hover:underline font-medium">
+          &larr; Return to Dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  const origins: string[] = [];
 
   const highCount = findings.filter((f: UI_Finding) => f.severity === 'high').length;
   const mediumCount = findings.filter((f: UI_Finding) => f.severity === 'medium').length;
@@ -206,13 +189,11 @@ export default async function CaseDetailsPage({ params }: PageProps) {
         {notAssessed.length > 0 && (
           <div className="bg-[var(--color-page)] rounded-[var(--radius-card)] border border-[var(--color-border)] p-4 flex flex-col sm:flex-row sm:items-center">
             <span className="text-[13px] font-medium text-[var(--color-fg-muted)] mr-4 whitespace-nowrap mb-2 sm:mb-0">
-              Not assessed — {notAssessed.length} rules
+              Not assessed &mdash; {notAssessed.length} rules
             </span>
             <div className="flex flex-wrap gap-2 text-[11px] font-mono text-[var(--color-fg-subtle)]">
-              {notAssessed.map((rule: { rule_id: string; title: string; reason: string }) => (
-                <span key={rule.rule_id} title={rule.reason}>
-                  · {rule.title}
-                </span>
+              {notAssessed.map((rule) => (
+                <span key={rule}>· {rule}</span>
               ))}
             </div>
           </div>
