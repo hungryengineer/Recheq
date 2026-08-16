@@ -32,12 +32,17 @@ export function ProfileTab() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setName(formData.name);
-    setEmail(formData.email);
-    setIsSaving(false);
-    toast.success('Profile updated successfully');
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setName(formData.name);
+      setEmail(formData.email);
+      toast.success('Profile updated successfully');
+    } catch (err: unknown) {
+      toast.error('Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -82,10 +87,11 @@ export function ProfileTab() {
 
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="w-full md:w-1/3">
-            <label className="block text-sm font-medium text-[var(--color-fg)]">Full name</label>
+            <label htmlFor="fullNameInput" className="block text-sm font-medium text-[var(--color-fg)]">Full name</label>
           </div>
           <div className="w-full md:w-2/3">
             <input
+              id="fullNameInput"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -96,12 +102,13 @@ export function ProfileTab() {
 
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="w-full md:w-1/3">
-            <label className="block text-sm font-medium text-[var(--color-fg)]">
+            <label htmlFor="emailAddressInput" className="block text-sm font-medium text-[var(--color-fg)]">
               Email address
             </label>
           </div>
           <div className="w-full md:w-2/3">
             <input
+              id="emailAddressInput"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}

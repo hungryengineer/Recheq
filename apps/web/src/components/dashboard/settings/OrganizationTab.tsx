@@ -27,12 +27,19 @@ export function OrganizationTab() {
     { id: 2, name: 'Sarah Jenkins', email: 'sarah@acme.com', role: 'Verifier', color: 'emerald' },
   ]);
 
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
   const handleUpdateCompany = async () => {
     setIsUpdating(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setCompanyName(localCompanyName);
-    setIsUpdating(false);
-    toast.success('Organization updated successfully');
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setCompanyName(localCompanyName);
+      toast.success('Organization updated successfully');
+    } catch (err: unknown) {
+      toast.error('Failed to update organization');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleInvite = () => {
@@ -60,10 +67,11 @@ export function OrganizationTab() {
 
       <div className="flex flex-col md:flex-row md:items-start gap-4 mb-8">
         <div className="w-full md:w-1/3">
-          <label className="block text-sm font-medium text-[var(--color-fg)]">Company name</label>
+          <label htmlFor="companyNameInput" className="block text-sm font-medium text-[var(--color-fg)]">Company name</label>
         </div>
         <div className="w-full md:w-2/3 flex gap-2">
           <input
+            id="companyNameInput"
             type="text"
             value={localCompanyName}
             onChange={(e) => setLocalCompanyName(e.target.value)}
@@ -134,18 +142,28 @@ export function OrganizationTab() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-[var(--color-fg)]">{member.role}</td>
-                    <td className="px-4 py-3 text-right text-sm relative group">
-                      <button className="text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]">
+                    <td className="px-4 py-3 text-right text-sm relative">
+                      <button 
+                        onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+                        aria-expanded={openMenuId === member.id}
+                        aria-label="Member actions"
+                        className="text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+                      >
                         <MoreHorizontal className="w-5 h-5" />
                       </button>
-                      <div className="hidden group-hover:block absolute right-8 top-8 w-32 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-10 overflow-hidden">
-                        <button
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-[var(--color-page)] transition-colors"
-                        >
-                          Remove
-                        </button>
-                      </div>
+                      {openMenuId === member.id && (
+                        <div className="absolute right-8 top-8 w-32 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-10 overflow-hidden">
+                          <button
+                            onClick={() => {
+                              handleRemoveMember(member.id);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-[var(--color-page)] transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

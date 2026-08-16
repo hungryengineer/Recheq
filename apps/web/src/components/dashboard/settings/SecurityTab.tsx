@@ -52,34 +52,48 @@ export function SecurityTab() {
       return;
     }
     setIsUpdatingPassword(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsUpdatingPassword(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    toast.success('Password updated successfully.');
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast.success('Password updated successfully.');
+    } catch (err: unknown) {
+      toast.error('Failed to update password');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleToggle2FA = async () => {
     setIsEnabling2FA(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsEnabling2FA(false);
-
-    if (is2FAEnabled) {
-      setIs2FAEnabled(false);
-      toast.info('Two-factor authentication disabled');
-    } else {
-      setIs2FAEnabled(true);
-      toast.success('Two-factor authentication successfully enabled');
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (is2FAEnabled) {
+        setIs2FAEnabled(false);
+        toast.info('Two-factor authentication disabled');
+      } else {
+        setIs2FAEnabled(true);
+        toast.success('Two-factor authentication successfully enabled');
+      }
+    } catch (err: unknown) {
+      toast.error('Failed to toggle two-factor authentication');
+    } finally {
+      setIsEnabling2FA(false);
     }
   };
 
   const handleSignoutOtherDevices = async () => {
     setIsSigningOut(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
-    setIsSigningOut(false);
-    toast.success('Successfully signed out of all other devices');
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
+      toast.success('Successfully signed out of all other devices');
+    } catch (err: unknown) {
+      toast.error('Failed to sign out of other devices');
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   return (

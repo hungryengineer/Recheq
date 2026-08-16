@@ -9,9 +9,14 @@ export function BillingTab() {
 
   const handleManagePlan = async () => {
     setIsManaging(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsManaging(false);
-    toast.info('Billing portal integration pending');
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      toast.info('Billing portal integration pending');
+    } catch (err: unknown) {
+      toast.error('Failed to load billing portal');
+    } finally {
+      setIsManaging(false);
+    }
   };
 
   const handleDownload = () => {

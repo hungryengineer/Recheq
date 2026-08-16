@@ -19,6 +19,7 @@ function makeCaseRecord(overrides: Partial<CaseRecord> = {}): CaseRecord {
     created_by: 'user-001',
     employer_name: 'Acme Corp',
     candidate_name: 'Jane Doe',
+    candidate_email: 'jane@example.com',
     title: 'Senior Engineer BGV',
     claimed_ctc: 1800000,
     employment_start: '2021-01-01',
@@ -102,6 +103,7 @@ describe('getCandidateView', () => {
     expect(view).toEqual({
       employer_name: 'Acme Corp',
       candidate_name: 'Jane Doe',
+      candidate_email: 'jane@example.com',
       title: 'Senior Engineer BGV',
       status: 'awaiting_consent',
       consent_status: null,

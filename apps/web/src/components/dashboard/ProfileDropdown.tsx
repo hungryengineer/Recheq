@@ -8,6 +8,7 @@ import { User, Settings, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser } from '@/contexts/UserContext';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,8 +35,12 @@ export function ProfileDropdown() {
 
   const handleSignout = async () => {
     setIsOpen(false);
-    await signoutAction();
-    router.push('/login');
+    try {
+      await signoutAction();
+      router.push('/login');
+    } catch (err: unknown) {
+      toast.error('Sign out failed');
+    }
   };
 
   return (
