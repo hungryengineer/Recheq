@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { UAParser } from 'ua-parser-js';
 
 export function SecurityTab() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -11,10 +12,35 @@ export function SecurityTab() {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const [activeSessions, setActiveSessions] = useState([
-    { id: 'current', device: 'Mac OS • Chrome', location: 'New York, US', isCurrent: true },
-    { id: 'iphone', device: 'iPhone 13 • Safari', location: 'New York, US', isCurrent: false },
-    { id: 'windows', device: 'Windows 11 • Edge', location: 'Boston, US', isCurrent: false }
+    { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true },
+    { id: 'iphone', device: 'iPhone 13 • Safari', location: 'New York, America', isCurrent: false },
+    { id: 'windows', device: 'Windows 11 • Edge', location: 'Boston, America', isCurrent: false }
   ]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const parser = new UAParser(window.navigator.userAgent);
+      const result = parser.getResult();
+      const os = result.os.name || 'Unknown OS';
+      const browser = result.browser.name || 'Unknown Browser';
+      const deviceName = `${os} • ${browser}`;
+
+      let location = 'Unknown Location';
+      try {
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timeZone) {
+          const parts = timeZone.split('/');
+          location = parts[parts.length - 1].replace(/_/g, ' ') + (parts.length > 1 ? `, ${parts[0]}` : '');
+        }
+      } catch(e) {}
+
+      setActiveSessions(prev => [
+        { id: 'current', device: deviceName, location, isCurrent: true },
+        prev[1],
+        prev[2]
+      ]);
+    }
+  }, []);
 
   const handleUpdatePassword = async () => {
     setIsUpdatingPassword(true);

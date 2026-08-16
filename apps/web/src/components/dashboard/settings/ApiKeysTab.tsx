@@ -50,10 +50,10 @@ export function ApiKeysTab() {
         </div>
         <button 
           onClick={handleGenerate}
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 active:scale-95 transition-all"
+          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:scale-[0.98] transition-all"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Generate new key
+          <Plus className="w-4 h-4 mr-1.5 opacity-80" strokeWidth={2.5} />
+          Generate Key
         </button>
       </div>
       <hr className="border-[var(--color-border)] mb-6" />
