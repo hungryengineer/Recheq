@@ -39,6 +39,7 @@ export async function createCase(
     created_by: userId,
     employer_name: data.employer_name,
     candidate_name: data.candidate_name,
+    candidate_email: data.candidate_email,
     title: data.title,
     claimed_ctc: data.claimed_ctc,
     employment_start: data.employment_start,

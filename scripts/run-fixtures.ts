@@ -16,10 +16,12 @@ async function run() {
 
   const tests = await loadFixtures(FIXTURES_DIR);
   if (tests.length === 0) {
-    console.warn('⚠️  No fixtures found in ' + FIXTURES_DIR);
-    process.exit(0);
+    console.error('⚠️  No fixtures found in ' + FIXTURES_DIR);
+    console.error('    Expected fixtures/inputs/*.json paired with fixtures/expected/*.json.');
+    process.exit(1);
   }
 
+  let passed = 0;
   let failed = 0;
 
   for (const test of tests) {
@@ -44,6 +46,7 @@ async function run() {
 
     if (comparison.passed) {
       console.log(`✅ Passed (${findings.length} findings, score: ${score})`);
+      passed++;
     } else {
       console.error(`❌ Failed:`);
       comparison.errors.forEach((e: string) => console.error(`   - ${e}`));
@@ -56,7 +59,7 @@ async function run() {
     console.error(`💥 ${failed} out of ${tests.length} fixture checks failed!`);
     process.exit(1);
   } else {
-    console.log(`🎉 All ${tests.length} fixture checks passed successfully!`);
+    console.log(`🎉 ${passed}/${tests.length} passed`);
     process.exit(0);
   }
 }

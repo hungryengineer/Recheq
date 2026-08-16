@@ -20,6 +20,7 @@ export function CreateCaseForm() {
     const input: CaseCreateInput = {
       employer_name: formData.get('employer_name') as string,
       candidate_name: formData.get('candidate_name') as string,
+      candidate_email: formData.get('candidate_email') as string,
       title: formData.get('title') as string,
       claimed_ctc: Number(formData.get('claimed_ctc')),
       employment_start: formData.get('employment_start') as string,
@@ -78,6 +79,19 @@ export function CreateCaseForm() {
                 type="text"
                 name="candidate_name"
                 id="candidate_name"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+              />
+            </div>
+
+            <div className="col-span-6 sm:col-span-3">
+              <label htmlFor="candidate_email" className="block text-sm font-medium text-gray-700">
+                Candidate Email
+              </label>
+              <input
+                type="email"
+                name="candidate_email"
+                id="candidate_email"
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
               />

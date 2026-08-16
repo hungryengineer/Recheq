@@ -1,0 +1,58 @@
+{
+  "id": "doctored-01",
+  "context": {
+    "assembly": {
+      "case_id": "10000000-0000-0000-0000-000000000002",
+      "origins": ["payslip", "epfo"],
+      "has_payslip": true,
+      "has_form16": false,
+      "has_epfo": true,
+      "has_employer": false,
+      "has_forensics": false
+    },
+    "payslip": {
+      "employee_name": "Arun Kumar",
+      "employee_id": "ACM-2847",
+      "employer_name": "Acme Technologies Pvt Ltd",
+      "month": "March",
+      "year": 2026,
+      "basic": { "raw_label": "Basic Salary", "amount": 52000 },
+      "hra": { "raw_label": "House Rent Allowance", "amount": 20800 },
+      "da": { "raw_label": "Dearness Allowance", "amount": 3000 },
+      "special_allowance": { "raw_label": "Special Allowance", "amount": 8000 },
+      "other_allowances": [{ "raw_label": "Transport Allowance", "amount": 1600 }],
+      "gross_salary": 85400,
+      "pf_deduction": 3600,
+      "professional_tax": 200,
+      "income_tax": 4800,
+      "other_deductions": 0,
+      "total_deductions": 8600,
+      "net_salary": 76800,
+      "uan": "100123456789",
+      "pf_account_number": "MH/MUM/12345/000/2847",
+      "extraction_notes": null,
+      "schema_version": "payslip-v1"
+    },
+    "form16": null,
+    "epfoHistory": {
+      "uan": "100123456789",
+      "periods": [
+        {
+          "employerName": "Acme Technologies Pvt Ltd",
+          "establishmentId": "MH/MUM/12345",
+          "startDate": "2023-04-01",
+          "endDate": null,
+          "contributions": [
+            { "month": "2025-10", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2025-11", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2025-12", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2026-01", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2026-02", "employee_share": 3600, "employer_share": 3600 },
+            { "month": "2026-03", "employee_share": 1800, "employer_share": 1800 }
+          ]
+        }
+      ]
+    },
+    "forensics": null
+  }
+}
