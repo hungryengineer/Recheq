@@ -11,20 +11,20 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
     setErrors({});
-    
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const fullName = formData.get('fullName') as string;
     const company = formData.get('company') as string;
-    
+
     const result = await signupAction({ email, password, fullName, company });
-    
+
     if (!result.success) {
       if (result.errors) {
         setErrors(result.errors);
@@ -34,7 +34,7 @@ export default function SignupPage() {
       setIsLoading(false);
       return;
     }
-    
+
     // On success, redirect to dashboard
     router.push('/cases');
   }
@@ -46,7 +46,7 @@ export default function SignupPage() {
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.1),_transparent_40%)]"></div>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxjaXJjbGUgY3g9IjIiIGN5PSIyIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIj48L2NpcmNsZT4KPC9zdmc+')] opacity-50"></div>
-        
+
         <div className="relative z-10 max-w-xl">
           {/* Logo */}
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-12">
@@ -55,22 +55,24 @@ export default function SignupPage() {
               <span className="leading-none text-blue-400 -mt-1 tracking-tighter">cheq</span>
             </div>
           </div>
-          
+
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
             Join <span className="text-blue-500">Recheq</span> today
           </h1>
           <p className="text-2xl text-gray-300 font-medium tracking-wide flex items-center gap-3 mb-6">
-            Secure <span className="text-blue-500">•</span> Simple <span className="text-blue-500">•</span> Smart
+            Secure <span className="text-blue-500">•</span> Simple{' '}
+            <span className="text-blue-500">•</span> Smart
           </p>
           <p className="text-gray-400 text-lg max-w-md leading-relaxed">
-            Create an account to start verifying candidates instantly with enterprise-grade accuracy.
+            Create an account to start verifying candidates instantly with enterprise-grade
+            accuracy.
           </p>
         </div>
-        
+
         {/* Abstract 3D Dashboard Illustration */}
         <div className="relative z-10 my-auto h-80 flex items-center justify-center">
           <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full"></div>
-          
+
           <div className="relative transform rotate-[5deg] hover:rotate-0 transition-transform duration-700">
             <div className="w-80 h-48 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl p-4 flex flex-col relative z-20">
               <div className="flex gap-1.5 mb-4">
@@ -87,26 +89,38 @@ export default function SignupPage() {
               </div>
               <div className="flex gap-4 flex-1">
                 <div className="w-16 h-16 rounded-full border-4 border-blue-500/50 flex-shrink-0 relative">
-                  <div className="absolute inset-0 border-4 border-green-400 rounded-full" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }}></div>
+                  <div
+                    className="absolute inset-0 border-4 border-green-400 rounded-full"
+                    style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }}
+                  ></div>
                 </div>
                 <div className="flex-1 space-y-3 pt-2">
-                  <div className="flex gap-2 items-center"><div className="w-2 h-2 rounded-full bg-blue-400"></div><div className="h-2.5 bg-white/10 rounded w-3/4"></div></div>
-                  <div className="flex gap-2 items-center"><div className="w-2 h-2 rounded-full bg-white/30"></div><div className="h-2.5 bg-white/10 rounded w-1/2"></div></div>
-                  <div className="flex gap-2 items-center"><div className="w-2 h-2 rounded-full bg-white/30"></div><div className="h-2.5 bg-white/10 rounded w-2/3"></div></div>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <div className="h-2.5 bg-white/10 rounded w-3/4"></div>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-2 h-2 rounded-full bg-white/30"></div>
+                    <div className="h-2.5 bg-white/10 rounded w-1/2"></div>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-2 h-2 rounded-full bg-white/30"></div>
+                    <div className="h-2.5 bg-white/10 rounded w-2/3"></div>
+                  </div>
                 </div>
               </div>
             </div>
-            
+
             <div className="absolute -left-8 -bottom-8 bg-blue-500 p-4 rounded-2xl shadow-2xl transform -rotate-12 z-30 flex items-center justify-center">
               <User className="w-12 h-12 text-white" strokeWidth={2.5} />
             </div>
-            
+
             <div className="absolute -top-12 right-12 w-3 h-3 rounded-full border border-green-400/50 animate-pulse"></div>
             <div className="absolute top-24 -left-16 w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
             <div className="absolute -bottom-16 right-32 w-4 h-4 rounded border border-blue-500/50 rotate-45"></div>
           </div>
         </div>
-        
+
         {/* Footer Features */}
         <div className="relative z-10 grid grid-cols-3 gap-8">
           <div className="flex flex-col gap-3">
@@ -115,7 +129,9 @@ export default function SignupPage() {
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-1 text-white">Secure</h4>
-              <p className="text-xs text-gray-400 leading-relaxed">Your data is protected with enterprise-grade security</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Your data is protected with enterprise-grade security
+              </p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -124,7 +140,9 @@ export default function SignupPage() {
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-1 text-white">Fast</h4>
-              <p className="text-xs text-gray-400 leading-relaxed">Quick access to your documents and information</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Quick access to your documents and information
+              </p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -133,35 +151,37 @@ export default function SignupPage() {
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-1 text-white">Reliable</h4>
-              <p className="text-xs text-gray-400 leading-relaxed">Accurate data you can trust, every time</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Accurate data you can trust, every time
+              </p>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Right Split - Signup Form (Light Theme) */}
       <div className="flex-1 bg-gray-50 flex flex-col justify-between p-8 relative h-screen overflow-y-auto">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxjaXJjbGUgY3g9IjIiIGN5PSIyIiByPSIxIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMDQpIj48L2NpcmNsZT4KPC9zdmc+')] pointer-events-none opacity-50 mask-image:linear-gradient(to_bottom_left,white,transparent)"></div>
-        
+
         <div className="flex-1 flex flex-col justify-center items-center py-10">
           <div className="w-full max-w-[440px] bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-10 relative z-10">
-            
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Create an account</h2>
               <p className="text-sm text-gray-500">Sign up to get started with Recheq</p>
             </div>
-            
+
             {errors.form && (
               <div className="mb-6 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg border border-red-100 text-center">
                 {errors.form}
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-5">
-              
               {/* Full Name */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700" htmlFor="fullName">Full Name</label>
+                <label className="text-sm font-semibold text-gray-700" htmlFor="fullName">
+                  Full Name
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />
@@ -180,7 +200,9 @@ export default function SignupPage() {
 
               {/* Company */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700" htmlFor="company">Company</label>
+                <label className="text-sm font-semibold text-gray-700" htmlFor="company">
+                  Company
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <Building className="h-5 w-5 text-gray-400" />
@@ -196,10 +218,12 @@ export default function SignupPage() {
                 </div>
                 {errors.company && <p className="text-xs text-red-500 mt-1">{errors.company}</p>}
               </div>
-              
+
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700" htmlFor="email">Work Email</label>
+                <label className="text-sm font-semibold text-gray-700" htmlFor="email">
+                  Work Email
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -221,11 +245,23 @@ export default function SignupPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700" htmlFor="password">Password</label>
+                <label className="text-sm font-semibold text-gray-700" htmlFor="password">
+                  Password
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    <svg
+                      className="h-5 w-5 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
                     </svg>
                   </div>
                   <input
@@ -245,7 +281,9 @@ export default function SignupPage() {
                   </button>
                 </div>
                 {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-                <p className="text-[10px] text-gray-500 mt-1">Must be at least 8 characters long.</p>
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Must be at least 8 characters long.
+                </p>
               </div>
 
               <button
@@ -256,13 +294,15 @@ export default function SignupPage() {
                 {isLoading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>
-            
+
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
-                Already have an account? <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500">Sign in</Link>
+                Already have an account?{' '}
+                <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500">
+                  Sign in
+                </Link>
               </p>
             </div>
-            
           </div>
         </div>
 
@@ -270,11 +310,14 @@ export default function SignupPage() {
         <div className="relative z-10 flex justify-between items-center text-xs text-gray-500 px-4 mt-auto">
           <p>© 2026 Recheq Technologies Pvt Ltd. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
-            <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>
+            <Link href="/privacy" className="text-blue-600 hover:underline">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-blue-600 hover:underline">
+              Terms of Service
+            </Link>
           </div>
         </div>
-        
       </div>
     </div>
   );

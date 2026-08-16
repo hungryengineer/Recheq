@@ -21,6 +21,7 @@ describe('CaseCreateInput', () => {
   const valid = {
     employer_name: 'Acme Corp',
     candidate_name: 'Jane Doe',
+    candidate_email: 'jane@example.com',
     title: 'Employment Verification — Acme Corp',
     claimed_ctc: 1200000,
     employment_start: '2024-01-01',

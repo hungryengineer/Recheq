@@ -1,32 +1,66 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  FileText, X, ArrowLeft, Download, Printer, 
-  Minus, Plus, Maximize, File, User, IdCard, Briefcase, Shield, 
-  Building2, Wallet, PiggyBank, ChevronsLeft, ChevronsRight, ChevronRight, ChevronLeft
+import {
+  FileText,
+  X,
+  ArrowLeft,
+  Download,
+  Printer,
+  Minus,
+  Plus,
+  Maximize,
+  File,
+  User,
+  IdCard,
+  Briefcase,
+  Shield,
+  Building2,
+  Wallet,
+  PiggyBank,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 
+import { toast } from 'sonner';
+
 interface DocumentViewerProps {
   sourceLabel: string;
+  caseId: string;
+  docId: string;
   onClose: () => void;
 }
 
-export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
+export function DocumentViewer({ sourceLabel, caseId, docId, onClose }: DocumentViewerProps) {
   const [isThumbnailsOpen, setIsThumbnailsOpen] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleDownload = () => {
-    // Generate a dummy text file blob just to trigger a download
-    const blob = new Blob(['This is a mock PDF download generated for ' + sourceLabel], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Payslip_${sourceLabel.replace('Payslip - ', '').replace(' ', '')}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const res = await fetch(`/api/proxy/documents/${caseId}/${docId}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch document');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Document_${sourceLabel.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not download document. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handlePrint = () => {
@@ -37,21 +71,37 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
     <div className="fixed inset-0 z-50 flex bg-[var(--color-surface)] animate-fade-in print:bg-white print:static print:inset-auto">
       {/* Sidebar Navigation */}
       <div className="w-16 border-r border-[var(--color-border)] flex flex-col items-center py-4 bg-[var(--color-surface)] z-10 shrink-0 print:hidden">
-        <button 
-          onClick={() => setIsThumbnailsOpen(!isThumbnailsOpen)} 
+        <button
+          onClick={() => setIsThumbnailsOpen(!isThumbnailsOpen)}
           className={`p-3 rounded-lg mb-8 relative transition-colors ${isThumbnailsOpen ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
         >
           <File className="w-6 h-6" />
-          {isThumbnailsOpen && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-r-full"></div>}
-          <span className={`absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isThumbnailsOpen ? 'text-blue-600' : 'text-gray-500 opacity-0'}`}>Pages</span>
+          {isThumbnailsOpen && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-r-full"></div>
+          )}
+          <span
+            className={`absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isThumbnailsOpen ? 'text-blue-600' : 'text-gray-500 opacity-0'}`}
+          >
+            Pages
+          </span>
         </button>
-        <button onClick={handleDownload} className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg mb-6 group relative">
+        <button
+          onClick={handleDownload}
+          className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg mb-6 group relative"
+        >
           <Download className="w-6 h-6" />
-          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">Download</span>
+          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            Download
+          </span>
         </button>
-        <button onClick={handlePrint} className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg group relative">
+        <button
+          onClick={handlePrint}
+          className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg group relative"
+        >
           <Printer className="w-6 h-6" />
-          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">Print</span>
+          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            Print
+          </span>
         </button>
       </div>
 
@@ -59,7 +109,10 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
         {/* Top Header */}
         <div className="h-16 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-surface)] z-10 shrink-0 print:hidden">
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-2 border border-gray-200 rounded text-gray-500 hover:bg-gray-50">
+            <button
+              onClick={onClose}
+              className="p-2 border border-gray-200 rounded text-gray-500 hover:bg-gray-50"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 ml-2">
@@ -72,18 +125,36 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-6">
             <div className="flex items-center bg-[var(--color-page)] border border-[var(--color-border)] rounded">
-              <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors"><Minus className="w-4 h-4" /></button>
-              <span className="px-3 text-sm font-medium text-[var(--color-fg)] border-x border-[var(--color-border)] py-1.5">100%</span>
-              <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors"><Plus className="w-4 h-4" /></button>
+              <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors">
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="px-3 text-sm font-medium text-[var(--color-fg)] border-x border-[var(--color-border)] py-1.5">
+                100%
+              </span>
+              <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors">
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
             <div className="flex items-center gap-3 text-[var(--color-fg-muted)]">
-              <button className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"><Maximize className="w-5 h-5" /></button>
-              <button onClick={handleDownload} className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"><Download className="w-5 h-5" /></button>
+              <button className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors">
+                <Maximize className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleDownload}
+                className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"
+              >
+                <Download className="w-5 h-5" />
+              </button>
               <div className="w-px h-6 bg-[var(--color-border)] mx-1"></div>
-              <button onClick={onClose} className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"><X className="w-6 h-6" /></button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-[var(--color-page)] hover:text-[var(--color-fg)] rounded transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
           </div>
         </div>
@@ -94,7 +165,12 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
             <div className="w-64 border-r border-[var(--color-border)] bg-gray-50/50 flex flex-col shrink-0 print:hidden animate-fade-in">
               <div className="p-4 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-700">Pages</span>
-                <button onClick={() => setIsThumbnailsOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded transition-colors"><ChevronsLeft className="w-4 h-4" /></button>
+                <button
+                  onClick={() => setIsThumbnailsOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-200 rounded transition-colors"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
               </div>
               <div className="p-4 flex-1 overflow-auto">
                 <div className="mb-4">
@@ -102,7 +178,9 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
                     <div className="origin-top-left scale-[0.22] w-[850px] pointer-events-none">
                       <PayslipContent sourceLabel={sourceLabel} />
                     </div>
-                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded z-10 shadow-sm">1</div>
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded z-10 shadow-sm">
+                      1
+                    </div>
                   </div>
                 </div>
               </div>
@@ -123,21 +201,36 @@ export function DocumentViewer({ sourceLabel, onClose }: DocumentViewerProps) {
           <div className="flex items-center gap-3">
             <FileText className="w-5 h-5 text-gray-400" />
             <div>
-              <p className="text-sm font-medium text-[var(--color-fg)]">Payslip_{sourceLabel.replace('Payslip - ', '').replace(' ', '')}.pdf</p>
+              <p className="text-sm font-medium text-[var(--color-fg)]">
+                Payslip_{sourceLabel.replace('Payslip - ', '').replace(' ', '')}.pdf
+              </p>
               <p className="text-xs text-[var(--color-fg-muted)]">1 page • 210 KB</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronsLeft className="w-4 h-4" /></button>
-            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-            <div className="px-3 text-sm font-medium border border-[var(--color-border)] rounded py-1 bg-[var(--color-page)] text-[var(--color-fg)] shadow-sm">1</div>
-            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronRight className="w-4 h-4" /></button>
-            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors"><ChevronsRight className="w-4 h-4" /></button>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors">
+              <ChevronsLeft className="w-4 h-4" />
+            </button>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="px-3 text-sm font-medium border border-[var(--color-border)] rounded py-1 bg-[var(--color-page)] text-[var(--color-fg)] shadow-sm">
+              1
+            </div>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <button className="p-2 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded border border-transparent hover:border-[var(--color-border)] transition-colors">
+              <ChevronsRight className="w-4 h-4" />
+            </button>
           </div>
 
           <div>
-            <button onClick={onClose} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm">
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm"
+            >
               Close viewer
             </button>
           </div>
@@ -160,7 +253,9 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
         <div className="flex justify-between items-start mb-16">
           <div>
             <h1 className="text-4xl font-extrabold text-[#0B2545] tracking-tight mb-2">PAYSLIP</h1>
-            <p className="text-lg text-blue-500 font-medium">{sourceLabel.replace('Payslip - ', '')}</p>
+            <p className="text-lg text-blue-500 font-medium">
+              {sourceLabel.replace('Payslip - ', '')}
+            </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100">
@@ -182,7 +277,9 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">Employee Name</p>
+                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">
+                  Employee Name
+                </p>
                 <p className="text-sm font-semibold text-gray-900">{name}</p>
               </div>
             </div>
@@ -191,7 +288,9 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
                 <IdCard className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">Employee ID</p>
+                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">
+                  Employee ID
+                </p>
                 <p className="text-sm font-semibold text-gray-900">EMP-4892</p>
               </div>
             </div>
@@ -200,7 +299,9 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
                 <Briefcase className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">Designation</p>
+                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">
+                  Designation
+                </p>
                 <p className="text-sm font-semibold text-gray-900">Senior Software Engineer</p>
               </div>
             </div>
@@ -209,7 +310,9 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
                 <Shield className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">UAN</p>
+                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase mb-0.5">
+                  UAN
+                </p>
                 <p className="text-sm font-semibold text-gray-900">100938472615</p>
               </div>
             </div>
@@ -220,30 +323,44 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
         <div className="flex-1 border border-gray-200 rounded-2xl overflow-hidden mb-8 shadow-sm">
           <div className="grid grid-cols-2 divide-x divide-gray-200 bg-gray-50 border-b border-gray-200">
             <div className="flex justify-between items-center px-6 py-4 bg-green-50/30">
-              <span className="text-[10px] font-bold tracking-wider text-green-700 uppercase">Earnings</span>
-              <span className="text-[10px] font-bold tracking-wider text-green-700 uppercase">Amount</span>
+              <span className="text-[10px] font-bold tracking-wider text-green-700 uppercase">
+                Earnings
+              </span>
+              <span className="text-[10px] font-bold tracking-wider text-green-700 uppercase">
+                Amount
+              </span>
             </div>
             <div className="flex justify-between items-center px-6 py-4 bg-red-50/30">
-              <span className="text-[10px] font-bold tracking-wider text-red-700 uppercase">Deductions</span>
-              <span className="text-[10px] font-bold tracking-wider text-red-700 uppercase">Amount</span>
+              <span className="text-[10px] font-bold tracking-wider text-red-700 uppercase">
+                Deductions
+              </span>
+              <span className="text-[10px] font-bold tracking-wider text-red-700 uppercase">
+                Amount
+              </span>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 divide-x divide-gray-200 bg-white">
             {/* Earnings Col */}
             <div className="p-6">
               <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>Basic Salary</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>Basic Salary
+                </div>
                 <div className="font-medium text-gray-900">₹ 52,000</div>
               </div>
               <div className="border-b border-dashed border-gray-200 mb-6 -mx-6"></div>
               <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>House Rent Allowance</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>House Rent Allowance
+                </div>
                 <div className="font-medium text-gray-900">₹ 20,800</div>
               </div>
               <div className="border-b border-dashed border-gray-200 mb-6 -mx-6"></div>
               <div className="flex justify-between items-center text-sm text-gray-600">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>Special Allowance</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>Special Allowance
+                </div>
                 <div className="font-medium text-gray-900">₹ 27,200</div>
               </div>
             </div>
@@ -254,18 +371,25 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
                 <div className="absolute -inset-x-6 -inset-y-3 bg-yellow-300/30 border-y border-yellow-400 mix-blend-multiply pointer-events-none transition-all"></div>
                 <div className="absolute top-1/2 -left-3 w-2 h-2 rounded-full bg-red-500 animate-pulse -translate-y-1/2"></div>
                 <div className="flex justify-between items-center relative z-10 text-sm text-gray-600">
-                  <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div><span className="font-semibold text-gray-900">Provident Fund (PF)</span></div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                    <span className="font-semibold text-gray-900">Provident Fund (PF)</span>
+                  </div>
                   <div className="font-bold text-gray-900">₹ 3,600</div>
                 </div>
               </div>
               <div className="border-b border-dashed border-gray-200 mb-6 mt-6 -mx-6"></div>
               <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>Professional Tax</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>Professional Tax
+                </div>
                 <div className="font-medium text-gray-900">₹ 200</div>
               </div>
               <div className="border-b border-dashed border-gray-200 mb-6 -mx-6"></div>
               <div className="flex justify-between items-center text-sm text-gray-600">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>Income Tax</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>Income Tax
+                </div>
                 <div className="font-medium text-gray-900">₹ 14,500</div>
               </div>
             </div>
@@ -280,19 +404,23 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
                 <Wallet className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-green-800 uppercase mb-1">Total Earnings</p>
+                <p className="text-[10px] font-bold tracking-wider text-green-800 uppercase mb-1">
+                  Total Earnings
+                </p>
                 <p className="text-xl font-bold text-gray-900">₹ 1,00,000</p>
               </div>
             </div>
           </div>
-          
+
           <div className="flex-1 bg-red-50/50 border border-red-100 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white rounded-full border border-red-200 flex items-center justify-center shadow-sm">
                 <PiggyBank className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-red-800 uppercase mb-1">Total Deductions</p>
+                <p className="text-[10px] font-bold tracking-wider text-red-800 uppercase mb-1">
+                  Total Deductions
+                </p>
                 <p className="text-xl font-bold text-gray-900">₹ 18,300</p>
               </div>
             </div>
@@ -301,9 +429,13 @@ function PayslipContent({ sourceLabel }: { sourceLabel: string }) {
           <div className="flex-[1.2] bg-white border-2 border-blue-200 rounded-xl p-4 flex items-center justify-center shadow-sm relative overflow-hidden">
             <div className="absolute inset-0 bg-blue-50/30"></div>
             <div className="relative z-10 text-center">
-              <p className="text-[10px] font-bold tracking-wider text-blue-600 uppercase mb-1">Net Pay</p>
+              <p className="text-[10px] font-bold tracking-wider text-blue-600 uppercase mb-1">
+                Net Pay
+              </p>
               <p className="text-2xl font-bold text-blue-700">₹ 81,700</p>
-              <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">(Earnings - Deductions)</p>
+              <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">
+                (Earnings - Deductions)
+              </p>
             </div>
           </div>
         </div>

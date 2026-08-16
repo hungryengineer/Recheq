@@ -3,17 +3,15 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // Protected dashboard routes
-  const isProtectedRoute = 
-    pathname.startsWith('/cases') || 
-    pathname.startsWith('/settings') || 
+  const isProtectedRoute =
+    pathname.startsWith('/cases') ||
+    pathname.startsWith('/settings') ||
     pathname.startsWith('/docs');
-  
+
   // Authentication routes (should not be accessed if already logged in)
-  const isAuthRoute = 
-    pathname.startsWith('/login') || 
-    pathname.startsWith('/signup');
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
 
   // Verify session existence via cookie
   const session = request.cookies.get('recheq_session');

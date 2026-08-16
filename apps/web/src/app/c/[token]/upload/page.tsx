@@ -86,7 +86,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
         });
       }
 
-      await fetch(`/api/public/${token}/documents/submit`, { method: 'POST' });
+      await fetch(`/api/public/${token}/submit`, { method: 'POST' });
 
       router.push(`/c/${token}/status`);
     } catch (err) {

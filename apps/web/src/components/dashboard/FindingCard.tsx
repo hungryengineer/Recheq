@@ -12,9 +12,10 @@ export interface UI_Finding {
   expected: string | number;
   observed: string | number;
   source_label?: string;
+  source_document_ids?: string[];
 }
 
-export function FindingCard({ finding }: { finding: UI_Finding }) {
+export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: string }) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const severityColor =
@@ -70,17 +71,14 @@ export function FindingCard({ finding }: { finding: UI_Finding }) {
                 <div className="text-[10px] font-semibold tracking-wider text-[var(--color-fg-subtle)] mb-1 uppercase">
                   Observed
                 </div>
-                <div
-                  className="font-mono text-[13px] font-medium"
-                  style={{ color: severityColor }}
-                >
+                <div className="font-mono text-[13px] font-medium" style={{ color: severityColor }}>
                   {finding.observed}
                 </div>
               </div>
             </div>
 
             {finding.source_label && (
-              <button 
+              <button
                 onClick={() => setIsViewerOpen(true)}
                 className="text-xs font-medium text-[var(--color-accent)] hover:underline flex items-center gap-1 active:scale-95 transition-all focus:outline-none"
               >
@@ -93,9 +91,11 @@ export function FindingCard({ finding }: { finding: UI_Finding }) {
       </div>
 
       {isViewerOpen && (
-        <DocumentViewer 
-          sourceLabel={finding.source_label || 'Unknown'} 
-          onClose={() => setIsViewerOpen(false)} 
+        <DocumentViewer
+          sourceLabel={finding.source_label || 'Unknown'}
+          caseId={caseId}
+          docId={finding.source_document_ids?.[0] || 'unknown'}
+          onClose={() => setIsViewerOpen(false)}
         />
       )}
     </>

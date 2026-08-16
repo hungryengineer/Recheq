@@ -94,9 +94,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
   const origins = caseRecord.origins || [];
 
   const highCount = findings.filter((f: UI_Finding) => f.severity === 'high').length;
-  const mediumCount = findings.filter(
-    (f: UI_Finding) => f.severity === 'medium',
-  ).length;
+  const mediumCount = findings.filter((f: UI_Finding) => f.severity === 'medium').length;
 
   return (
     <div className="animate-fade-in pb-12">
@@ -197,7 +195,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
         ) : (
           <div className="space-y-4 mb-6">
             {findings.map((f: UI_Finding, i: number) => (
-              <FindingCard key={i} finding={f} />
+              <FindingCard key={i} finding={f} caseId={id} />
             ))}
           </div>
         )}
@@ -209,7 +207,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
             </span>
             <div className="flex flex-wrap gap-2 text-[11px] font-mono text-[var(--color-fg-subtle)]">
               {notAssessed.map((rule: { rule_id: string; title: string; reason: string }) => (
-                <span key={rule.rule_id} title={rule.reason}>· {rule.title}</span>
+                <span key={rule.rule_id} title={rule.reason}>
+                  · {rule.title}
+                </span>
               ))}
             </div>
           </div>

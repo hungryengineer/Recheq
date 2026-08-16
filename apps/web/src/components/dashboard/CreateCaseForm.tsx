@@ -245,13 +245,13 @@ export function CreateCaseForm() {
       {/* QR Code Modal */}
       {isQrModalOpen && successLink && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div 
+          <div
             className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500"></div>
-            
-            <button 
+
+            <button
               onClick={() => setIsQrModalOpen(false)}
               className="absolute top-4 right-4 p-1.5 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded-full transition-colors"
             >
@@ -261,14 +261,15 @@ export function CreateCaseForm() {
             <div className="text-center mb-6 mt-2">
               <h3 className="text-xl font-bold text-[var(--color-fg)] mb-2">Scan to verify</h3>
               <p className="text-sm text-[var(--color-fg-muted)]">
-                Ask the candidate to scan this QR code with their mobile device to begin the verification journey.
+                Ask the candidate to scan this QR code with their mobile device to begin the
+                verification journey.
               </p>
             </div>
 
             <div className="bg-white p-4 rounded-xl shadow-inner border border-gray-100 mb-6 relative">
-              <QRCodeSVG 
-                value={successLink} 
-                size={220} 
+              <QRCodeSVG
+                value={successLink}
+                size={220}
                 level="Q"
                 includeMargin={false}
                 imageSettings={{

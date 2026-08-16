@@ -18,10 +18,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 Recheq
               </Link>
               <nav className="flex space-x-6 text-sm">
-                <Link href="/cases" className="font-medium text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+                <Link
+                  href="/cases"
+                  className="font-medium text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors"
+                >
                   Cases
                 </Link>
-                <Link href="/settings" className="font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors">
+                <Link
+                  href="/settings"
+                  className="font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors"
+                >
                   Settings
                 </Link>
               </nav>
@@ -32,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 relative z-0">{children}</main>
-        
+
         {/* Fixed UI Elements */}
         <HelpWidget />
       </div>

@@ -123,7 +123,10 @@ export default async function CasesPage() {
             </thead>
             <tbody className="bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
               {cases.map((c: CaseSummary) => (
-                <tr key={c.id} className="hover:bg-[var(--color-page)] transition-colors relative group">
+                <tr
+                  key={c.id}
+                  className="hover:bg-[var(--color-page)] transition-colors relative group"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       href={`/cases/${c.id}`}

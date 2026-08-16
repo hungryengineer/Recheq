@@ -20,6 +20,7 @@ describe('Case Service', () => {
   const validCreateInput = {
     employer_name: 'Acme Corp',
     candidate_name: 'John Doe',
+    candidate_email: 'john@example.com',
     title: 'Senior Engineer Background Check',
     claimed_ctc: 1500000,
     employment_start: '2020-01-01',
@@ -37,6 +38,7 @@ describe('Case Service', () => {
         created_by: userId,
         employer_name: validCreateInput.employer_name,
         candidate_name: validCreateInput.candidate_name,
+        candidate_email: validCreateInput.candidate_email,
         title: validCreateInput.title,
         claimed_ctc: validCreateInput.claimed_ctc,
         employment_start: validCreateInput.employment_start,

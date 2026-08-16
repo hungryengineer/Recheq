@@ -92,8 +92,8 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
 
       <div className="space-y-6 mb-12 ml-2">
         {data ? (
-          data.steps.map((step) => (
-            <div key={step.key} className="flex items-center">
+          data.steps?.map((step, index) => (
+            <div key={step.key ? `${step.key}-${index}` : index} className="flex items-center">
               <div className="mr-4 flex-shrink-0">
                 {step.state === 'done' && (
                   <div className="w-5 h-5 rounded-full bg-[var(--color-ok-bg)] flex items-center justify-center">

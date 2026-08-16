@@ -51,8 +51,12 @@ export function ProfileDropdown() {
             name.charAt(0).toUpperCase()
           )}
         </div>
-        <span className="text-sm font-medium text-[var(--color-fg)] truncate max-w-[100px]">{name.split(' ')[0]}</span>
-        <ChevronDown className={`w-4 h-4 text-[var(--color-fg-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="text-sm font-medium text-[var(--color-fg)] truncate max-w-[100px]">
+          {name.split(' ')[0]}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-[var(--color-fg-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (
@@ -61,7 +65,7 @@ export function ProfileDropdown() {
             <p className="text-sm text-[var(--color-fg)] font-medium truncate">{name}</p>
             <p className="text-xs text-[var(--color-fg-muted)] truncate mt-0.5">{email}</p>
           </div>
-          
+
           <div className="py-1">
             <Link
               href="/settings"
@@ -80,7 +84,7 @@ export function ProfileDropdown() {
               Settings
             </Link>
           </div>
-          
+
           <div className="py-1 border-t border-[var(--color-border)]">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -94,7 +98,7 @@ export function ProfileDropdown() {
               {mounted && theme === 'dark' ? 'Light mode' : 'Dark mode'}
             </button>
           </div>
-          
+
           <div className="border-t border-[var(--color-border)] py-1">
             <button
               onClick={handleSignout}

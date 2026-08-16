@@ -22,7 +22,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [companyName, setCompanyName] = useState<string>('Acme Technologies Pvt Ltd');
 
   return (
-    <UserContext.Provider value={{ avatar, setAvatar, name, setName, email, setEmail, companyName, setCompanyName }}>
+    <UserContext.Provider
+      value={{ avatar, setAvatar, name, setName, email, setEmail, companyName, setCompanyName }}
+    >
       {children}
     </UserContext.Provider>
   );

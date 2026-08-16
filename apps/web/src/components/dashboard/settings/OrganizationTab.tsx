@@ -9,20 +9,27 @@ export function OrganizationTab() {
   const [isUpdating, setIsUpdating] = useState(false);
   const { companyName, setCompanyName, name, email } = useUser();
   const [localCompanyName, setLocalCompanyName] = useState(companyName);
-  
+
   // Calculate initials dynamically
   const getInitials = (fullName: string) => {
-    return fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
+    return (
+      fullName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase() || 'U'
+    );
   };
 
   const [members, setMembers] = useState([
     { id: 1, role: 'Owner', color: 'blue' },
-    { id: 2, name: 'Sarah Jenkins', email: 'sarah@acme.com', role: 'Verifier', color: 'emerald' }
+    { id: 2, name: 'Sarah Jenkins', email: 'sarah@acme.com', role: 'Verifier', color: 'emerald' },
   ]);
 
   const handleUpdateCompany = async () => {
     setIsUpdating(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     setCompanyName(localCompanyName);
     setIsUpdating(false);
     toast.success('Organization updated successfully');
@@ -37,7 +44,7 @@ export function OrganizationTab() {
       toast.error('Cannot remove the organization owner');
       return;
     }
-    setMembers(prev => prev.filter(m => m.id !== id));
+    setMembers((prev) => prev.filter((m) => m.id !== id));
     toast.success('Member removed');
   };
 
@@ -62,7 +69,7 @@ export function OrganizationTab() {
             onChange={(e) => setLocalCompanyName(e.target.value)}
             className="max-w-md w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow"
           />
-          <button 
+          <button
             onClick={handleUpdateCompany}
             disabled={isUpdating}
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all"
@@ -77,9 +84,11 @@ export function OrganizationTab() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-medium text-[var(--color-fg)]">Team Members</h3>
-            <p className="text-xs text-[var(--color-fg-muted)] mt-1">Users who have access to this workspace.</p>
+            <p className="text-xs text-[var(--color-fg-muted)] mt-1">
+              Users who have access to this workspace.
+            </p>
           </div>
-          <button 
+          <button
             onClick={handleInvite}
             className="inline-flex items-center px-3 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
           >
@@ -87,26 +96,35 @@ export function OrganizationTab() {
             Invite member
           </button>
         </div>
-        
+
         <div className="border border-[var(--color-border)] rounded-[var(--radius-card)] overflow-hidden">
           <table className="min-w-full divide-y divide-[var(--color-border)]">
             <thead className="bg-[var(--color-page)]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-fg-muted)] uppercase">User</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-fg-muted)] uppercase">Role</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-fg-muted)] uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-fg-muted)] uppercase">
+                  User
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-fg-muted)] uppercase">
+                  Role
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-fg-muted)] uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
-              {members.map(member => {
+              {members.map((member) => {
                 const memberName = member.id === 1 ? name : member.name;
                 const memberEmail = member.id === 1 ? email : member.email;
-                const memberInitials = member.id === 1 ? getInitials(name) : getInitials(member.name || '');
+                const memberInitials =
+                  member.id === 1 ? getInitials(name) : getInitials(member.name || '');
                 return (
                   <tr key={member.id} className="hover:bg-[var(--color-page)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-${member.color}-100 dark:bg-${member.color}-900/30 text-xs font-semibold text-${member.color}-700 dark:text-${member.color}-400`}>
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-full bg-${member.color}-100 dark:bg-${member.color}-900/30 text-xs font-semibold text-${member.color}-700 dark:text-${member.color}-400`}
+                        >
                           {memberInitials}
                         </div>
                         <div className="ml-3">
@@ -121,7 +139,7 @@ export function OrganizationTab() {
                         <MoreHorizontal className="w-5 h-5" />
                       </button>
                       <div className="hidden group-hover:block absolute right-8 top-8 w-32 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-10 overflow-hidden">
-                        <button 
+                        <button
                           onClick={() => handleRemoveMember(member.id)}
                           className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-[var(--color-page)] transition-colors"
                         >

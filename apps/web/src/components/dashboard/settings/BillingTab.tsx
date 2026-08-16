@@ -9,7 +9,7 @@ export function BillingTab() {
 
   const handleManagePlan = async () => {
     setIsManaging(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     setIsManaging(false);
     toast.info('Billing portal integration pending');
   };
@@ -34,14 +34,20 @@ export function BillingTab() {
 
       <div className="bg-gradient-to-r from-[var(--color-surface)] to-[var(--color-page)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h3 className="text-sm font-medium text-[var(--color-fg-muted)] uppercase tracking-wide mb-1">Current Plan</h3>
+          <h3 className="text-sm font-medium text-[var(--color-fg-muted)] uppercase tracking-wide mb-1">
+            Current Plan
+          </h3>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold text-[var(--color-fg)]">Enterprise</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">Active</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
+              Active
+            </span>
           </div>
-          <p className="text-sm text-[var(--color-fg-muted)] mt-2">Unlimited verifications with priority processing.</p>
+          <p className="text-sm text-[var(--color-fg-muted)] mt-2">
+            Unlimited verifications with priority processing.
+          </p>
         </div>
-        <button 
+        <button
           onClick={handleManagePlan}
           disabled={isManaging}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 disabled:opacity-70 active:scale-95 transition-all"
@@ -55,7 +61,12 @@ export function BillingTab() {
         <div className="flex-1 border border-[var(--color-border)] rounded-[var(--radius-card)] p-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-medium text-[var(--color-fg)]">Payment Method</h3>
-            <button onClick={handleUpdatePayment} className="text-[var(--color-accent)] text-xs font-medium hover:underline">Update</button>
+            <button
+              onClick={handleUpdatePayment}
+              className="text-[var(--color-accent)] text-xs font-medium hover:underline"
+            >
+              Update
+            </button>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-12 h-8 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center">
@@ -76,7 +87,10 @@ export function BillingTab() {
             <span className="text-xs text-[var(--color-fg-muted)] mb-1">/ Unlimited cases</span>
           </div>
           <div className="w-full bg-[var(--color-page)] rounded-full h-2 overflow-hidden">
-            <div className="bg-[var(--color-accent)] h-full transition-all duration-1000 ease-out" style={{ width: '45%' }}></div>
+            <div
+              className="bg-[var(--color-accent)] h-full transition-all duration-1000 ease-out"
+              style={{ width: '45%' }}
+            ></div>
           </div>
         </div>
       </div>
@@ -89,16 +103,18 @@ export function BillingTab() {
               {[
                 { id: 1, date: 'Aug 1, 2026', amount: '$499.00', status: 'Paid' },
                 { id: 2, date: 'Jul 1, 2026', amount: '$499.00', status: 'Paid' },
-                { id: 3, date: 'Jun 1, 2026', amount: '$499.00', status: 'Paid' }
+                { id: 3, date: 'Jun 1, 2026', amount: '$499.00', status: 'Paid' },
               ].map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-[var(--color-page)] transition-colors">
                   <td className="px-4 py-3 text-sm text-[var(--color-fg)]">{invoice.date}</td>
                   <td className="px-4 py-3 text-sm text-[var(--color-fg)]">{invoice.amount}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">{invoice.status}</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
+                      {invoice.status}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button 
+                    <button
                       onClick={handleDownload}
                       className="text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors p-1"
                       title="Download Invoice"

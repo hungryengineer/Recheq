@@ -16,7 +16,7 @@ export function SecurityTab() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [activeSessions, setActiveSessions] = useState([
-    { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true }
+    { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true },
   ]);
 
   useEffect(() => {
@@ -32,13 +32,12 @@ export function SecurityTab() {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (timeZone) {
           const parts = timeZone.split('/');
-          location = parts[parts.length - 1].replace(/_/g, ' ') + (parts.length > 1 ? `, ${parts[0]}` : '');
+          location =
+            parts[parts.length - 1].replace(/_/g, ' ') + (parts.length > 1 ? `, ${parts[0]}` : '');
         }
-      } catch(e) {}
+      } catch (e) {}
 
-      setActiveSessions([
-        { id: 'current', device: deviceName, location, isCurrent: true }
-      ]);
+      setActiveSessions([{ id: 'current', device: deviceName, location, isCurrent: true }]);
     }
   }, []);
 
@@ -53,7 +52,7 @@ export function SecurityTab() {
       return;
     }
     setIsUpdatingPassword(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     setIsUpdatingPassword(false);
     setCurrentPassword('');
     setNewPassword('');
@@ -63,9 +62,9 @@ export function SecurityTab() {
 
   const handleToggle2FA = async () => {
     setIsEnabling2FA(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsEnabling2FA(false);
-    
+
     if (is2FAEnabled) {
       setIs2FAEnabled(false);
       toast.info('Two-factor authentication disabled');
@@ -77,8 +76,8 @@ export function SecurityTab() {
 
   const handleSignoutOtherDevices = async () => {
     setIsSigningOut(true);
-    await new Promise(resolve => setTimeout(resolve, 600));
-    setActiveSessions(prev => prev.filter(session => session.isCurrent));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
     setIsSigningOut(false);
     toast.success('Successfully signed out of all other devices');
   };
@@ -102,8 +101,13 @@ export function SecurityTab() {
           <div className="w-full md:w-2/3">
             <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-sm">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-[var(--color-fg-subtle)]" htmlFor="currentPassword">Current password</label>
-                <input 
+                <label
+                  className="text-sm font-medium text-[var(--color-fg-subtle)]"
+                  htmlFor="currentPassword"
+                >
+                  Current password
+                </label>
+                <input
                   id="currentPassword"
                   type="password"
                   value={currentPassword}
@@ -113,8 +117,13 @@ export function SecurityTab() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-[var(--color-fg-subtle)]" htmlFor="newPassword">New password</label>
-                <input 
+                <label
+                  className="text-sm font-medium text-[var(--color-fg-subtle)]"
+                  htmlFor="newPassword"
+                >
+                  New password
+                </label>
+                <input
                   id="newPassword"
                   type="password"
                   value={newPassword}
@@ -124,8 +133,13 @@ export function SecurityTab() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-[var(--color-fg-subtle)]" htmlFor="confirmPassword">Confirm new password</label>
-                <input 
+                <label
+                  className="text-sm font-medium text-[var(--color-fg-subtle)]"
+                  htmlFor="confirmPassword"
+                >
+                  Confirm new password
+                </label>
+                <input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
@@ -135,7 +149,7 @@ export function SecurityTab() {
                 />
               </div>
               <div className="pt-2">
-                <button 
+                <button
                   type="submit"
                   disabled={isUpdatingPassword}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 disabled:opacity-70 active:scale-95 transition-all"
@@ -152,23 +166,33 @@ export function SecurityTab() {
 
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="w-full md:w-1/3">
-            <label className="block text-sm font-medium text-[var(--color-fg)]">Two-factor Authentication</label>
-            <p className="text-xs text-[var(--color-fg-muted)] mt-1">Add an extra layer of security to your account.</p>
+            <label className="block text-sm font-medium text-[var(--color-fg)]">
+              Two-factor Authentication
+            </label>
+            <p className="text-xs text-[var(--color-fg-muted)] mt-1">
+              Add an extra layer of security to your account.
+            </p>
           </div>
           <div className="w-full md:w-2/3">
             <div className="flex items-center gap-3 mb-3">
               {is2FAEnabled ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">Enabled</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
+                  Enabled
+                </span>
               ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">Disabled</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">
+                  Disabled
+                </span>
               )}
             </div>
-            <button 
+            <button
               onClick={handleToggle2FA}
               disabled={isEnabling2FA}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 disabled:opacity-70 active:scale-95 transition-all"
             >
-              {isEnabling2FA ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-[var(--color-surface)]" /> : null}
+              {isEnabling2FA ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin text-[var(--color-surface)]" />
+              ) : null}
               {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
             </button>
           </div>
@@ -178,27 +202,36 @@ export function SecurityTab() {
 
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="w-full md:w-1/3">
-            <label className="block text-sm font-medium text-[var(--color-fg)]">Active Sessions</label>
+            <label className="block text-sm font-medium text-[var(--color-fg)]">
+              Active Sessions
+            </label>
           </div>
           <div className="w-full md:w-2/3">
             <div className="space-y-3 mb-4">
-              {activeSessions.map(session => (
-                <div key={session.id} className="border border-[var(--color-border)] rounded-[var(--radius-control)] p-3 flex justify-between items-center bg-[var(--color-surface)]">
+              {activeSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="border border-[var(--color-border)] rounded-[var(--radius-control)] p-3 flex justify-between items-center bg-[var(--color-surface)]"
+                >
                   <div>
                     <p className="text-sm font-medium text-[var(--color-fg)]">{session.device}</p>
-                    <p className="text-xs text-[var(--color-fg-muted)]">{session.location} {session.isCurrent ? '• Current session' : ''}</p>
+                    <p className="text-xs text-[var(--color-fg-muted)]">
+                      {session.location} {session.isCurrent ? '• Current session' : ''}
+                    </p>
                   </div>
                   {session.isCurrent ? (
                     <span className="text-xs font-medium text-[var(--color-ok)]">Active</span>
                   ) : (
-                    <span className="text-xs font-medium text-[var(--color-fg-subtle)]">2 hrs ago</span>
+                    <span className="text-xs font-medium text-[var(--color-fg-subtle)]">
+                      2 hrs ago
+                    </span>
                   )}
                 </div>
               ))}
             </div>
-            
+
             {activeSessions.length > 1 && (
-              <button 
+              <button
                 onClick={handleSignoutOtherDevices}
                 disabled={isSigningOut}
                 className="text-sm text-[var(--color-high)] font-medium hover:underline disabled:opacity-70 inline-flex items-center"
