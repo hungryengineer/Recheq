@@ -138,7 +138,6 @@ export class AnthropicExtractor implements LlmDocumentExtractor {
       };
     } catch (error) {
       return {
-        data: {} as T,
         rawOutput,
         modelId: this.config.model,
         usage,

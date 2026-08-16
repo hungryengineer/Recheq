@@ -93,7 +93,10 @@ export class SchemaRetryWrapper implements LlmDocumentExtractor {
         } else {
           // No more retries available - mark as failure
           return {
-            ...result,
+            rawOutput: result.rawOutput,
+            modelId: result.modelId,
+            usage: result.usage,
+            extractionDurationMs: result.extractionDurationMs,
             status: 'failure',
             error: `Schema validation failed after ${maxAttempts} attempts: ${lastValidationError}`,
             retryCount: attempt,

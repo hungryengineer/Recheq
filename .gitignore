@@ -126,3 +126,4 @@ GEMINI.md
 local_reference/
 .vercel
 .env*
+!.env.example

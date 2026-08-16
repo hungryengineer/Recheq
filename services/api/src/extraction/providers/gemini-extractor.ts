@@ -107,13 +107,10 @@ export class GeminiExtractor implements LlmDocumentExtractor {
   readonly provider = 'gemini';
   readonly supportsStreaming = false;
 
-  private readonly fallbackExtractor: LlmDocumentExtractor | null;
-
-  constructor(private readonly config: GeminiExtractorConfig = DEFAULT_CONFIG) {
+  constructor(private readonly config: GeminiExtractorConfig) {
     if (!config.apiKey) {
       throw new Error('GEMINI_API_KEY is required');
     }
-    this.fallbackExtractor = config.fixturesFallback ? createFixtureExtractor() : null;
   }
 
   async extractPayslip(request: ExtractionRequest): Promise<ExtractionResult<PayslipExtraction>> {
@@ -138,8 +135,9 @@ export class GeminiExtractor implements LlmDocumentExtractor {
   async isAvailable(): Promise<boolean> {
     try {
       // List available models as a lightweight health check.
-      const response = await fetch(`${this.config.baseUrl}/models?key=${this.config.apiKey}`, {
+      const response = await fetch(`${this.config.baseUrl}/models`, {
         method: 'GET',
+        headers: { 'x-goog-api-key': this.config.apiKey },
         signal: AbortSignal.timeout(5_000),
       });
       return response.ok;
@@ -166,22 +164,32 @@ export class GeminiExtractor implements LlmDocumentExtractor {
 
       const body = this.buildRequestBody(request, prompt);
 
-      const url = `${this.config.baseUrl}/models/${this.config.model}:generateContent?key=${this.config.apiKey}`;
+      const url = `${this.config.baseUrl}/models/${this.config.model}:generateContent`;
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.config.apiKey },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(60_000),
       });
 
-      const data: GeminiResponse = await response.json();
+      let data: GeminiResponse;
+      try {
+        data = (await response.json()) as GeminiResponse;
+      } catch {
+        throw new Error(`Gemini API error: HTTP ${response.status} with a non-JSON body`);
+      }
 
       if (!response.ok || data.error) {
         const msg = data.error?.message ?? `HTTP ${response.status}`;
-        throw new Error(`Gemini API error: ${msg}`);
+        throw new Error(`Gemini API error: HTTP ${response.status} — ${msg}`);
       }
 
-      rawOutput = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      const candidate = data.candidates?.[0];
+      const finishReason = candidate?.finishReason;
+      if (finishReason != null && finishReason !== 'STOP') {
+        throw new Error(`Gemini stopped early: finishReason=${finishReason}`);
+      }
+      rawOutput = (candidate?.content?.parts ?? []).map((part) => part.text ?? '').join('');
       usage = {
         promptTokens: data.usageMetadata?.promptTokenCount ?? 0,
         completionTokens: data.usageMetadata?.candidatesTokenCount ?? 0,
@@ -201,7 +209,6 @@ export class GeminiExtractor implements LlmDocumentExtractor {
       };
     } catch (error) {
       return {
-        data: {} as T,
         rawOutput,
         modelId: this.config.model,
         usage,
@@ -229,6 +236,11 @@ export class GeminiExtractor implements LlmDocumentExtractor {
   ): GeminiRequest {
     const isPdf = request.mimeType === 'application/pdf';
     const isImage = request.mimeType.startsWith('image/');
+
+    const { maxContentSize } = this.getMetadata();
+    if (request.documentContent.length > maxContentSize) {
+      throw new Error(`Document exceeds the ${maxContentSize} byte inline limit`);
+    }
 
     let userParts: GeminiPart[];
 
@@ -270,7 +282,7 @@ export class GeminiExtractor implements LlmDocumentExtractor {
 
     try {
       const parsed: unknown = JSON.parse(jsonStr);
-      if (typeof parsed !== 'object' || parsed === null) {
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
         throw new Error('Expected JSON object');
       }
       return parsed as T;
@@ -350,7 +362,21 @@ export class GeminiWithFallback implements LlmDocumentExtractor {
         `Serving fixture extraction. model_id will be recorded as "${fallbackModelId}".`,
     );
 
-    const fallbackResult = await fallback();
+    let fallbackResult: ExtractionResult<T>;
+    try {
+      fallbackResult = await fallback();
+    } catch {
+      // The safety valve itself failed. Return the original Gemini failure.
+      return result;
+    }
+
+    if (fallbackResult.status !== 'success') {
+      // Keep the Gemini error as the primary cause; the fixture path added nothing.
+      return {
+        ...result,
+        error: `${result.error ?? 'unknown'} (fixture fallback also failed: ${fallbackResult.error ?? 'unknown'})`,
+      };
+    }
 
     return {
       ...fallbackResult,

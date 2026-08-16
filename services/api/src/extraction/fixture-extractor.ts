@@ -105,7 +105,6 @@ export class FixtureExtractor implements LlmDocumentExtractor {
     modelId: string,
   ): ExtractionResult<T> {
     return {
-      data: {} as T,
       rawOutput: `{"error": "${errorMessage}"}`,
       modelId,
       usage: {
