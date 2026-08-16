@@ -803,7 +803,9 @@ describe('GeminiExtractor', () => {
     });
 
     it('throws without an API key', () => {
-      expect(() => new GeminiExtractor({ apiKey: '' } as never)).toThrow('GEMINI_API_KEY is required');
+      expect(() => new GeminiExtractor({ apiKey: '' } as never)).toThrow(
+        'GEMINI_API_KEY is required',
+      );
     });
 
     it('exposes provider = "gemini"', () => {
@@ -1085,7 +1087,11 @@ describe('GeminiExtractor', () => {
           status: 200,
           json: async () => ({
             candidates: [{ content: { parts: [{ text: JSON.stringify(invalidJson) }] } }],
-            usageMetadata: { promptTokenCount: 400, candidatesTokenCount: 50, totalTokenCount: 450 },
+            usageMetadata: {
+              promptTokenCount: 400,
+              candidatesTokenCount: 50,
+              totalTokenCount: 450,
+            },
           }),
         })
         .mockResolvedValueOnce({
@@ -1093,7 +1099,11 @@ describe('GeminiExtractor', () => {
           status: 200,
           json: async () => ({
             candidates: [{ content: { parts: [{ text: JSON.stringify(validPayslip) }] } }],
-            usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 150, totalTokenCount: 650 },
+            usageMetadata: {
+              promptTokenCount: 500,
+              candidatesTokenCount: 150,
+              totalTokenCount: 650,
+            },
           }),
         });
 
@@ -1112,7 +1122,8 @@ describe('GeminiExtractor', () => {
       // Retry request must include retryContext (validation error injected by SchemaRetryWrapper)
       const retryBody = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string);
       // PDF is in parts[0] (inlineData), extraction prompt is in parts[1] (text)
-      const retryUserText = (retryBody.contents[0].parts[1]?.text ?? retryBody.contents[0].parts[0]?.text) as string;
+      const retryUserText = (retryBody.contents[0].parts[1]?.text ??
+        retryBody.contents[0].parts[0]?.text) as string;
       expect(retryUserText).toContain('PREVIOUS ATTEMPT FAILED SCHEMA VALIDATION');
     });
 
@@ -1160,7 +1171,12 @@ describe('GeminiExtractor', () => {
           retryCount: 1,
         } satisfies ExtractionResult<PayslipExtraction>),
         extractForm16: vi.fn(),
-        getMetadata: vi.fn().mockReturnValue({ maxContentSize: 0, supportsImages: true, supportsPdfText: true, costPer1kTokens: 0 }),
+        getMetadata: vi.fn().mockReturnValue({
+          maxContentSize: 0,
+          supportsImages: true,
+          supportsPdfText: true,
+          costPer1kTokens: 0,
+        }),
         isAvailable: vi.fn().mockResolvedValue(true),
       };
 
@@ -1182,7 +1198,9 @@ describe('GeminiExtractor', () => {
       expect(result.modelId).toBe('fixture-fallback:gemini-2.5-flash');
       // Fallback must log loudly
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('FALLBACK ACTIVATED'));
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('fixture-fallback:gemini-2.5-flash'));
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('fixture-fallback:gemini-2.5-flash'),
+      );
 
       warnSpy.mockRestore();
     });
@@ -1225,7 +1243,12 @@ describe('GeminiExtractor', () => {
           retryCount: 0,
         } satisfies ExtractionResult<PayslipExtraction>),
         extractForm16: vi.fn(),
-        getMetadata: vi.fn().mockReturnValue({ maxContentSize: 0, supportsImages: true, supportsPdfText: true, costPer1kTokens: 0 }),
+        getMetadata: vi.fn().mockReturnValue({
+          maxContentSize: 0,
+          supportsImages: true,
+          supportsPdfText: true,
+          costPer1kTokens: 0,
+        }),
         isAvailable: vi.fn().mockResolvedValue(true),
       };
 
