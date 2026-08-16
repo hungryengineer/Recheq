@@ -1,84 +1,140 @@
-'use client';
+import React from 'react';
 
-import { useEffect, useState, use } from 'react';
-import { getCaseByToken } from '@/lib/api/candidate';
-import type { PublicCaseContext } from '@/lib/api/candidate';
-import { ConsentSummary } from '@/components/candidate/ConsentSummary';
-import { ConsentAction } from '@/components/candidate/ConsentAction';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 
-export default function CandidateConsentPage({ params }: { params: Promise<{ token: string }> }) {
-  const resolvedParams = use(params);
-  const token = resolvedParams.token;
-  const router = useRouter();
+export const dynamic = 'force-dynamic';
 
-  const [context, setContext] = useState<PublicCaseContext | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function CandidateConsentPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  const apiUrl = process.env.API_BASE_URL || 'http://localhost:4010';
 
-  useEffect(() => {
-    getCaseByToken(token)
-      .then((data) => {
-        if (
-          data.status === 'awaiting_documents' ||
-          data.status === 'processing' ||
-          data.status === 'complete'
-        ) {
-          // Already consented, redirect to status or upload
-          if (data.status === 'awaiting_documents') {
-            router.push(`/c/${token}/upload`);
-          } else {
-            router.push(`/c/${token}/status`);
-          }
-        } else if (data.status === 'withdrawn') {
-          router.push(`/c/${token}/status`);
-        } else {
-          setContext(data);
-        }
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Unknown error'))
-      .finally(() => setLoading(false));
-  }, [token, router]);
+  const res = await fetch(`${apiUrl}/api/public/${token}`, { cache: 'no-store' });
 
-  if (loading) {
+  if (!res.ok) {
+    if (res.status === 410) {
+      return (
+        <div className="animate-fade-in text-center mt-12">
+          <div className="bg-[var(--color-high-bg)] p-6 rounded-[var(--radius-card)] border border-[var(--color-high)] inline-block">
+            <h2 className="text-lg font-semibold text-[var(--color-high)] mb-2">Access Denied</h2>
+            <p className="text-sm text-[var(--color-fg)]">
+              This link has expired - ask your recruiter for a new one
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="container text-center mt-8 animate-fade-in">
-        <p className="text-muted">Loading your secure link...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mt-8 animate-fade-in">
-        <div className="card text-center" style={{ borderColor: 'var(--color-danger)' }}>
-          <h2 className="text-danger">Access Denied</h2>
-          <p className="mt-2 text-muted">
-            {error === 'TOKEN_EXPIRED'
-              ? 'This link has expired for your security. Please request a new link from your employer.'
-              : 'This link is invalid or could not be verified.'}
-          </p>
+      <div className="animate-fade-in text-center mt-12">
+        <div className="bg-[var(--color-high-bg)] p-6 rounded-[var(--radius-card)] border border-[var(--color-high)] inline-block">
+          <h2 className="text-lg font-semibold text-[var(--color-high)] mb-2">Access Denied</h2>
+          <p className="text-sm text-[var(--color-fg)]">This link isn't valid</p>
         </div>
       </div>
     );
   }
 
-  if (!context) return null;
+  const context = await res.json();
+
+  if (context.status === 'awaiting_documents') {
+    redirect(`/c/${token}/upload`);
+  } else if (
+    context.status === 'processing' ||
+    context.status === 'complete' ||
+    context.status === 'withdrawn'
+  ) {
+    redirect(`/c/${token}/status`);
+  }
 
   return (
-    <div className="container animate-fade-in">
-      <div className="text-center">
-        <h1 style={{ fontSize: '1.75rem', color: 'var(--color-primary)' }}>
-          {context.orgName} Background Verification
-        </h1>
-        <p className="mt-2 text-muted" style={{ fontSize: '1.1rem' }}>
-          Hello {context.candidateName}, please review and provide your consent to begin the
-          verification process.
+    <div className="animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-xl font-semibold text-[var(--color-fg)] mb-2">Recheq</h1>
+        <p className="text-[17px] text-[var(--color-fg)] leading-snug">
+          {context.org_name} has asked us to verify your employment at {context.employer_name}.
         </p>
       </div>
 
-      <ConsentSummary orgName={context.orgName} />
-      <ConsentAction token={token} />
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-sm overflow-hidden mb-8">
+        <div className="p-5">
+          <h2 className="text-sm font-semibold text-[var(--color-fg)] mb-3">What we'll collect</h2>
+          <ul className="space-y-2 text-sm text-[var(--color-fg-muted)]">
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>Your payslip</span>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>Your Form 16</span>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>EPFO contribution history via your UAN</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="border-t border-[var(--color-border)] px-5 py-4 bg-[var(--color-page)]">
+          <dl className="space-y-3 text-sm">
+            <div className="grid grid-cols-4 gap-4">
+              <dt className="font-medium text-[var(--color-fg-subtle)]">Why</dt>
+              <dd className="col-span-3 text-[var(--color-fg)]">Employment verification only</dd>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <dt className="font-medium text-[var(--color-fg-subtle)]">Kept</dt>
+              <dd className="col-span-3 text-[var(--color-fg)]">180 days, then deleted</dd>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <dt className="font-medium text-[var(--color-fg-subtle)]">Where</dt>
+              <dd className="col-span-3 text-[var(--color-fg)]">
+                India; documents are read by an AI model hosted outside India
+              </dd>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <dt className="font-medium text-[var(--color-fg-subtle)]">Rights</dt>
+              <dd className="col-span-3 text-[var(--color-fg)]">Withdraw anytime</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <form
+        action={async () => {
+          'use server';
+          // Mocking the POST action for now until FE-6 rewrites it properly via client
+          const api = process.env.API_BASE_URL || 'http://localhost:4010';
+          await fetch(`${api}/api/public/${token}/consent`, { method: 'POST' });
+          redirect(`/c/${token}/upload`);
+        }}
+      >
+        <button
+          type="submit"
+          className="w-full mb-3 flex justify-center py-3 px-4 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] hover:opacity-90"
+        >
+          I consent
+        </button>
+      </form>
+
+      <form
+        action={async () => {
+          'use server';
+          // Mocking the DELETE action
+          const api = process.env.API_BASE_URL || 'http://localhost:4010';
+          await fetch(`${api}/api/public/${token}/consent`, { method: 'DELETE' });
+          redirect(`/c/${token}/status`);
+        }}
+      >
+        <button
+          type="submit"
+          className="w-full flex justify-center py-3 px-4 rounded-[var(--radius-control)] text-sm font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors"
+        >
+          Decline
+        </button>
+      </form>
     </div>
   );
 }

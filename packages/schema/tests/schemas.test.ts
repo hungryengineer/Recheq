@@ -21,6 +21,7 @@ describe('CaseCreateInput', () => {
   const valid = {
     employer_name: 'Acme Corp',
     candidate_name: 'Jane Doe',
+    candidate_email: 'jane@example.com',
     title: 'Employment Verification — Acme Corp',
     claimed_ctc: 1200000,
     employment_start: '2024-01-01',
@@ -66,6 +67,7 @@ describe('CaseRecord', () => {
       created_by: uuid(),
       employer_name: 'Acme Corp',
       candidate_name: 'Jane Doe',
+      candidate_email: 'jane@example.com',
       title: 'Verification',
       claimed_ctc: 1200000,
       employment_start: '2024-01-01',
@@ -88,6 +90,7 @@ describe('CaseRecord', () => {
         created_by: uuid(),
         employer_name: 'X',
         candidate_name: 'Y',
+        candidate_email: 'y@example.com',
         title: 'T',
         claimed_ctc: 100,
         employment_start: '2024-01-01',

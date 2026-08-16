@@ -11,6 +11,7 @@ export function toCaseRecord(row: (typeof cases)['$inferSelect']): CaseRecord {
     created_by: row.created_by,
     employer_name: row.employer_name,
     candidate_name: row.candidate_name,
+    candidate_email: row.candidate_email,
     title: row.title,
     claimed_ctc: Number(row.claimed_ctc),
     employment_start: row.employment_start,

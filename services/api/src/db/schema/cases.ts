@@ -24,6 +24,7 @@ export const cases = pgTable(
       .references(() => users.id),
     employer_name: varchar('employer_name', { length: 500 }).notNull(),
     candidate_name: varchar('candidate_name', { length: 500 }).notNull(),
+    candidate_email: varchar('candidate_email', { length: 255 }).notNull(),
     title: varchar('title', { length: 1000 }).notNull(),
     claimed_ctc: numeric('claimed_ctc', { precision: 15, scale: 2 }).notNull(),
     employment_start: date('employment_start').notNull(),

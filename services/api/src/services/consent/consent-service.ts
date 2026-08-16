@@ -17,6 +17,7 @@ import { validationError, notFoundError, conflictError } from '../../http/errors
 export interface CandidateSafeView {
   employer_name: string;
   candidate_name: string;
+  candidate_email: string;
   title: string;
   status: CaseStatus;
   consent_status: 'pending' | 'granted' | 'withdrawn' | null;
@@ -81,6 +82,7 @@ export async function getCandidateView(
   return {
     employer_name: caseRecord.employer_name,
     candidate_name: caseRecord.candidate_name,
+    candidate_email: caseRecord.candidate_email,
     title: caseRecord.title,
     status: caseRecord.status,
     consent_status: consent?.status ?? null,

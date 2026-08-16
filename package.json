@@ -10,8 +10,8 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "typecheck": "pnpm --filter @tieout/schema build && tsc --noEmit",
+    "test": "pnpm --filter @tieout/schema build && vitest run",
     "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
