@@ -3,13 +3,15 @@
 import React, { useEffect, useState, use } from 'react';
 
 interface Step {
-  id: string;
+  key: string;
   label: string;
-  status: 'pending' | 'active' | 'done';
+  state: 'pending' | 'active' | 'done' | 'failed';
 }
 
 interface StatusResponse {
-  case_status: string;
+  status: string;
+  documents_total: number;
+  documents_extracted: number;
   steps: Step[];
   error?: {
     code: string;
@@ -33,7 +35,7 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
         const json: StatusResponse = await res.json();
         if (active) setData(json);
 
-        if (json.case_status === 'complete' || json.case_status === 'withdrawn') {
+        if (json.status === 'complete' || json.status === 'withdrawn') {
           if (active) setIsComplete(true);
           clearInterval(intervalId);
         }
@@ -47,7 +49,7 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
       .then((json) => {
         if (!active || !json) return;
         setData(json);
-        if (json.case_status === 'complete' || json.case_status === 'withdrawn') {
+        if (json.status === 'complete' || json.status === 'withdrawn') {
           setIsComplete(true);
           clearInterval(intervalId);
         }
@@ -91,23 +93,23 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
       <div className="space-y-6 mb-12 ml-2">
         {data ? (
           data.steps.map((step) => (
-            <div key={step.id} className="flex items-center">
+            <div key={step.key} className="flex items-center">
               <div className="mr-4 flex-shrink-0">
-                {step.status === 'done' && (
+                {step.state === 'done' && (
                   <div className="w-5 h-5 rounded-full bg-[var(--color-ok-bg)] flex items-center justify-center">
                     <span className="text-[var(--color-ok)] text-xs">✓</span>
                   </div>
                 )}
-                {step.status === 'active' && (
+                {step.state === 'active' && (
                   <div className="w-5 h-5 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
                 )}
-                {step.status === 'pending' && <div className="w-5 h-5 rounded-full bg-gray-200" />}
+                {step.state === 'pending' && <div className="w-5 h-5 rounded-full bg-gray-200" />}
               </div>
               <span
                 className={`text-[15px] font-medium ${
-                  step.status === 'active'
+                  step.state === 'active'
                     ? 'text-[var(--color-fg)]'
-                    : step.status === 'done'
+                    : step.state === 'done'
                       ? 'text-[var(--color-fg-muted)]'
                       : 'text-[var(--color-fg-subtle)]'
                 }`}
