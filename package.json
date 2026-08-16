@@ -10,7 +10,7 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm --filter @tieout/schema build && tsc --noEmit",
     "test": "pnpm --filter @tieout/schema build && vitest run",
     "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write .",

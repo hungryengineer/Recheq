@@ -136,7 +136,7 @@ export class SchemaRetryWrapper implements LlmDocumentExtractor {
     const parsed = schema.safeParse(data);
     if (!parsed.success) {
       const detail = parsed.error.issues
-        .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .map((issue: { path: (string | number)[]; message: string }) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
         .join('; ');
       throw new Error(`${kindLabel} schema validation failed: ${detail}`);
     }

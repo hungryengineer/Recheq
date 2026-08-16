@@ -30,7 +30,7 @@ export const checkPayslipArithmetic: RuleFunction = (ctx) => {
     p.hra.amount,
     p.da.amount,
     p.special_allowance.amount,
-    ...p.other_allowances.map((a) => a.amount),
+    ...p.other_allowances.map((a: { amount: number | null }) => a.amount),
   );
   if (p.gross_salary !== null) {
     const diff = Math.abs(calculatedGross - p.gross_salary);
