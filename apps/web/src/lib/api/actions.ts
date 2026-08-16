@@ -1,5 +1,6 @@
 'use server';
 
+import { ZodError } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
 import type { CaseRecord } from '@tieout/schema';
@@ -21,6 +22,13 @@ export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
 
     return { success: true, data: caseRecord };
   } catch (err) {
+    // Validation failures surface the specific field issues rather than a
+    // generic message. ZodError is not an AppError, so it must be handled
+    // explicitly before the fallback.
+    if (err instanceof ZodError) {
+      const messages = err.issues.map((issue) => issue.message);
+      return { success: false, error: messages.join('. ') || 'Please check the form fields.' };
+    }
     // Validation and domain errors carry a user-safe message — expose it directly.
     if (err instanceof AppError) {
       return { success: false, error: err.message };

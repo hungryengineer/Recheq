@@ -151,6 +151,49 @@ describe('storage health', () => {
       /^AWS4-HMAC-SHA256 Credential=/,
     );
   });
+
+  it('signs and issues object DELETEs with the same SigV4 flow', async () => {
+    const requests: RequestInit[] = [];
+    const transport: DocumentStorageTransport = async (_url, init) => {
+      requests.push(init);
+      return { ok: true, status: 204, statusText: 'No Content' };
+    };
+    const storage = createDocumentStorage(
+      {
+        ...testConfig,
+        bucket: 'documents',
+        forcePathStyle: true,
+      },
+      transport,
+    );
+
+    await storage.deleteObject('cases/1/orphan.pdf');
+
+    expect(requests[0]?.method).toBe('DELETE');
+    expect(new Headers(requests[0]?.headers).get('authorization')).toMatch(
+      /^AWS4-HMAC-SHA256 Credential=/,
+    );
+  });
+
+  it('throws a descriptive error when an object DELETE fails', async () => {
+    const transport: DocumentStorageTransport = async () => ({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+    });
+    const storage = createDocumentStorage(
+      {
+        ...testConfig,
+        bucket: 'documents',
+        forcePathStyle: true,
+      },
+      transport,
+    );
+
+    await expect(storage.deleteObject('cases/1/orphan.pdf')).rejects.toThrow(
+      /Failed to delete document: 403 Forbidden/,
+    );
+  });
 });
 
 const testConfig = {

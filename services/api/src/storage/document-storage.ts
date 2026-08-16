@@ -26,6 +26,13 @@ export interface DocumentStorage {
    * @param key - The storage path
    */
   headObject(key: string): Promise<ObjectHead>;
+
+  /**
+   * Deletes an object from the private storage bucket. Used to remove orphaned
+   * objects (e.g. the losing upload in a dedup race) and test artifacts.
+   * @param key - The storage path
+   */
+  deleteObject(key: string): Promise<void>;
 }
 
 // ─── S3 Configuration ───────────────────────────────────────────
@@ -120,6 +127,34 @@ export function createDocumentStorage(
         size: response.size ?? null,
       };
     },
+    async deleteObject(key: string): Promise<void> {
+      const url = getObjectUrl(config, key);
+      const headers = signObjectRequest(
+        config,
+        'DELETE',
+        url,
+        EMPTY_BODY_SHA256,
+        undefined,
+        0,
+        new Date(),
+      );
+
+      let response: Awaited<ReturnType<DocumentStorageTransport>>;
+      try {
+        response = await transport(url, {
+          method: 'DELETE',
+          headers,
+        });
+      } catch (cause) {
+        throw new Error(`Failed to delete document (key=${key}): network or transport error`, {
+          cause,
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete document: ${response.status} ${response.statusText}`);
+      }
+    },
   };
 }
 
@@ -163,7 +198,7 @@ function getObjectUrl(config: DocumentStorageConfig, key: string): URL {
 
 function signObjectRequest(
   config: DocumentStorageConfig,
-  method: 'HEAD' | 'PUT',
+  method: 'HEAD' | 'PUT' | 'DELETE',
   url: URL,
   bodyHash: string,
   contentType: string | undefined,

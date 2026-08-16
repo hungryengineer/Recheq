@@ -71,6 +71,21 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
 
         try {
           await db.transaction(async (tx) => {
+            // Serialize concurrent consent writes for the same case. Locking the
+            // case row FOR UPDATE before the audit append ensures only one
+            // transaction at a time computes the seq and status transition; the
+            // shared `tx` alone gives atomicity, not serialization.
+            const caseRows = await tx
+              .select()
+              .from(cases)
+              .where(eq(cases.id, input.case_id))
+              .for('update')
+              .limit(1);
+            const caseRow = caseRows[0];
+            if (!caseRow) {
+              throw new AppError(404, 'NOT_FOUND', `Case ${input.case_id} not found`);
+            }
+
             const [row] = await tx
               .insert(consents)
               .values({
@@ -91,22 +106,22 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
             }
 
             // Transition case status inside the same transaction.
-            const caseRows = await tx
-              .select()
-              .from(cases)
-              .where(eq(cases.id, input.case_id))
-              .limit(1);
-            const caseRow = caseRows[0];
-            if (caseRow) {
-              const newStatus = transitionCaseStatus(
-                toCaseRecord(caseRow).status,
-                'consent_granted',
+            let newStatus;
+            try {
+              newStatus = transitionCaseStatus(toCaseRecord(caseRow).status, 'consent_granted');
+            } catch (cause) {
+              throw new AppError(
+                409,
+                'INVALID_STATE_TRANSITION',
+                'Consent cannot be granted for this case in its current state',
+                { cause },
               );
-              await tx.update(cases).set({ status: newStatus }).where(eq(cases.id, input.case_id));
             }
+            await tx.update(cases).set({ status: newStatus }).where(eq(cases.id, input.case_id));
 
             // Append audit event inside the same transaction so the read and
-            // the write share the same snapshot (seq-race prevention).
+            // the write share the same snapshot (seq-race prevention). The
+            // case row lock above additionally serializes concurrent appends.
             await audit.appendEvent(tx, {
               case_id: input.case_id,
               kind: 'consent_granted',
@@ -157,43 +172,60 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
       async updateConsentStatus(consentId, status, withdrawnAt) {
         try {
           await db.transaction(async (tx) => {
+            // Lock the consent row so concurrent withdrawals for the same
+            // consent serialize, then lock the case row to serialize the status
+            // transition and audit append with the consent-grant path.
             const consentRows = await tx
               .select()
               .from(consents)
               .where(eq(consents.id, consentId))
+              .for('update')
               .limit(1);
             const consentRow = consentRows[0];
+
+            if (!consentRow) {
+              throw new AppError(404, 'NOT_FOUND', `Consent ${consentId} not found`);
+            }
 
             await tx
               .update(consents)
               .set({ status, withdrawn_at: new Date(withdrawnAt) })
               .where(eq(consents.id, consentId));
 
-            if (consentRow) {
-              const caseRows = await tx
-                .select()
-                .from(cases)
-                .where(eq(cases.id, consentRow.case_id))
-                .limit(1);
-              const caseRow = caseRows[0];
-              if (caseRow) {
-                const newStatus = transitionCaseStatus(toCaseRecord(caseRow).status, 'withdrawn');
-                await tx
-                  .update(cases)
-                  .set({ status: newStatus })
-                  .where(eq(cases.id, consentRow.case_id));
+            const caseRows = await tx
+              .select()
+              .from(cases)
+              .where(eq(cases.id, consentRow.case_id))
+              .for('update')
+              .limit(1);
+            const caseRow = caseRows[0];
+            if (caseRow) {
+              let newStatus;
+              try {
+                newStatus = transitionCaseStatus(toCaseRecord(caseRow).status, 'withdrawn');
+              } catch (cause) {
+                throw new AppError(
+                  409,
+                  'INVALID_STATE_TRANSITION',
+                  'Consent cannot be withdrawn for this case in its current state',
+                  { cause },
+                );
               }
-
-              await audit.appendEvent(tx, {
-                case_id: consentRow.case_id,
-                kind: 'consent_withdrawn',
-                payload: {
-                  consent_id: consentId,
-                  withdrawn_at: withdrawnAt,
-                },
-                actor: 'candidate',
-              });
+              await tx
+                .update(cases)
+                .set({ status: newStatus })
+                .where(eq(cases.id, consentRow.case_id));
             }
+
+            await audit.appendEvent(tx, {
+              case_id: consentRow.case_id,
+              kind: 'consent_withdrawn',
+              payload: {
+                consent_id: consentId,
+                withdrawn_at: withdrawnAt,
+              },
+              actor: 'candidate',
+            });
           });
         } catch (cause) {
           if (cause instanceof AppError) throw cause;

@@ -81,7 +81,10 @@ export async function getCaseByToken(token: string): Promise<PublicCaseContext> 
     throw new Error('TOKEN_INVALID');
   }
 
-  const raw = await response.json();
+  // Guard the parse: a proxy may return a 200 HTML error page. .catch() turns
+  // a non-JSON body into null, which then fails safeParse below with the same
+  // stable CANDIDATE_API_ERROR message instead of a raw SyntaxError.
+  const raw = await response.json().catch(() => null);
 
   // Use safeParse so a malformed payload produces a clear error rather than an
   // unhandled ZodError propagating to the UI.
