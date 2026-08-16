@@ -7,6 +7,7 @@ import type { CaseServiceDeps } from '../services/cases/case-service.js';
 
 type CaseRow = typeof cases.$inferSelect;
 
+/** Maps a DB case row to the @tieout/schema CaseSummary contract. */
 function toCaseSummary(row: CaseRow): CaseSummary {
   return {
     id: row.id,
