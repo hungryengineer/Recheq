@@ -11,6 +11,11 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures');
 
+/**
+ * Runs every fixture through the rules engine, compares score/verdict/findings
+ * against the expected results, and exits non-zero on any failure or when no
+ * fixtures are found.
+ */
 async function run() {
   console.log('🔍 Running Tieout Fixture Validations...');
 

@@ -17,10 +17,17 @@ export function CreateCaseForm() {
 
     const formData = new FormData(e.currentTarget);
 
+    const candidateEmail = formData.get('candidate_email');
+    if (typeof candidateEmail !== 'string' || candidateEmail.trim() === '') {
+      setError('Candidate email is required');
+      setIsSubmitting(false);
+      return;
+    }
+
     const input: CaseCreateInput = {
       employer_name: formData.get('employer_name') as string,
       candidate_name: formData.get('candidate_name') as string,
-      candidate_email: formData.get('candidate_email') as string,
+      candidate_email: candidateEmail,
       title: formData.get('title') as string,
       claimed_ctc: Number(formData.get('claimed_ctc')),
       employment_start: formData.get('employment_start') as string,
