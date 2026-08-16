@@ -564,10 +564,11 @@ components:
 
     CaseSummary:
       type: object
-      required: [id, candidate_name, employer_name, title, status, created_at]
+      required: [id, candidate_name, candidate_email, employer_name, title, status, created_at]
       properties:
         id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
         candidate_name: { type: string, example: Arun Kumar }
+        candidate_email: { type: string, example: arun@example.com }
         employer_name: { type: string, example: Acme Technologies Pvt Ltd }
         title: { type: string, example: Senior Analyst }
         status:
@@ -585,10 +586,11 @@ components:
 
     CaseDetail:
       type: object
-      required: [id, candidate_name, employer_name, title, status, findings, not_assessed, origins]
+      required: [id, candidate_name, candidate_email, employer_name, title, status, findings, not_assessed, origins]
       properties:
         id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
         candidate_name: { type: string, example: Arun Kumar }
+        candidate_email: { type: string, example: arun@example.com }
         employer_name: { type: string, example: Acme Technologies Pvt Ltd }
         title: { type: string, example: Senior Analyst }
         claimed_ctc: { type: number, example: 1800000 }
