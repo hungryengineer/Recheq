@@ -93,8 +93,7 @@ try {
 
         // Re-check inside the transaction in case a concurrent runner just
         // committed the same migration while we were waiting for the lock.
-        const alreadyApplied =
-          await tx`SELECT 1 FROM tieout_migrations WHERE name = ${file}`;
+        const alreadyApplied = await tx`SELECT 1 FROM tieout_migrations WHERE name = ${file}`;
         if (alreadyApplied.length > 0) {
           console.log(`  – ${file} applied by concurrent runner, skipping`);
           return;

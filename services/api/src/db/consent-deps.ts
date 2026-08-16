@@ -89,10 +89,7 @@ export function createConsentDeps(db: Database): ConsentServiceDeps {
           const caseRow = caseRows[0];
           if (caseRow) {
             const { transitionCaseStatus } = await import('../domain/case-status.js');
-            const newStatus = transitionCaseStatus(
-              toCaseRecord(caseRow).status,
-              'consent_granted',
-            );
+            const newStatus = transitionCaseStatus(toCaseRecord(caseRow).status, 'consent_granted');
             await tx.update(cases).set({ status: newStatus }).where(eq(cases.id, input.case_id));
           }
 

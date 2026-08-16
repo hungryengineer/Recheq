@@ -7,8 +7,7 @@ import { createCase as persistCase } from '@tieout/api/web';
 import { getCaseDeps, DEV_ORG_ID, DEV_USER_ID } from './db';
 
 export type CreateCaseResult =
-  | { success: true; data: CaseRecord }
-  | { success: false; error: string };
+  { success: true; data: CaseRecord } | { success: false; error: string };
 
 export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
   try {

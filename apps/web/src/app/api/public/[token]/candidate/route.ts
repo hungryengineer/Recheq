@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getCandidateView, resolveToken, listDocumentKindsByCase, toErrorResponse } from '@tieout/api/web';
+import {
+  getCandidateView,
+  resolveToken,
+  listDocumentKindsByCase,
+  toErrorResponse,
+} from '@tieout/api/web';
 import type { CandidateSafeView } from '@tieout/api/web';
 import { getDb } from '@/lib/api/db';
 import { getConsentDeps, getTokenVerifier } from '@/lib/api/public';
