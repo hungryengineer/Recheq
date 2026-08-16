@@ -586,7 +586,18 @@ components:
 
     CaseDetail:
       type: object
-      required: [id, candidate_name, candidate_email, employer_name, title, status, findings, not_assessed, origins]
+      required:
+        [
+          id,
+          candidate_name,
+          candidate_email,
+          employer_name,
+          title,
+          status,
+          findings,
+          not_assessed,
+          origins,
+        ]
       properties:
         id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
         candidate_name: { type: string, example: Arun Kumar }

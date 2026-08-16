@@ -40,7 +40,10 @@ export function NotificationsTab() {
               Get an email when a verification case is fully processed.
             </p>
           </div>
-          <label htmlFor="caseCompletionsToggle" className="relative inline-flex items-center cursor-pointer mr-2">
+          <label
+            htmlFor="caseCompletionsToggle"
+            className="relative inline-flex items-center cursor-pointer mr-2"
+          >
             <input
               id="caseCompletionsToggle"
               type="checkbox"
@@ -63,7 +66,10 @@ export function NotificationsTab() {
               Get notified when a candidate uploads their forms.
             </p>
           </div>
-          <label htmlFor="documentUploadsToggle" className="relative inline-flex items-center cursor-pointer mr-2">
+          <label
+            htmlFor="documentUploadsToggle"
+            className="relative inline-flex items-center cursor-pointer mr-2"
+          >
             <input
               id="documentUploadsToggle"
               type="checkbox"
@@ -84,7 +90,10 @@ export function NotificationsTab() {
               Receive monthly invoices and billing updates.
             </p>
           </div>
-          <label htmlFor="billingReceiptsToggle" className="relative inline-flex items-center cursor-pointer mr-2">
+          <label
+            htmlFor="billingReceiptsToggle"
+            className="relative inline-flex items-center cursor-pointer mr-2"
+          >
             <input
               id="billingReceiptsToggle"
               type="checkbox"

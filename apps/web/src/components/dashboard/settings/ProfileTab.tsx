@@ -87,7 +87,12 @@ export function ProfileTab() {
 
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="w-full md:w-1/3">
-            <label htmlFor="fullNameInput" className="block text-sm font-medium text-[var(--color-fg)]">Full name</label>
+            <label
+              htmlFor="fullNameInput"
+              className="block text-sm font-medium text-[var(--color-fg)]"
+            >
+              Full name
+            </label>
           </div>
           <div className="w-full md:w-2/3">
             <input
@@ -102,7 +107,10 @@ export function ProfileTab() {
 
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="w-full md:w-1/3">
-            <label htmlFor="emailAddressInput" className="block text-sm font-medium text-[var(--color-fg)]">
+            <label
+              htmlFor="emailAddressInput"
+              className="block text-sm font-medium text-[var(--color-fg)]"
+            >
               Email address
             </label>
           </div>

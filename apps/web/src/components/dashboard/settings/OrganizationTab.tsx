@@ -67,7 +67,12 @@ export function OrganizationTab() {
 
       <div className="flex flex-col md:flex-row md:items-start gap-4 mb-8">
         <div className="w-full md:w-1/3">
-          <label htmlFor="companyNameInput" className="block text-sm font-medium text-[var(--color-fg)]">Company name</label>
+          <label
+            htmlFor="companyNameInput"
+            className="block text-sm font-medium text-[var(--color-fg)]"
+          >
+            Company name
+          </label>
         </div>
         <div className="w-full md:w-2/3 flex gap-2">
           <input
@@ -143,7 +148,7 @@ export function OrganizationTab() {
                     </td>
                     <td className="px-4 py-3 text-sm text-[var(--color-fg)]">{member.role}</td>
                     <td className="px-4 py-3 text-right text-sm relative">
-                      <button 
+                      <button
                         onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
                         aria-expanded={openMenuId === member.id}
                         aria-label="Member actions"
