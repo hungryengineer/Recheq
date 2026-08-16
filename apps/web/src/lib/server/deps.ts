@@ -22,6 +22,10 @@ export function buildDeps(): CaseProcessingDeps {
     const tokenVerifier = {
       verifyAndGetCaseId: async (rawToken: string, _purpose: string) => {
         // Mock token verification for demo/testing
+        if (rawToken.startsWith('test-')) {
+          const extractedId = rawToken.replace('test-', '');
+          if (extractedId !== 'token') return extractedId;
+        }
         if (rawToken === 'test-token' || rawToken.startsWith('tie_')) {
           // Just return the first available case for testing if no specific token logic is implemented in db
           const orgId = process.env.DEV_ORG_ID || '00000000-0000-0000-0000-000000000002';
@@ -34,7 +38,7 @@ export function buildDeps(): CaseProcessingDeps {
     };
 
     globalForDeps.__deps = {
-      db,
+      db: repository,
       audit: auditService,
       epfoProvider: new FixtureEpfoProvider(),
       extractor: new FixtureExtractor(),

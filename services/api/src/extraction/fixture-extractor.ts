@@ -127,7 +127,12 @@ export class FixtureExtractor implements LlmDocumentExtractor {
 function createDefaultFixtures(): FixtureData {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const fixturesPath = path.resolve(__dirname, '../../../../fixtures/extraction');
+  
+  // Resilient path resolution for Next.js/Turbopack
+  const isWebDir = process.cwd().endsWith('web');
+  const fixturesPath = isWebDir 
+    ? path.join(process.cwd(), '../../services/api/fixtures/extraction')
+    : path.resolve(__dirname, '../../../../fixtures/extraction');
 
   const readJson = (filename: string) => {
     try {

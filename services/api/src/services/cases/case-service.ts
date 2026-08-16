@@ -45,7 +45,7 @@ export async function createCase(
     employment_start: data.employment_start,
     employment_end: data.employment_end,
     uan: data.uan ?? null,
-    status: 'draft',
+    status: 'awaiting_consent',
     verdict: null,
     risk_score: null,
   };

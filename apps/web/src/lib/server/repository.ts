@@ -154,6 +154,7 @@ export const repository = {
   createPendingRecord: async (caseId: string, consentId: string, uan: string) => {
     const [result] = await db.insert(schema.epfoRecords).values({
       case_id: caseId,
+      consent_id: consentId,
       uan: uan,
       status: 'pending',
     } as any).returning({ id: schema.epfoRecords.id } as any);
