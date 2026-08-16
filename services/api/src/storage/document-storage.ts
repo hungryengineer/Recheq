@@ -80,10 +80,9 @@ export function createDocumentStorage(
           body: new Uint8Array(content),
         });
       } catch (cause) {
-        throw new Error(
-          `Failed to upload document (key=${key}): network or transport error`,
-          { cause },
-        );
+        throw new Error(`Failed to upload document (key=${key}): network or transport error`, {
+          cause,
+        });
       }
 
       if (!response.ok) {
@@ -109,10 +108,9 @@ export function createDocumentStorage(
           headers,
         });
       } catch (cause) {
-        throw new Error(
-          `Failed to HEAD object (key=${key}): network or transport error`,
-          { cause },
-        );
+        throw new Error(`Failed to HEAD object (key=${key}): network or transport error`, {
+          cause,
+        });
       }
 
       return {
@@ -133,9 +131,7 @@ export function createDocumentStorageFromEnv(
 ): DocumentStorage {
   const raw = env.S3_FORCE_PATH_STYLE;
   if (raw !== undefined && raw !== 'true' && raw !== 'false') {
-    throw new Error(
-      `S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`,
-    );
+    throw new Error(`S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`);
   }
   return createDocumentStorage({
     endpoint: requireEnv(env, 'S3_ENDPOINT'),

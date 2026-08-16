@@ -72,9 +72,7 @@ function createBucketBody(region: string): Buffer | undefined {
 export function createS3ClientFromEnv(env: NodeJS.ProcessEnv = process.env): S3Client {
   const raw = env.S3_FORCE_PATH_STYLE;
   if (raw !== undefined && raw !== 'true' && raw !== 'false') {
-    throw new Error(
-      `S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`,
-    );
+    throw new Error(`S3_FORCE_PATH_STYLE must be "true" or "false", got: "${raw}"`);
   }
   return createS3Client({
     endpoint: requireEnv(env, 'S3_ENDPOINT'),
