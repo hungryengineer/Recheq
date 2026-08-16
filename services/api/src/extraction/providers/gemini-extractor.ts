@@ -138,10 +138,10 @@ export class GeminiExtractor implements LlmDocumentExtractor {
   async isAvailable(): Promise<boolean> {
     try {
       // List available models as a lightweight health check.
-      const response = await fetch(
-        `${this.config.baseUrl}/models?key=${this.config.apiKey}`,
-        { method: 'GET', signal: AbortSignal.timeout(5_000) },
-      );
+      const response = await fetch(`${this.config.baseUrl}/models?key=${this.config.apiKey}`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5_000),
+      });
       return response.ok;
     } catch {
       return false;
