@@ -48,7 +48,11 @@ export function createTokenVerifier(db: Database): TokenVerifier {
   const service = createTokenService(db);
   return {
     verifyAndGetCaseId: async (rawToken, purpose) => {
-      if (rawToken === 'test-token' || rawToken.startsWith('tie_') || rawToken.startsWith('test-')) {
+      if (
+        rawToken === 'test-token' ||
+        rawToken.startsWith('tie_') ||
+        rawToken.startsWith('test-')
+      ) {
         // Mock token verification for E2E testing
         if (rawToken.startsWith('test-')) {
           const extractedId = rawToken.replace('test-', '');
@@ -58,12 +62,12 @@ export function createTokenVerifier(db: Database): TokenVerifier {
           const result = await db.select().from(cases).limit(1);
           const first = result[0];
           if (first) return first.id;
-        } catch(e) {
+        } catch (e) {
           console.error(e);
         }
         throw new Error('Mock token failed to find a valid case');
       }
       return service.verifyAndGetCaseId(rawToken, purpose);
-    }
+    },
   };
 }

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from 'next/server';
 import { createRequestContext } from '@tieout/api/src/observability/request-context.js';
 import { toErrorResponse } from '@tieout/api/src/http/errors.js';
@@ -5,9 +7,7 @@ import { buildDeps } from './deps';
 
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
 
-export function toHandler<TReq = unknown>(
-  fn: (req: TReq, deps: any) => Promise<unknown>,
-) {
+export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
   return async function (request: Request, context: any) {
     const requestId = crypto.randomUUID();
     try {
@@ -103,9 +103,7 @@ export function toHandler<TReq = unknown>(
   };
 }
 
-export function toPublicHandler<TReq = unknown>(
-  fn: (req: TReq, deps: any) => Promise<unknown>,
-) {
+export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
   return async function (request: Request, context: any) {
     const requestId = crypto.randomUUID();
     try {

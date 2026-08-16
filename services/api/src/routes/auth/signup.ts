@@ -8,10 +8,10 @@ import bcrypt from 'bcryptjs';
 
 export async function signupHandler(
   req: { body: unknown },
-  deps: { db: Database }
+  deps: { db: Database },
 ): Promise<{ status: number; body: LoginResponse }> {
   const parseResult = SignupInputSchema.safeParse(req.body);
-  
+
   if (!parseResult.success) {
     throw new AppError(400, 'VALIDATION_ERROR', 'Invalid input');
   }
@@ -33,21 +33,27 @@ export async function signupHandler(
   // We need a transaction to create org and user together
   const result = await deps.db.transaction(async (tx) => {
     // 1. Create Organization
-    const [org] = await tx.insert(schema.organizations).values({
-      name: company,
-      slug: company.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    }).returning();
+    const [org] = await tx
+      .insert(schema.organizations)
+      .values({
+        name: company,
+        slug: company.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      })
+      .returning();
 
     if (!org) throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create organization');
 
     // 2. Create User
-    const [user] = await tx.insert(schema.users).values({
-      email,
-      password_hash,
-      name: fullName,
-      org_id: org.id,
-      role: 'admin',
-    }).returning();
+    const [user] = await tx
+      .insert(schema.users)
+      .values({
+        email,
+        password_hash,
+        name: fullName,
+        org_id: org.id,
+        role: 'admin',
+      })
+      .returning();
 
     if (!user) throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create user');
 
@@ -70,7 +76,7 @@ export async function signupHandler(
         email: result.user.email,
         name: result.user.name,
         role: result.user.role,
-      }
-    }
+      },
+    },
   };
 }

@@ -21,7 +21,8 @@ async function getAuthHeader() {
 
 export async function getApiKeysAction(): Promise<ApiKey[]> {
   try {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/settings/keys`, {
       method: 'GET',
       headers: await getAuthHeader(),
@@ -44,7 +45,8 @@ export async function createApiKeyAction(
   name: string,
 ): Promise<{ success: boolean; data?: ApiKeyCreated; error?: string }> {
   try {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/settings/keys`, {
       method: 'POST',
       headers: {
@@ -70,7 +72,8 @@ export async function deleteApiKeyAction(
   id: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/settings/keys/${id}`, {
       method: 'DELETE',
       headers: await getAuthHeader(),

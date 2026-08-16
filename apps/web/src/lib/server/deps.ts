@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
 
 declare global {

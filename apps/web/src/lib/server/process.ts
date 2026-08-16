@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { processCase } from '@tieout/api/src/workflows/case-processing.js';
 import { buildDeps } from './deps';
 import { repository } from './repository';

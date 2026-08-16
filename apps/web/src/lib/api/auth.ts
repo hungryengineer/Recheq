@@ -26,7 +26,8 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, rememberMe } = parsed.data;
 
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -70,7 +71,8 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
 export async function ssoLoginAction(): Promise<AuthActionResult> {
   try {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/auth/sso`, {
       method: 'POST',
       headers: {
@@ -111,7 +113,8 @@ export async function ssoLoginAction(): Promise<AuthActionResult> {
 
 export async function forgotPasswordAction(email: string): Promise<AuthActionResult> {
   try {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -143,7 +146,8 @@ export async function resetPasswordAction(
   newPassword: string,
 ): Promise<AuthActionResult> {
   try {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -183,7 +187,8 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, fullName, company } = parsed.data;
 
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/auth/signup`, {
       method: 'POST',
       headers: {

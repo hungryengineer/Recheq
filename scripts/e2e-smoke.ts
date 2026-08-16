@@ -8,7 +8,7 @@ async function run() {
     userId: '00000000-0000-0000-0000-000000000001',
     orgId: '00000000-0000-0000-0000-000000000002',
     role: 'verifier',
-    email: 'test@tieout.dev'
+    email: 'test@tieout.dev',
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -21,7 +21,7 @@ async function run() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       candidate_name: 'E2E Test User',
@@ -61,7 +61,10 @@ async function run() {
   console.log('3. Uploading Document');
   const formData = new FormData();
   // Create a simple text file blob that starts with PDF magic bytes
-  const pdfMagicBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a, 0x25, 0xc3, 0xa4, 0xc3, 0xbc, 0xc3, 0xb6, 0xc3, 0x9f, 0x0a]);
+  const pdfMagicBytes = new Uint8Array([
+    0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a, 0x25, 0xc3, 0xa4, 0xc3, 0xbc, 0xc3, 0xb6,
+    0xc3, 0x9f, 0x0a,
+  ]);
   const file = new Blob([pdfMagicBytes, 'sample payslip content'], { type: 'application/pdf' });
   formData.append('file', file, 'payslip.pdf');
   formData.append('kind', 'payslip');

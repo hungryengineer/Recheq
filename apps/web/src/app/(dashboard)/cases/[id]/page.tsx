@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getCaseDetails } from '@/lib/api/cases';
 import { FindingCard } from '@/components/dashboard/FindingCard';
-import type { UI_Finding } from '@/components/dashboard/FindingCard';
+import type {} from '@/components/dashboard/FindingCard';
 import type { CaseRecord, FindingRecord } from '@tieout/schema';
 
 interface PageProps {

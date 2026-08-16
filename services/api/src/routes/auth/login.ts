@@ -8,10 +8,10 @@ import bcrypt from 'bcryptjs';
 
 export async function loginHandler(
   req: { body: unknown },
-  deps: { db: Database }
+  deps: { db: Database },
 ): Promise<{ status: number; body: LoginResponse }> {
   const parseResult = LoginInputSchema.safeParse(req.body);
-  
+
   if (!parseResult.success) {
     throw new AppError(400, 'VALIDATION_ERROR', 'Invalid credentials');
   }
@@ -19,10 +19,7 @@ export async function loginHandler(
   const { email, password } = parseResult.data;
 
   // Find user by email
-  const [user] = await deps.db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.email, email));
+  const [user] = await deps.db.select().from(schema.users).where(eq(schema.users.email, email));
 
   if (!user || !user.password_hash) {
     throw new AppError(401, 'UNAUTHORIZED', 'Invalid email or password');
@@ -50,7 +47,7 @@ export async function loginHandler(
         email: user.email,
         name: user.name,
         role: user.role,
-      }
-    }
+      },
+    },
   };
 }

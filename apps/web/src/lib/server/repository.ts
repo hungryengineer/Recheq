@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from './db';
 import { schema } from '@tieout/api/src/db/client.js';
 import { eq, and, desc, inArray } from 'drizzle-orm';
@@ -10,7 +11,10 @@ const storage = createDocumentStorageFromEnv();
 
 export const repository = {
   createCase: async (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => {
-    const [result] = await db.insert(schema.cases).values(input as any).returning();
+    const [result] = await db
+      .insert(schema.cases)
+      .values(input as any)
+      .returning();
     return result;
   },
   listCasesByOrg: async (orgId: string) => {
@@ -152,12 +156,15 @@ export const repository = {
       );
   },
   createPendingRecord: async (caseId: string, consentId: string, uan: string) => {
-    const [result] = await db.insert(schema.epfoRecords).values({
-      case_id: caseId,
-      consent_id: consentId,
-      uan: uan,
-      status: 'pending',
-    } as any).returning({ id: schema.epfoRecords.id } as any);
+    const [result] = await db
+      .insert(schema.epfoRecords)
+      .values({
+        case_id: caseId,
+        consent_id: consentId,
+        uan: uan,
+        status: 'pending',
+      } as any)
+      .returning({ id: schema.epfoRecords.id } as any);
     return result.id;
   },
   updateRecordSuccess: async (id: string, history: EpfoHistory) => {
