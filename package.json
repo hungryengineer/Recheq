@@ -17,7 +17,13 @@
     "format:check": "prettier --check .",
     "fixtures": "tsx scripts/run-fixtures.ts",
     "check:local-dependencies": "node --experimental-strip-types scripts/check-local-dependencies.ts",
-    "bootstrap": "tsx scripts/bootstrap.ts"
+    "bootstrap": "tsx scripts/bootstrap.ts",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "storage:setup": "tsx scripts/ensure-bucket.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "check:neon": "tsx scripts/check-neon-persistence.ts",
+    "check:storage": "tsx scripts/check-storage.ts",
+    "db:ping": "tsx scripts/check-db-connectivity.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
@@ -30,6 +36,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitest/coverage-v8": "^3.2.4",
+    "drizzle-orm": "^0.45.2",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
     "globals": "^16.2.0",
