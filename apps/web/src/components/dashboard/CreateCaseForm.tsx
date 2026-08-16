@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { createCase } from '../../lib/api/actions';
+import { QRCodeSVG } from 'qrcode.react';
+import { X, QrCode } from 'lucide-react';
 
 export function CreateCaseForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -10,6 +12,7 @@ export function CreateCaseForm() {
   const [successLink, setSuccessLink] = useState<string | null>(null);
 
   const [copied, setCopied] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -230,10 +233,60 @@ export function CreateCaseForm() {
               {copied ? 'Copied!' : 'Copy'}
             </button>
             <button
-              className="rounded-[var(--radius-control)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-[var(--color-page)] disabled:opacity-50 transition-colors"
-              disabled
+              onClick={() => setIsQrModalOpen(true)}
+              className="rounded-[var(--radius-control)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-[var(--color-page)] transition-colors flex items-center gap-1.5"
             >
-              QR
+              <QrCode className="w-4 h-4" /> QR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {isQrModalOpen && successLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div 
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500"></div>
+            
+            <button 
+              onClick={() => setIsQrModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6 mt-2">
+              <h3 className="text-xl font-bold text-[var(--color-fg)] mb-2">Scan to verify</h3>
+              <p className="text-sm text-[var(--color-fg-muted)]">
+                Ask the candidate to scan this QR code with their mobile device to begin the verification journey.
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-inner border border-gray-100 mb-6 relative">
+              <QRCodeSVG 
+                value={successLink} 
+                size={220} 
+                level="Q"
+                includeMargin={false}
+                imageSettings={{
+                  src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>",
+                  x: undefined,
+                  y: undefined,
+                  height: 48,
+                  width: 48,
+                  excavate: true,
+                }}
+              />
+            </div>
+
+            <button
+              onClick={handleCopy}
+              className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2.5 rounded-[var(--radius-control)] transition-colors text-sm"
+            >
+              {copied ? 'Link Copied!' : 'Copy Link Instead'}
             </button>
           </div>
         </div>
