@@ -7,6 +7,8 @@ export const CaseCreateInput = z.object({
   employer_name: z.string().min(1).max(500),
   /** Candidate full name */
   candidate_name: z.string().min(1).max(500),
+  /** Candidate email */
+  candidate_email: z.string().email(),
   /** Case title / description */
   title: z.string().min(1).max(1000),
   /** Claimed CTC (Cost to Company) in INR */

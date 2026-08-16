@@ -23,6 +23,7 @@ export function CreateCaseForm() {
     const input = {
       employer_name: formData.get('employer_name') as string,
       candidate_name: formData.get('candidate_name') as string,
+      candidate_email: formData.get('candidate_email') as string,
       title: formData.get('title') as string,
       claimed_ctc: Number(formData.get('claimed_ctc')),
       employment_start: formData.get('employment_start') as string,
