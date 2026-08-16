@@ -1,30 +1,11 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { CaseRecord, CaseSummary, CaseStatus, Verdict } from '@tieout/schema';
+import type { CaseSummary, CaseStatus, Verdict } from '@tieout/schema';
 import { cases } from './schema/cases.js';
+import { toCaseRecord } from './case-queries.js';
 import type { Database } from './client.js';
 import type { CaseServiceDeps } from '../services/cases/case-service.js';
 
 type CaseRow = typeof cases.$inferSelect;
-
-function toCaseRecord(row: CaseRow): CaseRecord {
-  return {
-    id: row.id,
-    org_id: row.org_id,
-    created_by: row.created_by,
-    employer_name: row.employer_name,
-    candidate_name: row.candidate_name,
-    title: row.title,
-    claimed_ctc: Number(row.claimed_ctc),
-    employment_start: row.employment_start,
-    employment_end: row.employment_end,
-    uan: row.uan,
-    status: row.status as CaseStatus,
-    verdict: row.verdict as Verdict | null,
-    risk_score: row.risk_score,
-    created_at: row.created_at.toISOString(),
-    updated_at: row.updated_at.toISOString(),
-  };
-}
 
 function toCaseSummary(row: CaseRow): CaseSummary {
   return {

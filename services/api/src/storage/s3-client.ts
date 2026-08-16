@@ -12,6 +12,8 @@ export interface S3Request {
   method: 'HEAD' | 'PUT';
   bucket: string;
   now?: Date;
+  body?: Buffer;
+  contentType?: string;
 }
 
 export interface S3Response {
@@ -35,8 +37,36 @@ export function createS3Client(
 ): S3Client {
   return {
     headBucket: (bucket) => sendSignedS3Request(config, { method: 'HEAD', bucket }, transport),
-    createBucket: (bucket) => sendSignedS3Request(config, { method: 'PUT', bucket }, transport),
+    createBucket: (bucket) => {
+      const body = createBucketBody(config.region);
+      return sendSignedS3Request(
+        config,
+        {
+          method: 'PUT',
+          bucket,
+          ...(body ? { body, contentType: 'application/xml' } : {}),
+        },
+        transport,
+      );
+    },
   };
+}
+
+/**
+ * B2/S3-compatible providers require the region in the CreateBucket body
+ * (LocationConstraint). AWS only wants it for regions other than us-east-1,
+ * so us-east-1 (the MinIO default) sends an empty body.
+ */
+function createBucketBody(region: string): Buffer | undefined {
+  if (!region || region === 'us-east-1') {
+    return undefined;
+  }
+  return Buffer.from(
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+      `<LocationConstraint>${region}</LocationConstraint>` +
+      '</CreateBucketConfiguration>',
+  );
 }
 
 export function createS3ClientFromEnv(env: NodeJS.ProcessEnv = process.env): S3Client {
@@ -56,11 +86,20 @@ export async function sendSignedS3Request(
 ): Promise<S3Response> {
   const now = request.now ?? new Date();
   const url = getBucketUrl(config, request.bucket);
-  const headers = signS3Request(config, request.method, url, now);
+  const bodyHash = request.body
+    ? createHash('sha256').update(request.body).digest('hex')
+    : EMPTY_BODY_SHA256;
+  const headers = signS3Request(config, request.method, url, now, bodyHash);
+
+  if (request.body) {
+    headers.set('content-length', String(request.body.length));
+    headers.set('content-type', request.contentType ?? 'application/octet-stream');
+  }
 
   return transport(url, {
     method: request.method,
     headers,
+    ...(request.body ? { body: new Uint8Array(request.body) } : {}),
   });
 }
 
@@ -86,13 +125,14 @@ function signS3Request(
   method: S3Request['method'],
   url: URL,
   now: Date,
+  bodyHash = EMPTY_BODY_SHA256,
 ): Headers {
   const amzDate = toAmzDate(now);
   const dateStamp = amzDate.slice(0, 8);
   const credentialScope = `${dateStamp}/${config.region}/s3/aws4_request`;
   const headers = new Headers({
     host: url.host,
-    'x-amz-content-sha256': EMPTY_BODY_SHA256,
+    'x-amz-content-sha256': bodyHash,
     'x-amz-date': amzDate,
   });
   const canonicalHeaders = getCanonicalHeaders(headers);
@@ -103,7 +143,7 @@ function signS3Request(
     url.searchParams.toString(),
     canonicalHeaders,
     signedHeaders,
-    EMPTY_BODY_SHA256,
+    bodyHash,
   ].join('\n');
   const stringToSign = [
     'AWS4-HMAC-SHA256',

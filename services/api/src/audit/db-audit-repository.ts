@@ -23,8 +23,8 @@ export class DbAuditRepository implements IAuditRepository {
   }
 
   async appendEvent(tx: unknown, event: EventRecord): Promise<void> {
-    const dbtx = tx as Tx;
-    await dbtx.insert(events).values({
+    const target = ((tx as Tx | null | undefined) ?? this.db) as DB;
+    await target.insert(events).values({
       id: event.id,
       case_id: event.case_id,
       seq: event.seq,
