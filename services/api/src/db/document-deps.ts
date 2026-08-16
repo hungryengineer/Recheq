@@ -66,10 +66,7 @@ export function createDocumentDeps(db: Database, storage: DocumentStorage): Docu
           // After 'code' in err narrowing, TypeScript knows err has a `code`
           // property — read it directly without an explicit type assertion.
           const isUniqueViolation =
-            typeof err === 'object' &&
-            err !== null &&
-            'code' in err &&
-            err.code === '23505';
+            typeof err === 'object' && err !== null && 'code' in err && err.code === '23505';
 
           if (isUniqueViolation) {
             const existing = await db
