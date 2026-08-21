@@ -34,35 +34,48 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
     const documents = await deps.db.getDocumentsForCase(caseId);
     // Determine extractions count from documents logic if needed
     // In actual implementation we might fetch extractions, but this is a simplified view
-
-    // Status steps: payslip, form16, epfo, rules
-    const hasPayslip = documents.some((d) => d.kind === 'payslip');
-    const hasForm16 = documents.some((d) => d.kind === 'form_16');
     const epfoRecords = await deps.db.getCompletedEpfoRecords(caseId);
+
+    const getDocState = (kind: string) => {
+      const docs = documents.filter((d) => d.kind === kind);
+      if (docs.length === 0) {
+        if (caseRecord.status === 'complete') return 'not_assessed';
+        return 'pending';
+      }
+      if (docs.some((d) => d.status === 'failed')) return 'failed';
+      if (docs.every((d) => d.status === 'extracted')) return 'succeeded';
+      if (caseRecord.status === 'processing') return 'running';
+      return 'pending';
+    };
+
+    const getEpfoState = () => {
+      if (epfoRecords.length > 0) return 'succeeded';
+      if (caseRecord.status === 'processing') return 'awaiting_external';
+      if (caseRecord.status === 'complete') return 'not_assessed';
+      return 'pending';
+    };
 
     const steps = [
       {
-        key: 'payslip',
+        id: 'payslip',
         label: 'Payslip Processing',
-        state: hasPayslip ? 'succeeded' : 'pending',
+        state: getDocState('payslip'),
+        started_at: new Date().toISOString(),
       },
       {
-        key: 'form16',
+        id: 'form16',
         label: 'Form 16 Analysis',
-        state: hasForm16 ? 'succeeded' : 'pending',
+        state: getDocState('form_16'),
+        started_at: new Date().toISOString(),
       },
       {
-        key: 'epfo',
+        id: 'epfo',
         label: 'EPFO Verification',
-        state:
-          epfoRecords.length > 0
-            ? 'succeeded'
-            : caseRecord.status === 'processing' || caseRecord.status === 'complete'
-              ? 'succeeded'
-              : 'pending',
+        state: getEpfoState(),
+        started_at: new Date().toISOString(),
       },
       {
-        key: 'rules',
+        id: 'rules',
         label: 'Rule Evaluation',
         state:
           caseRecord.status === 'complete'
@@ -70,6 +83,7 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
             : caseRecord.status === 'processing'
               ? 'running'
               : 'pending',
+        started_at: new Date().toISOString(),
       },
     ];
 

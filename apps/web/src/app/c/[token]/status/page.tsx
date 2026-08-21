@@ -3,7 +3,7 @@
 import React, { useEffect, useState, use } from 'react';
 
 interface Step {
-  key: string;
+  id: string;
   label: string;
   state:
     | 'pending'
@@ -30,19 +30,20 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
   const resolvedParams = use(params);
   const token = resolvedParams.token;
   const [data, setData] = useState<StatusResponse | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
+  const [terminalStatus, setTerminalStatus] = useState<'complete' | 'withdrawn' | null>(null);
   const [pollInterval, setPollInterval] = useState(2000);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       setPollInterval(document.visibilityState === 'hidden' ? 10000 : 2000);
     };
+    handleVisibilityChange();
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   useEffect(() => {
-    if (isComplete) return;
+    if (terminalStatus) return;
 
     let active = true;
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -56,7 +57,7 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
         if (active) setData(json);
 
         if (json.status === 'complete' || json.status === 'withdrawn') {
-          if (active) setIsComplete(true);
+          if (active) setTerminalStatus(json.status as 'complete' | 'withdrawn');
           return;
         }
       } catch (err) {
@@ -74,7 +75,7 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
       active = false;
       clearTimeout(timeoutId);
     };
-  }, [token, pollInterval, isComplete]);
+  }, [token, pollInterval, terminalStatus]);
 
   const renderStepIcon = (state: Step['state']) => {
     switch (state) {
@@ -131,7 +132,24 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
     }
   };
 
-  if (isComplete && data) {
+  if (terminalStatus && data) {
+    if (terminalStatus === 'withdrawn') {
+      return (
+        <div className="animate-fade-in text-center py-12">
+          <div className="mx-auto w-16 h-16 flex items-center justify-center mb-6">
+            <span className="text-4xl text-[var(--color-fg-muted)]">—</span>
+          </div>
+          <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
+            Verification withdrawn
+          </h1>
+          <p className="text-[var(--color-fg-muted)] mb-6">
+            Your background verification has been withdrawn.
+          </p>
+          <p className="text-sm text-[var(--color-fg-subtle)]">You can safely close this page.</p>
+        </div>
+      );
+    }
+
     const allNotAssessed =
       data.steps && data.steps.length > 0 && data.steps.every((s) => s.state === 'not_assessed');
     const hasAwaitingExternal =
@@ -191,7 +209,7 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
       <div className="space-y-6 mb-12 ml-2">
         {data ? (
           data.steps?.map((step, index) => (
-            <div key={step.key ? `${step.key}-${index}` : index} className="flex items-center">
+            <div key={step.id ? `${step.id}-${index}` : index} className="flex items-center">
               <div className="mr-4 flex-shrink-0">{renderStepIcon(step.state)}</div>
               <span className={`text-[15px] font-medium ${getStepTextColor(step.state)}`}>
                 {step.label}
