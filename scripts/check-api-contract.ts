@@ -106,8 +106,9 @@ function checkContract() {
 
   try {
     documentedOperations = parseDocumentedOperations(fileContents);
-  } catch (error: any) {
-    console.error(`❌ Failed to parse OpenAPI document: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`❌ Failed to parse OpenAPI document: ${message}`);
     process.exit(1);
   }
 

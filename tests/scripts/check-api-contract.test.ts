@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   compareOperations,
   parseDocumentedOperations,
-  Operation,
+  type Operation,
 } from '../../scripts/check-api-contract';
 
 describe('API Contract Checker', () => {
