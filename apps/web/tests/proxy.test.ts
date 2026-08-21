@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { proxy } from '../src/proxy';
 import * as jwt from '@tieout/api/src/security/jwt.js';
 
@@ -14,27 +14,30 @@ const mockNext = vi.fn();
 const mockCookieDelete = vi.fn();
 
 vi.mock('next/server', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const actual = await importOriginal<typeof import('next/server')>();
   return {
     ...actual,
     NextResponse: {
       ...actual.NextResponse,
-      redirect: (...args: any[]) => {
-        mockRedirect(...args);
-        return {
-          cookies: {
-            delete: mockCookieDelete,
-          },
-        };
-      },
-      next: (...args: any[]) => {
+      redirect: vi
+        .fn()
+        .mockImplementation((...args: Parameters<typeof actual.NextResponse.redirect>) => {
+          mockRedirect(...args);
+          return {
+            cookies: {
+              delete: mockCookieDelete,
+            },
+          };
+        }),
+      next: vi.fn().mockImplementation((...args: Parameters<typeof actual.NextResponse.next>) => {
         mockNext(...args);
         return {
           cookies: {
             delete: mockCookieDelete,
           },
         };
-      },
+      }),
     },
   };
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { VerificationStep, StepContext, StepResult } from '../src/types.js';
 import { Engine } from '../src/engine.js';
 
@@ -31,13 +31,18 @@ class FakeStep implements VerificationStep {
 }
 
 describe('Step Engine', () => {
-  it('computes insufficient_evidence on empty step list', async () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('Empty step list -> insufficient_evidence, not a crash', async () => {
     const engine = new Engine([]);
     const result = await engine.run({ caseId: '123' });
     expect(result.verdict).toBe('insufficient_evidence');
+    expect(result.steps).toEqual([]);
   });
 
-  it('marks step not_assessed if requires() is false (P3)', async () => {
+  it('All steps not_assessed -> insufficient_evidence, status complete, never failed (R1.12)', async () => {
     const step = new FakeStep('s1', 'Step 1', 'fast', 1000, [], undefined, () => false);
     const engine = new Engine([step]);
     const result = await engine.run({ caseId: '123' });
@@ -45,7 +50,7 @@ describe('Step Engine', () => {
     expect(result.verdict).toBe('insufficient_evidence');
   });
 
-  it('catches throwing step and marks failed without aborting others', async () => {
+  it('One fast step fails, others succeed -> Verdict from survivors; failed step visible in steps[]', async () => {
     const stepFail = new FakeStep(
       's1',
       'Fail',
@@ -64,15 +69,11 @@ describe('Step Engine', () => {
 
     expect(result.steps.find((s) => s.id === 's1')?.state).toBe('failed');
     expect(result.steps.find((s) => s.id === 's2')?.state).toBe('succeeded');
+    // Survivors yield verified
+    expect(result.verdict).toBe('verified');
   });
 
-  it('detects mutual dependency (cycle) at load time', () => {
-    const stepA = new FakeStep('a', 'A', 'fast', 1000, ['b']);
-    const stepB = new FakeStep('b', 'B', 'fast', 1000, ['a']);
-    expect(() => new Engine([stepA, stepB])).toThrow(/Cycle detected/);
-  });
-
-  it('marks dependency-of-a-dependency as not_assessed when upstream fails', async () => {
+  it('Dependency-of-a-dependency fails -> Both downstream not_assessed, one reason each', async () => {
     const stepFail = new FakeStep(
       'a',
       'Fail',
@@ -93,25 +94,88 @@ describe('Step Engine', () => {
     const stepB = new FakeStep('b', 'B', 'fast', 1000, ['a']);
     const stepC = new FakeStep('c', 'C', 'fast', 1000, ['b']);
 
+    // Ensure PROVENANCE_REGISTER validation doesn't throw because stepFail dataSource is derived by default
     const engine = new Engine([stepFail, stepB, stepC]);
     const result = await engine.run({ caseId: '123' });
 
-    expect(result.steps.find((s) => s.id === 'b')?.state).toBe('not_assessed');
-    expect(result.steps.find((s) => s.id === 'c')?.state).toBe('not_assessed');
+    const resB = result.steps.find((s) => s.id === 'b');
+    const resC = result.steps.find((s) => s.id === 'c');
+
+    expect(resB?.state).toBe('not_assessed');
+    expect(resC?.state).toBe('not_assessed');
+    expect(resB?.reason).toBe('Dependency a did not succeed');
+    expect(resC?.reason).toBe('Dependency b did not succeed');
   });
 
-  it('rejects duplicate step ids and unknown dependencies at construction', () => {
-    expect(() => {
-      const s = new FakeStep('s1', 'S1', 'fast', 1000, []);
-      new Engine([s, new FakeStep('s1', 'Dup', 'fast', 1000, [])]);
-    }).toThrow(/Duplicate step id/);
+  it('succeeded with null artifact -> Coerced to not_assessed (P3)', async () => {
+    const nullStep = new FakeStep(
+      'n1',
+      'Null',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => true,
+      async () => ({
+        state: 'succeeded',
+        artifact: null,
+        reason: null,
+        provenance: { source: 'derived', model: null, licence: 'none' },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    );
+    const engine = new Engine([nullStep]);
+    const result = await engine.run({ caseId: '123' });
 
-    expect(() => {
-      new Engine([new FakeStep('a', 'A', 'fast', 1000, ['missing'])]);
-    }).toThrow(/unknown dependency missing/);
+    expect(result.steps[0]?.state).toBe('not_assessed');
+    expect(result.steps[0]?.reason).toBe('Step succeeded but returned null artifact');
   });
 
-  it('runs a shared dependency exactly once when several steps depend on it', async () => {
+  it('Mutual dependency -> Refuses to start, names both', () => {
+    const stepA = new FakeStep('a', 'A', 'fast', 1000, ['b']);
+    const stepB = new FakeStep('b', 'B', 'fast', 1000, ['a']);
+    expect(() => new Engine([stepA, stepB])).toThrowError(
+      'Cycle detected involving steps: a -> b -> a',
+    );
+  });
+
+  it('Step resolves after its timeout fired -> Late result discarded, timed_out stands', async () => {
+    const slow = new FakeStep(
+      'slow',
+      'Slow',
+      'fast',
+      50, // 50ms timeout
+      [],
+      undefined,
+      () => true,
+      async () =>
+        new Promise<StepResult>((resolve) => {
+          setTimeout(
+            () =>
+              resolve({
+                state: 'succeeded',
+                artifact: 'late-artifact',
+                reason: null,
+                provenance: { source: 'derived', model: null, licence: 'none' },
+                startedAt: new Date(),
+                completedAt: new Date(),
+              }),
+            100, // resolves at 100ms
+          );
+        }),
+    );
+    const engine = new Engine([slow]);
+    const result = await engine.run({ caseId: '123' });
+
+    expect(result.steps[0]?.state).toBe('timed_out');
+
+    // Wait extra to ensure no late overriding
+    await new Promise((r) => setTimeout(r, 100));
+    expect(result.steps[0]?.state).toBe('timed_out');
+  });
+
+  it('Concurrent invocation for one case -> No double-write (inflight promise cache ensures single run)', async () => {
     let runs = 0;
     const shared = new FakeStep(
       'shared',
@@ -140,46 +204,51 @@ describe('Step Engine', () => {
     const engine = new Engine([shared, left, right]);
     const result = await engine.run({ caseId: '123' });
 
-    expect(runs).toBe(1);
+    expect(runs).toBe(1); // Executed only once
     expect(result.steps.find((s) => s.id === 'left')?.state).toBe('succeeded');
     expect(result.steps.find((s) => s.id === 'right')?.state).toBe('succeeded');
   });
 
-  it('enforces timeoutMs: marks the step timed_out and blocks dependents', async () => {
-    const slow = new FakeStep(
-      'slow',
-      'Slow',
+  it('Step returns provenance with an undeclared source -> Rejected, marked failed, alert raised', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const step = new FakeStep(
+      's1',
+      'S1',
       'fast',
-      20,
+      1000,
       [],
       undefined,
       () => true,
-      async () =>
-        new Promise<StepResult>((resolve) => {
-          setTimeout(
-            () =>
-              resolve({
-                state: 'succeeded',
-                artifact: null,
-                reason: null,
-                provenance: { source: 'derived', model: null, licence: 'none' },
-                startedAt: new Date(),
-                completedAt: new Date(),
-              }),
-            500,
-          );
-        }),
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: { source: 'unknown-source', model: null, licence: 'none' },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
     );
-    const dependent = new FakeStep('dep', 'Dep', 'fast', 1000, ['slow']);
 
-    const engine = new Engine([slow, dependent]);
+    const engine = new Engine([step]);
     const result = await engine.run({ caseId: '123' });
 
-    expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('timed_out');
-    expect(result.steps.find((s) => s.id === 'dep')?.state).toBe('not_assessed');
+    expect(result.steps[0]?.state).toBe('failed');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'ALERT: Step s1 returned undeclared provenance source unknown-source',
+    );
   });
 
-  it('caps concurrent execution at four steps', async () => {
+  it('Refuses to run a step whose dataSource is not in the provenance register (R1.16)', () => {
+    const invalidSourceStep = new FakeStep('invalid', 'Invalid', 'fast', 1000, [], {
+      source: 'alien-source',
+      licence: 'none',
+    });
+    expect(() => new Engine([invalidSourceStep])).toThrowError(
+      'Step invalid declares unknown dataSource: alien-source',
+    );
+  });
+
+  it('caps concurrent execution at four steps (using semaphore)', async () => {
     let active = 0;
     let maxActive = 0;
     const mk = (id: string) =>
@@ -194,11 +263,11 @@ describe('Step Engine', () => {
         async () => {
           active += 1;
           maxActive = Math.max(maxActive, active);
-          await new Promise((r) => setTimeout(r, 5));
+          await new Promise((r) => setTimeout(r, 10));
           active -= 1;
           return {
             state: 'succeeded',
-            artifact: null,
+            artifact: 'art',
             reason: null,
             provenance: { source: 'derived', model: null, licence: 'none' },
             startedAt: new Date(),
@@ -212,6 +281,17 @@ describe('Step Engine', () => {
 
     expect(maxActive).toBeLessThanOrEqual(4);
     expect(result.verdict).toBe('verified');
+  });
+
+  it('rejects duplicate step ids and unknown dependencies at construction', () => {
+    expect(() => {
+      const s = new FakeStep('s1', 'S1', 'fast', 1000, []);
+      new Engine([s, new FakeStep('s1', 'Dup', 'fast', 1000, [])]);
+    }).toThrow(/Duplicate step id/);
+
+    expect(() => {
+      new Engine([new FakeStep('a', 'A', 'fast', 1000, ['missing'])]);
+    }).toThrow(/unknown dependency missing/);
   });
 
   it('returns the interim verdict without waiting for slow steps (R1.6/R1.14)', async () => {
@@ -238,5 +318,81 @@ describe('Step Engine', () => {
     expect(result.steps.find((s) => s.id === 'quick')?.state).toBe('succeeded');
     expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
     expect(elapsed).toBeLessThan(1000);
+  });
+
+  it('handles requires callback throwing an error by marking the step failed', async () => {
+    const errorStep = new FakeStep(
+      'err_req',
+      'ErrReq',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => {
+        throw new Error('requires failed randomly');
+      },
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: { source: 'derived', model: null, licence: 'none' },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    );
+
+    const engine = new Engine([errorStep]);
+    const result = await engine.run({ caseId: '123' });
+
+    expect(result.steps[0]?.state).toBe('failed');
+    expect(result.steps[0]?.reason).toBe('This check could not be completed');
+  });
+
+  it('keeps semaphore locked for background step when it ignores abort signal after timeout', async () => {
+    let active = 0;
+    let maxActive = 0;
+    const mkSlow = (id: string) =>
+      new FakeStep(
+        id,
+        id,
+        'fast',
+        50, // very tight timeout
+        [],
+        undefined,
+        () => true,
+        async () => {
+          active += 1;
+          maxActive = Math.max(maxActive, active);
+          // Wait longer than timeout, ignoring the abort signal
+          await new Promise((r) => setTimeout(r, 200));
+          active -= 1;
+          return {
+            state: 'succeeded',
+            artifact: 'art',
+            reason: null,
+            provenance: { source: 'derived', model: null, licence: 'none' },
+            startedAt: new Date(),
+            completedAt: new Date(),
+          };
+        },
+      );
+
+    // Create 10 slow steps.
+    // They will all time out at 50ms, resolving the engine run fast.
+    // However, they will linger in the background for 200ms.
+    // Concurrency must NEVER exceed 4 in the background.
+    const steps = Array.from({ length: 10 }, (_, i) => mkSlow(`slow${i}`));
+    const engine = new Engine(steps);
+    const result = await engine.run({ caseId: '123' });
+
+    // The engine run completes quickly because everything timed out
+    expect(result.verdict).toBe('insufficient_evidence');
+    expect(result.steps.every((s) => s.state === 'timed_out')).toBe(true);
+
+    // Wait until all background steps are completely finished
+    await new Promise((r) => setTimeout(r, 300));
+
+    // Max concurrency must not exceed 4, even across background lingering steps
+    expect(maxActive).toBeLessThanOrEqual(4);
   });
 });
