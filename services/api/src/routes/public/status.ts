@@ -44,21 +44,21 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
       {
         key: 'payslip',
         label: 'Payslip Processing',
-        state: hasPayslip ? 'done' : 'pending',
+        state: hasPayslip ? 'succeeded' : 'pending',
       },
       {
         key: 'form16',
         label: 'Form 16 Analysis',
-        state: hasForm16 ? 'done' : 'pending',
+        state: hasForm16 ? 'succeeded' : 'pending',
       },
       {
         key: 'epfo',
         label: 'EPFO Verification',
         state:
           epfoRecords.length > 0
-            ? 'done'
+            ? 'succeeded'
             : caseRecord.status === 'processing' || caseRecord.status === 'complete'
-              ? 'done'
+              ? 'succeeded'
               : 'pending',
       },
       {
@@ -66,9 +66,9 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
         label: 'Rule Evaluation',
         state:
           caseRecord.status === 'complete'
-            ? 'done'
+            ? 'succeeded'
             : caseRecord.status === 'processing'
-              ? 'active'
+              ? 'running'
               : 'pending',
       },
     ];
