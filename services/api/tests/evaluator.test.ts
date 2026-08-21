@@ -102,12 +102,35 @@ describe('Evaluator', () => {
       expect(result.failures[0].mode).toBe(FailureMode.VALUE_MISMATCH);
     });
 
+    it('identifies type mismatches', () => {
+      const expected = { a: 1 };
+      const actual = { a: '1' };
+
+      const result = evaluateExtraction(expected, actual);
+      expect(result.truePositives).toBe(0);
+      expect(result.falsePositives).toBe(1);
+      expect(result.falseNegatives).toBe(1);
+      expect(result.failures[0].mode).toBe(FailureMode.TYPE_MISMATCH);
+    });
+
+    it('identifies explicit null in actual as missing field', () => {
+      const expected = { a: 1 };
+      const actual = { a: null };
+
+      const result = evaluateExtraction(expected, actual);
+      expect(result.truePositives).toBe(0);
+      expect(result.falsePositives).toBe(0);
+      expect(result.falseNegatives).toBe(1);
+      expect(result.failures[0].mode).toBe(FailureMode.MISSING_FIELD);
+    });
+
     it('ignores schema metadata fields', () => {
       const expected = { a: 1, schema_version: 'v1' };
-      const actual = { a: 1 };
+      const actual = { a: 1, schema_version: 'v2' };
 
       const result = evaluateExtraction(expected, actual);
       expect(result.falseNegatives).toBe(0);
+      expect(result.falsePositives).toBe(0);
     });
   });
 });

@@ -8,8 +8,8 @@ export enum FailureMode {
 export interface Failure {
   path: string;
   mode: FailureMode;
-  expected?: any;
-  actual?: any;
+  expected?: unknown;
+  actual?: unknown;
 }
 
 export interface EvaluationResult {
@@ -25,19 +25,19 @@ export interface EvaluationResult {
  * Flattens an object to a dot-notation key-value map.
  * E.g. { basic: { amount: 55000 } } => { "basic.amount": 55000 }
  */
-export function flattenObject(obj: any, prefix = ''): Record<string, any> {
-  const result: Record<string, any> = {};
+export function flattenObject(obj: unknown, prefix = ''): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
-  if (obj === null || obj === undefined) {
+  if (obj === null || obj === undefined || typeof obj !== 'object') {
     return result;
   }
 
-  for (const key of Object.keys(obj)) {
+  for (const key of Object.keys(obj as Record<string, unknown>)) {
     // Skip internal fields
     if (key.startsWith('_')) continue;
 
     const path = prefix ? `${prefix}.${key}` : key;
-    const value = obj[key];
+    const value = (obj as Record<string, unknown>)[key];
 
     if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
       Object.assign(result, flattenObject(value, path));
@@ -60,7 +60,7 @@ export function flattenObject(obj: any, prefix = ''): Record<string, any> {
 /**
  * Compares actual extraction against expected labels and calculates reliability metrics.
  */
-export function evaluateExtraction(expected: any, actual: any): EvaluationResult {
+export function evaluateExtraction(expected: unknown, actual: unknown): EvaluationResult {
   const flatExpected = flattenObject(expected);
   const flatActual = flattenObject(actual);
 
@@ -107,7 +107,18 @@ export function evaluateExtraction(expected: any, actual: any): EvaluationResult
         continue;
       }
 
-      if (typeof valExpected !== typeof valActual && valActual !== null && valExpected !== null) {
+      if (valExpected !== null && valExpected !== undefined && valActual === null) {
+        falseNegatives++;
+        failures.push({
+          path,
+          mode: FailureMode.MISSING_FIELD,
+          expected: valExpected,
+        });
+      } else if (
+        typeof valExpected !== typeof valActual &&
+        valActual !== null &&
+        valExpected !== null
+      ) {
         falsePositives++;
         falseNegatives++;
         failures.push({

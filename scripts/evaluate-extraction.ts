@@ -9,11 +9,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pdfParse from 'pdf-parse';
-import { FixtureExtractor } from '../services/api/src/extraction/fixture-extractor.js';
+import { GeminiExtractor } from '../services/api/src/extraction/providers/gemini-extractor.js';
 import {
   evaluateExtraction,
   FailureMode,
-  Failure,
+  type Failure,
 } from '../services/api/src/extraction/evaluator.js';
 import type { ExtractionRequest } from '../services/api/src/extraction/llm-document-extractor.js';
 
@@ -46,9 +46,8 @@ async function main() {
   let totalFN = 0;
   const allFailures: (Failure & { document: string })[] = [];
 
-  // Use fixture extractor for now to guarantee deterministic results for the test.
-  // In a real run, this would be replaced with OpenAIExtractor or AnthropicExtractor.
-  const extractor = new FixtureExtractor();
+  // Initialize the real LLM extractor
+  const extractor = new GeminiExtractor();
 
   for (const file of files) {
     console.log(`\n📄 Evaluating: ${file}`);
@@ -78,8 +77,9 @@ async function main() {
         const pdfBuffer = fs.readFileSync(pdfPath);
         const pdfData = await pdfParse(pdfBuffer);
         pdfText = pdfData.text;
-      } catch (err) {
-        console.warn(`   ⚠️ Error parsing PDF at ${pdfPath}: ${(err as Error).message}`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn(`   ⚠️ Error parsing PDF at ${pdfPath}: ${message}`);
         pdfText = 'mock text fallback';
       }
     } else {
@@ -89,16 +89,18 @@ async function main() {
     }
 
     // Prepare extraction request
+    const documentKind = docType === 'form16' ? 'form_16' : 'payslip';
+
     const request: ExtractionRequest = {
       documentId: file.replace('.json', ''),
-      documentKind: docType as any,
+      documentKind,
       documentContent: pdfText,
       mimeType: 'application/pdf',
       schemaVersion: expected.schema_version || `${docType}-v1`,
     };
 
     // Run extraction
-    let actualResult: any;
+    let actualResult: unknown;
     if (docType === 'payslip') {
       const result = await extractor.extractPayslip(request);
       actualResult = result.status === 'success' ? result.data : {};
