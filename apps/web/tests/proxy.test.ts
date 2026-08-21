@@ -14,27 +14,28 @@ const mockNext = vi.fn();
 const mockCookieDelete = vi.fn();
 
 vi.mock('next/server', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actual = await importOriginal<typeof import('next/server')>();
   return {
     ...actual,
     NextResponse: {
-      ...(actual.NextResponse as Record<string, unknown>),
-      redirect: (...args: unknown[]) => {
+      ...actual.NextResponse,
+      redirect: vi.fn().mockImplementation((...args: Parameters<typeof actual.NextResponse.redirect>) => {
         mockRedirect(...args);
         return {
           cookies: {
             delete: mockCookieDelete,
           },
         };
-      },
-      next: (...args: unknown[]) => {
+      }),
+      next: vi.fn().mockImplementation((...args: Parameters<typeof actual.NextResponse.next>) => {
         mockNext(...args);
         return {
           cookies: {
             delete: mockCookieDelete,
           },
         };
-      },
+      }),
     },
   };
 });

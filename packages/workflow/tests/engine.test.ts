@@ -319,4 +319,80 @@ describe('Step Engine', () => {
     expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
     expect(elapsed).toBeLessThan(1000);
   });
+
+  it('handles requires callback throwing an error by marking the step failed', async () => {
+    const errorStep = new FakeStep(
+      'err_req',
+      'ErrReq',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => {
+        throw new Error('requires failed randomly');
+      },
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: { source: 'derived', model: null, licence: 'none' },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      })
+    );
+    
+    const engine = new Engine([errorStep]);
+    const result = await engine.run({ caseId: '123' });
+
+    expect(result.steps[0]?.state).toBe('failed');
+    expect(result.steps[0]?.reason).toBe('This check could not be completed');
+  });
+
+  it('keeps semaphore locked for background step when it ignores abort signal after timeout', async () => {
+    let active = 0;
+    let maxActive = 0;
+    const mkSlow = (id: string) =>
+      new FakeStep(
+        id,
+        id,
+        'fast',
+        50, // very tight timeout
+        [],
+        undefined,
+        () => true,
+        async () => {
+          active += 1;
+          maxActive = Math.max(maxActive, active);
+          // Wait longer than timeout, ignoring the abort signal
+          await new Promise((r) => setTimeout(r, 200));
+          active -= 1;
+          return {
+            state: 'succeeded',
+            artifact: 'art',
+            reason: null,
+            provenance: { source: 'derived', model: null, licence: 'none' },
+            startedAt: new Date(),
+            completedAt: new Date(),
+          };
+        },
+      );
+
+    // Create 10 slow steps. 
+    // They will all time out at 50ms, resolving the engine run fast.
+    // However, they will linger in the background for 200ms.
+    // Concurrency must NEVER exceed 4 in the background.
+    const steps = Array.from({ length: 10 }, (_, i) => mkSlow(`slow${i}`));
+    const engine = new Engine(steps);
+    const result = await engine.run({ caseId: '123' });
+
+    // The engine run completes quickly because everything timed out
+    expect(result.verdict).toBe('insufficient_evidence');
+    expect(result.steps.every(s => s.state === 'timed_out')).toBe(true);
+
+    // Wait until all background steps are completely finished
+    await new Promise((r) => setTimeout(r, 300));
+    
+    // Max concurrency must not exceed 4, even across background lingering steps
+    expect(maxActive).toBeLessThanOrEqual(4);
+  });
 });

@@ -188,7 +188,16 @@ export class Engine {
       }
     }
 
-    if (!step.requires(ctx)) {
+    let requiresMet: boolean;
+    try {
+      requiresMet = step.requires(ctx);
+    } catch {
+      const res = failed(new Date());
+      results.set(stepId, res);
+      return res;
+    }
+
+    if (!requiresMet) {
       const res = notAssessed('Requirements not met');
       results.set(stepId, res);
       return res;
@@ -197,9 +206,24 @@ export class Engine {
     // Acquire concurrency lock only after dependencies are resolved
     await this.semaphore.acquire();
     const startedAt = new Date();
+    const controller = new AbortController();
+
+    const rawPromise = step.run({ ...ctx, signal: controller.signal });
+    // Ensure semaphore is always released exactly once when the step finishes
+    // and suppress the rejection from bubbling up to UnhandledRejection
+    rawPromise.finally(() => this.semaphore.release()).catch(() => {});
+
+    let deadlineExceeded = false;
+    const deadline = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        deadlineExceeded = true;
+        controller.abort();
+        reject(new Error(`Step ${step.id} exceeded its ${step.timeoutMs}ms deadline`));
+      }, step.timeoutMs);
+    });
 
     try {
-      let res = await this.runWithTimeout(step, ctx, startedAt);
+      let res = await Promise.race([rawPromise, deadline]);
 
       // Coerce null artifact to not_assessed (P3)
       if (res.state === 'succeeded' && res.artifact === null) {
@@ -217,38 +241,8 @@ export class Engine {
       results.set(stepId, res);
       return res;
     } catch {
-      // Candidate-safe reason only - internal error text must never leak
-      // into EngineResult.steps (R2.2).
-      const res = failed(startedAt);
-      results.set(stepId, res);
-      return res;
-    } finally {
-      this.semaphore.release();
-    }
-  }
-
-  /** Enforces the step's declared deadline via AbortController (R1.11). */
-  private async runWithTimeout(
-    step: VerificationStep,
-    ctx: StepContext,
-    startedAt: Date,
-  ): Promise<StepResult> {
-    const controller = new AbortController();
-    let deadlineExceeded = false;
-
-    const deadline = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        deadlineExceeded = true;
-        controller.abort();
-        reject(new Error(`Step ${step.id} exceeded its ${step.timeoutMs}ms deadline`));
-      }, step.timeoutMs);
-    });
-
-    try {
-      return await Promise.race([step.run({ ...ctx, signal: controller.signal }), deadline]);
-    } catch (err) {
       if (deadlineExceeded) {
-        return {
+        const res: StepResult = {
           state: 'timed_out',
           artifact: null,
           reason: null,
@@ -256,8 +250,14 @@ export class Engine {
           startedAt,
           completedAt: new Date(),
         };
+        results.set(stepId, res);
+        return res;
       }
-      throw err;
+      // Candidate-safe reason only - internal error text must never leak
+      // into EngineResult.steps (R2.2).
+      const res = failed(startedAt);
+      results.set(stepId, res);
+      return res;
     }
   }
 }
