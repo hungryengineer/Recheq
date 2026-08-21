@@ -21,7 +21,7 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { createDb, type Database } from '../services/api/src/db/client.js';
 import { organizations } from '../services/api/src/db/schema/organizations.js';
 import { users } from '../services/api/src/db/schema/users.js';
@@ -340,6 +340,41 @@ try {
     .onConflictDoNothing()
     .execute();
 
+  // Reconcile id/email drift before the upsert. users.email is UNIQUE and
+  // cases.created_by references users.id WITHOUT ON UPDATE CASCADE, so a naive
+  // repoint can either fail on the FK or silently target the wrong row. The
+  // branches below reject unsafe states loudly instead of relying on a cryptic
+  // database error.
+  const demoRows = await db
+    .select({ id: users.id, email: users.email })
+    .from(users)
+    .where(or(eq(users.email, 'demo@tieout.local'), eq(users.id, DEV_USER_ID)));
+
+  const canonical = demoRows.find((r) => r.id === DEV_USER_ID);
+  const byEmail = demoRows.find((r) => r.email === 'demo@tieout.local');
+
+  if (canonical && byEmail && canonical.id !== byEmail.id) {
+    throw new Error(
+      `users has both id=${DEV_USER_ID} and email='demo@tieout.local' on different rows; reconcile manually (e.g. pnpm reset:demo).`,
+    );
+  }
+
+  if (!canonical && byEmail) {
+    // The demo email lives on a row with a foreign id. Repointing is only safe
+    // when nothing references that id (no cascade on cases.created_by).
+    const referenced = await db
+      .select({ id: cases.id })
+      .from(cases)
+      .where(eq(cases.created_by, byEmail.id))
+      .limit(1);
+    if (referenced.length > 0) {
+      throw new Error(
+        `Demo user ${byEmail.id} is referenced by existing cases; refusing to repoint users.id to ${DEV_USER_ID}. Run pnpm reset:demo first.`,
+      );
+    }
+    await db.update(users).set({ id: DEV_USER_ID }).where(eq(users.email, 'demo@tieout.local'));
+  }
+
   await db
     .insert(users)
     .values({
@@ -351,7 +386,10 @@ try {
     })
     // Upsert so an existing demo user is promoted to the verifier role the
     // demo expects, instead of silently keeping a stale role.
-    .onConflictDoUpdate({ target: users.id, set: { role: 'verifier' } })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: { org_id: DEV_ORG_ID, email: 'demo@tieout.local', role: 'verifier' },
+    })
     .execute();
 
   console.log(`  ✓ Org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);

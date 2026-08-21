@@ -69,8 +69,8 @@ describe('Step Engine', () => {
 
     expect(result.steps.find((s) => s.id === 's1')?.state).toBe('failed');
     expect(result.steps.find((s) => s.id === 's2')?.state).toBe('succeeded');
-    // Survivors yield verified
-    expect(result.verdict).toBe('verified');
+    // Survivors keep the run usable, but the failure downgrades the verdict (R1.12)
+    expect(result.verdict).toBe('verified_with_notes');
   });
 
   it('Dependency-of-a-dependency fails -> Both downstream not_assessed, one reason each', async () => {
@@ -279,7 +279,7 @@ describe('Step Engine', () => {
     const steps = Array.from({ length: 12 }, (_, i) => mk(`s${i}`));
     const result = await new Engine(steps).run({ caseId: '123' });
 
-    expect(maxActive).toBeLessThanOrEqual(4);
+    expect(maxActive).toBe(4);
     expect(result.verdict).toBe('verified');
   });
 
@@ -385,8 +385,9 @@ describe('Step Engine', () => {
     const engine = new Engine(steps);
     const result = await engine.run({ caseId: '123' });
 
-    // The engine run completes quickly because everything timed out
-    expect(result.verdict).toBe('insufficient_evidence');
+    // The engine run completes quickly because everything timed out.
+    // Every fast step timed out with no successes -> needs_review (R1.12).
+    expect(result.verdict).toBe('needs_review');
     expect(result.steps.every((s) => s.state === 'timed_out')).toBe(true);
 
     // Wait until all background steps are completely finished
@@ -394,5 +395,152 @@ describe('Step Engine', () => {
 
     // Max concurrency must not exceed 4, even across background lingering steps
     expect(maxActive).toBeLessThanOrEqual(4);
+  });
+
+  it('reports needs_review when every fast step failed or timed out (R1.12)', async () => {
+    const mkFail = (id: string) =>
+      new FakeStep(
+        id,
+        id,
+        'fast',
+        1000,
+        [],
+        undefined,
+        () => true,
+        async () => {
+          throw new Error('Boom');
+        },
+      );
+
+    const result = await new Engine([mkFail('a'), mkFail('b')]).run({ caseId: '123' });
+    expect(result.verdict).toBe('needs_review');
+  });
+
+  it('rejects a fast step that depends on a slow step at construction (R1.14)', () => {
+    const fast = new FakeStep('fast', 'Fast', 'fast', 1000, ['slow']);
+    const slowStep = new FakeStep('slow', 'Slow', 'slow', 60000, []);
+    expect(() => new Engine([fast, slowStep])).toThrow(
+      /Fast step fast cannot depend on slow step slow/,
+    );
+  });
+
+  it('blocks dependents of a timed-out step as not_assessed', async () => {
+    const timeout = new FakeStep(
+      'timeout',
+      'Timeout',
+      'fast',
+      30,
+      [],
+      undefined,
+      () => true,
+      async () =>
+        new Promise<StepResult>(() => {
+          // never resolves within this test
+        }),
+    );
+    const dependent = new FakeStep('dep', 'Dep', 'fast', 1000, ['timeout']);
+
+    const result = await new Engine([timeout, dependent]).run({ caseId: '123' });
+
+    expect(result.steps.find((s) => s.id === 'timeout')?.state).toBe('timed_out');
+    expect(result.steps.find((s) => s.id === 'dep')?.state).toBe('not_assessed');
+  });
+
+  it('surfaces slow-step completion exactly once through onSlowStepSettled (R1.14)', async () => {
+    const slow = new FakeStep(
+      'slow',
+      'Slow',
+      'slow',
+      60000,
+      [],
+      undefined,
+      () => true,
+      async () => {
+        await new Promise((r) => setTimeout(r, 20));
+        return {
+          state: 'succeeded',
+          artifact: 'slow-artifact',
+          reason: null,
+          provenance: { source: 'derived', model: null, licence: 'none' },
+          startedAt: new Date(),
+          completedAt: new Date(),
+        };
+      },
+    );
+
+    const settled: { id: string; result: StepResult | null; error: unknown | null }[] = [];
+    let resolveSettled!: () => void;
+    const firstSettled = new Promise<void>((resolve) => {
+      resolveSettled = resolve;
+    });
+    await new Engine([slow]).run(
+      { caseId: '123' },
+      {
+        onSlowStepSettled: (id, res, err) => {
+          settled.push({ id, result: res, error: err });
+          resolveSettled();
+        },
+      },
+    );
+
+    // No settlement before the callback fires…
+    expect(settled).toHaveLength(0);
+
+    // …then exactly one delivery with the full payload.
+    await firstSettled;
+    expect(settled).toHaveLength(1);
+    expect(settled[0]?.id).toBe('slow');
+    expect(settled[0]?.result?.state).toBe('succeeded');
+    expect(settled[0]?.error).toBeNull();
+
+    // No duplicate settlement ever arrives after the step has long resolved.
+    await new Promise((r) => setTimeout(r, 100));
+    expect(settled).toHaveLength(1);
+  });
+
+  it('contains async-observer rejections without unhandled rejections', async () => {
+    const slow = new FakeStep(
+      'slow',
+      'Slow',
+      'slow',
+      60000,
+      [],
+      undefined,
+      () => true,
+      async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        return {
+          state: 'succeeded',
+          artifact: null,
+          reason: null,
+          provenance: { source: 'derived', model: null, licence: 'none' },
+          startedAt: new Date(),
+          completedAt: new Date(),
+        };
+      },
+    );
+
+    // If the engine failed to contain the observer's rejected promise, vitest
+    // reports an unhandled rejection and this test fails.
+    let observerInvoked!: () => void;
+    const invoked = new Promise<void>((resolve) => {
+      observerInvoked = resolve;
+    });
+    const result = await new Engine([slow]).run(
+      { caseId: '123' },
+      {
+        onSlowStepSettled: async () => {
+          observerInvoked();
+          throw new Error('observer exploded');
+        },
+      },
+    );
+
+    expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
+
+    // Prove the observer was actually entered, then yield event-loop turns so
+    // vitest can report an unhandled rejection if containment is broken.
+    await invoked;
+    await new Promise((r) => setTimeout(r, 50));
   });
 });

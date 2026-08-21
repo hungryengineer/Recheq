@@ -10,6 +10,29 @@ export interface EngineResult {
   steps: (StepResult & { id: string })[];
 }
 
+/** Options for {@link Engine.run}. */
+export interface EngineRunOptions {
+  /**
+   * Invoked when a background (slow) step settles. Slow steps are scheduled
+   * behind the fast boundary, so this is the only way their outcome becomes
+   * observable to the caller.
+   *
+   * Contract (mirrors `execute()` failure semantics):
+   * - A step whose `run()` throws or rejects is delivered as a normal result:
+   *   `(id, failedResult, null)` with `result.state === 'failed'`.
+   * - `error` is reserved for unexpected engine-level rejections (faults in
+   *   the engine itself), which should never occur in normal operation.
+   *
+   * Observer faults are contained: a throwing callback, or one that returns a
+   * rejected promise, must not produce an unhandled rejection after run().
+   */
+  onSlowStepSettled?: (
+    id: string,
+    result: StepResult | null,
+    error: unknown | null,
+  ) => void | Promise<void>;
+}
+
 /** Maximum number of steps executing concurrently (R1.4 / RCQ-121). */
 const MAX_CONCURRENCY = 4;
 
@@ -64,8 +87,14 @@ export class Engine {
 
     for (const step of this.steps) {
       for (const dep of step.dependsOn) {
-        if (!this.byId.has(dep)) {
+        const depStep = this.byId.get(dep);
+        if (!depStep) {
           throw new Error(`Step ${step.id} declares unknown dependency ${dep}`);
+        }
+        // A fast step awaiting a slow dependency would block the fast-path
+        // boundary (R1.14), so the edge is rejected up front.
+        if (step.speed === 'fast' && depStep.speed === 'slow') {
+          throw new Error(`Fast step ${step.id} cannot depend on slow step ${dep}`);
         }
       }
     }
@@ -104,7 +133,7 @@ export class Engine {
     }
   }
 
-  async run(ctx: StepContext): Promise<EngineResult> {
+  async run(ctx: StepContext, opts: EngineRunOptions = {}): Promise<EngineResult> {
     if (this.steps.length === 0) {
       return { verdict: 'insufficient_evidence', steps: [] };
     }
@@ -135,8 +164,31 @@ export class Engine {
 
     // Slow steps are scheduled independently of the fast path (R1.14) and are
     // not awaited here; the interim verdict is computed without them (R1.6).
+    // Their outcomes surface through onSlowStepSettled instead of being
+    // silently discarded. The observer itself is fault-contained: a throwing
+    // callback must not become an unhandled rejection after run() returned.
+    const notifySlowStepSettled = (
+      id: string,
+      result: StepResult | null,
+      error: unknown | null,
+    ) => {
+      try {
+        // The observer may be async; a rejected promise must not escape as an
+        // unhandled rejection after run() has returned.
+        const observed = opts.onSlowStepSettled?.(id, result, error);
+        if (observed instanceof Promise && typeof observed.catch === 'function') {
+          observed.catch(() => undefined);
+        }
+      } catch {
+        // Observer failures are non-fatal by contract; swallow deliberately.
+      }
+    };
+
     for (const id of this.steps.filter((s) => s.speed === 'slow').map((s) => s.id)) {
-      void executeStep(id).catch(() => undefined);
+      void executeStep(id).then(
+        (res) => notifySlowStepSettled(id, res, null),
+        (err) => notifySlowStepSettled(id, null, err),
+      );
     }
 
     const stepsArray = this.steps.map((s) => {
@@ -156,15 +208,25 @@ export class Engine {
 
     const fastResults = stepsArray.filter((s) => fastIds.has(s.id));
 
-    // Check if any valid results exist among fast steps
-    const anyValid = fastResults.some(
+    // Interim verdict aggregates every terminal state of the fast steps
+    // (R1.12): a failure must never silently upgrade the verdict.
+    const good = fastResults.filter(
       (s) => s.state === 'succeeded' || s.state === 'awaiting_external',
-    );
+    ).length;
+    const bad = fastResults.filter((s) => s.state === 'failed' || s.state === 'timed_out').length;
 
-    return {
-      verdict: anyValid ? 'verified' : 'insufficient_evidence',
-      steps: stepsArray,
-    };
+    let verdict: EngineResult['verdict'];
+    if (good > 0 && bad === 0) {
+      verdict = 'verified';
+    } else if (good > 0 && bad > 0) {
+      verdict = 'verified_with_notes';
+    } else if (bad > 0) {
+      verdict = 'needs_review';
+    } else {
+      verdict = 'insufficient_evidence';
+    }
+
+    return { verdict, steps: stepsArray };
   }
 
   private async execute(
@@ -214,13 +276,16 @@ export class Engine {
     rawPromise.finally(() => this.semaphore.release()).catch(() => {});
 
     let deadlineExceeded = false;
-    const deadline = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        deadlineExceeded = true;
-        controller.abort();
-        reject(new Error(`Step ${step.id} exceeded its ${step.timeoutMs}ms deadline`));
-      }, step.timeoutMs);
+    let rejectDeadline!: (err: Error) => void;
+    const deadline = new Promise<never>((_, rej) => {
+      rejectDeadline = rej;
     });
+
+    const timer = setTimeout(() => {
+      deadlineExceeded = true;
+      controller.abort();
+      rejectDeadline(new Error(`Step ${step.id} exceeded its ${step.timeoutMs}ms deadline`));
+    }, step.timeoutMs);
 
     try {
       let res = await Promise.race([rawPromise, deadline]);
@@ -258,6 +323,10 @@ export class Engine {
       const res = failed(startedAt);
       results.set(stepId, res);
       return res;
+    } finally {
+      // Clear the deadline when the step wins the race so the rejection is
+      // never raised (and never becomes an unhandled rejection).
+      clearTimeout(timer);
     }
   }
 }

@@ -24,8 +24,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import postgres from 'postgres';
 import { loadEnvFile } from './lib/load-env.js';
+import { listMigrationFiles, needsAutocommit } from './lib/migrations.js';
 
-loadEnvFile();
+loadEnvFile('.env.local', ['DATABASE_URL']);
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -37,51 +38,11 @@ if (!connectionString) {
 
 const migrationsDir = path.resolve(process.cwd(), 'db/migrations');
 
-/**
- * Decides whether a migration must run in autocommit mode (outside the wrapping
- * transaction). Two categories qualify:
- *
- * 1. Files that manage their own transaction (top-level BEGIN / START TRANSACTION).
- * 2. Files containing statements PostgreSQL rejects inside a transaction block:
- *    CREATE/DROP INDEX CONCURRENTLY, REINDEX CONCURRENTLY, VACUUM,
- *    CREATE DATABASE, DROP DATABASE.
- *
- * The scan strips comments and dollar-quoted bodies first so transaction-control
- * words inside DO blocks, function bodies, or comments cannot trip the classifier,
- * and it detects all CONCURRENTLY variants (including CREATE UNIQUE INDEX
- * CONCURRENTLY and REINDEX TABLE ... CONCURRENTLY).
- */
-function needsAutocommit(sql: string): boolean {
-  const scrubbed = scrubSql(sql);
-
-  if (/^\s*(BEGIN|START\s+TRANSACTION)\b/im.test(scrubbed)) {
-    return true;
-  }
-
-  return (
-    /(CREATE|DROP)\s+(UNIQUE\s+)?INDEX\s+CONCURRENTLY\b/im.test(scrubbed) ||
-    /\bREINDEX\s+(INDEX\s+)?CONCURRENTLY\b/im.test(scrubbed) ||
-    /\bVACUUM\b/im.test(scrubbed) ||
-    /(CREATE|DROP)\s+DATABASE\b/im.test(scrubbed)
-  );
-}
-
-/**
- * Removes SQL comments (-- line and /* * / block) and dollar-quoted bodies
- * ($$...$$ or $tag$...$tag$) so classification sees only executable SQL.
- */
-function scrubSql(sql: string): string {
-  return sql
-    .replace(/\$[A-Za-z_][A-Za-z0-9_]*\$[\s\S]*?\$[A-Za-z_][A-Za-z0-9_]*\$|\$\$[\s\S]*?\$\$/g, '')
-    .replace(/--[^\n]*/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
-}
-
 let files: string[];
 try {
-  files = (await fs.readdir(migrationsDir)).filter((f) => f.endsWith('.sql')).sort();
+  files = await listMigrationFiles(migrationsDir);
 } catch (err) {
-  console.error(`Cannot read migrations directory ${migrationsDir}: ${String(err)}`);
+  console.error(String(err instanceof Error ? err.message : err));
   process.exitCode = 1;
   process.exit();
 }
