@@ -543,4 +543,66 @@ describe('Step Engine', () => {
     await invoked;
     await new Promise((r) => setTimeout(r, 50));
   });
+  it('records input tokens, output tokens, model id, and computes INR cost per case', async () => {
+    const step1 = new FakeStep(
+      's1',
+      'Step1',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => true,
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: {
+          source: 'derived',
+          model: 'gemini-2.5-flash',
+          licence: 'none',
+          inputTokens: 1000,
+          outputTokens: 200,
+        },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    );
+    const step2 = new FakeStep(
+      's2',
+      'Step2',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => true,
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: {
+          source: 'derived',
+          model: 'gemini-2.5-flash',
+          licence: 'none',
+          inputTokens: 500,
+          outputTokens: 100,
+        },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    );
+
+    const engine = new Engine([step1, step2]);
+    const result = await engine.run({ caseId: '123' });
+
+    expect(result.cost).toBeDefined();
+    expect(result.cost.totalInputTokens).toBe(1500);
+    expect(result.cost.totalOutputTokens).toBe(300);
+    expect(result.cost.modelsUsed).toEqual(['gemini-2.5-flash']);
+    
+    // (1500 / 1_000_000) * 6.225 + (300 / 1_000_000) * 24.9
+    // = 0.0015 * 6.225 + 0.0003 * 24.9
+    // = 0.0093375 + 0.00747
+    // = 0.0168075
+    expect(result.cost.computedInr).toBeCloseTo(0.0168075);
+  });
 });

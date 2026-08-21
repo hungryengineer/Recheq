@@ -18,6 +18,8 @@ export interface StepResult<T = unknown> {
     source: string; // 'epfo:signzy' | 'mca:data.gov.in' | 'derived'
     model: string | null; // 'gemini-2.5-flash' | null
     licence: string; // 'consented' | 'licensed' | 'public-api'
+    inputTokens?: number;
+    outputTokens?: number;
   };
   startedAt: Date;
   completedAt: Date | null;
