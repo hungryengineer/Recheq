@@ -1,5 +1,7 @@
 # Tieout Hackathon — Three-Member Implementation Backlog
 
+> **Note**: For the definitive engineering standards, codebase architecture, and team workflows, please refer to the [Project Constitution](docs/CONSTITUTION.md).
+
 This document converts `TIEOUT_HACKATHON_BUILD_SPEC.md` into implementation stories. Each member can give their assigned workstream and one story at a time to Cursor/Codex.
 
 The goal is not to build three isolated applications. The goal is to deliver one demonstrable vertical slice at every milestone:
