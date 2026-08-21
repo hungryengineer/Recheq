@@ -522,16 +522,25 @@ describe('Step Engine', () => {
 
     // If the engine failed to contain the observer's rejected promise, vitest
     // reports an unhandled rejection and this test fails.
+    let observerInvoked!: () => void;
+    const invoked = new Promise<void>((resolve) => {
+      observerInvoked = resolve;
+    });
     const result = await new Engine([slow]).run(
       { caseId: '123' },
       {
         onSlowStepSettled: async () => {
+          observerInvoked();
           throw new Error('observer exploded');
         },
       },
     );
 
     expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
+
+    // Prove the observer was actually entered, then yield event-loop turns so
+    // vitest can report an unhandled rejection if containment is broken.
+    await invoked;
     await new Promise((r) => setTimeout(r, 50));
   });
 });
