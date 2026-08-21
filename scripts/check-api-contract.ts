@@ -31,7 +31,7 @@ function getImplementedRoutes(dir: string, baseRoute = '/api'): string[] {
 function checkContract() {
   // Parse OpenAPI YAML
   const fileContents = fs.readFileSync(openapiPath, 'utf8');
-  const doc = yaml.load(fileContents) as any;
+  const doc = yaml.load(fileContents) as { paths?: Record<string, unknown> };
   const documentedPaths = Object.keys(doc.paths || {});
 
   // Find implemented routes
