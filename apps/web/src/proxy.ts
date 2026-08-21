@@ -1,35 +1,60 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyToken } from '@tieout/api/src/security/jwt.js';
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export async function proxy(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
 
-  // Protected dashboard routes
+  // R5.2 - Excluded paths (already excluded by matcher, but /c/** and /e/** explicitly mentioned)
+  if (pathname.startsWith('/c/') || pathname.startsWith('/e/')) {
+    return NextResponse.next();
+  }
+
   const isProtectedRoute =
     pathname.startsWith('/cases') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/docs');
 
-  // Authentication routes (should not be accessed if already logged in)
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
+  const isAuthRoute =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/forgot-password');
 
-  // Verify session existence via cookie
-  const session = request.cookies.get('recheq_session');
+  const sessionCookie = request.cookies.get('recheq_session');
+  let isValidSession = false;
 
-  // 1. Unauthenticated users trying to access protected routes
-  if (isProtectedRoute && !session?.value) {
-    const url = new URL('/login', request.url);
-    // Optional: add a callback URL to return the user to their intended destination
-    url.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(url);
+  if (sessionCookie?.value) {
+    // Validate JWT token
+    const payload = await verifyToken(sessionCookie.value);
+    if (payload) {
+      isValidSession = true;
+    }
   }
 
-  // 2. Authenticated users trying to access auth pages (login/signup)
-  if (isAuthRoute && session?.value) {
+  // R5.1 & R5.4 - Protected routes without valid session
+  if (isProtectedRoute && !isValidSession) {
+    const url = new URL('/login', request.url);
+    url.searchParams.set('next', pathname + request.nextUrl.search);
+    const response = NextResponse.redirect(url, 307);
+
+    // R5.4 - clear invalid cookie
+    if (sessionCookie?.value && !isValidSession) {
+      response.cookies.delete('recheq_session');
+    }
+
+    return response;
+  }
+
+  // R5.3 - Auth routes with valid session
+  if (isAuthRoute && isValidSession) {
+    const nextUrl = searchParams.get('next');
+    // Security: Only redirect to relative paths to prevent open redirect
+    if (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//')) {
+      return NextResponse.redirect(new URL(nextUrl, request.url));
+    }
     return NextResponse.redirect(new URL('/cases', request.url));
   }
 
-  // Allow the request to proceed normally
   return NextResponse.next();
 }
 

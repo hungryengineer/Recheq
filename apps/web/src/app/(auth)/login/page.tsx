@@ -1,16 +1,24 @@
 'use client';
-
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff, ShieldCheck, Zap, Server, Shield, Building2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { loginAction } from '@/lib/api/auth';
 import { toast } from 'sonner';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const getRedirectUrl = () => {
+    const nextParam = searchParams.get('next');
+    if (nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')) {
+      return nextParam;
+    }
+    return '/cases';
+  };
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [authMode, setAuthMode] = useState<'password' | 'sso'>('password');
@@ -33,7 +41,7 @@ export default function LoginPage() {
     toast.success('Authenticated successfully via SSO!', { id: 'sso' });
 
     await ssoLoginAction();
-    router.push('/cases');
+    router.push(getRedirectUrl());
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -59,7 +67,7 @@ export default function LoginPage() {
     }
 
     // On success, redirect to dashboard
-    router.push('/cases');
+    router.push(getRedirectUrl());
   }
 
   return (
@@ -418,5 +426,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#0B1528] text-white">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
