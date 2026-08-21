@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import type * as NextServer from 'next/server';
 import { proxy } from '../src/proxy';
 import * as jwt from '@tieout/api/src/security/jwt.js';
 
@@ -14,12 +15,12 @@ const mockNext = vi.fn();
 const mockCookieDelete = vi.fn();
 
 vi.mock('next/server', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('next/server')>();
+  const actual = await importOriginal<typeof NextServer>();
   return {
     ...actual,
     NextResponse: {
       ...actual.NextResponse,
-      redirect: (...args: any[]) => {
+      redirect: (...args: unknown[]) => {
         mockRedirect(...args);
         return {
           cookies: {
@@ -27,7 +28,7 @@ vi.mock('next/server', async (importOriginal) => {
           },
         };
       },
-      next: (...args: any[]) => {
+      next: (...args: unknown[]) => {
         mockNext(...args);
         return {
           cookies: {
