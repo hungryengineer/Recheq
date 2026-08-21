@@ -1,3 +1,5 @@
+export const PROVENANCE_REGISTER = new Set(['epfo:signzy', 'mca:data.gov.in', 'derived']);
+
 export type StepState =
   | 'pending'
   | 'running'
