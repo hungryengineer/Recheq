@@ -24,12 +24,15 @@ export function getImplementedOperations(dir: string, baseRoute = '/api'): Opera
     if (item.isDirectory()) {
       // Convert Next.js dynamic segment [param] to OpenAPI parameter {param}
       const routeSegment = item.name.replace(/\[(.*?)\]/g, '{$1}');
-      operations = operations.concat(getImplementedOperations(fullPath, `${baseRoute}/${routeSegment}`));
+      operations = operations.concat(
+        getImplementedOperations(fullPath, `${baseRoute}/${routeSegment}`),
+      );
     } else if (item.isFile() && item.name === 'route.ts') {
       const fileContent = fs.readFileSync(fullPath, 'utf8');
-      
+
       // Match export const GET = ... or export async function POST(...) ...
-      const methodRegex = /export\s+(?:async\s+)?(?:const|function|let)\s+(GET|POST|PUT|DELETE|PATCH)\b/g;
+      const methodRegex =
+        /export\s+(?:async\s+)?(?:const|function|let)\s+(GET|POST|PUT|DELETE|PATCH)\b/g;
       let match;
       while ((match = methodRegex.exec(fileContent)) !== null) {
         operations.push({
@@ -49,11 +52,11 @@ function isObject(val: unknown): val is Record<string, unknown> {
 
 export function parseDocumentedOperations(fileContents: string): Operation[] {
   const doc = yaml.load(fileContents);
-  
+
   if (!isObject(doc)) {
     throw new Error('OpenAPI document is not a valid object');
   }
-  
+
   if (!isObject(doc.paths)) {
     throw new Error('OpenAPI document .paths is missing or not a valid object');
   }
@@ -100,7 +103,7 @@ export function compareOperations(documented: Operation[], implemented: Operatio
 function checkContract() {
   const fileContents = fs.readFileSync(openapiPath, 'utf8');
   let documentedOperations: Operation[];
-  
+
   try {
     documentedOperations = parseDocumentedOperations(fileContents);
   } catch (error: any) {
@@ -112,19 +115,23 @@ function checkContract() {
 
   const { hasError, errors, documentedSet, implementedSet } = compareOperations(
     documentedOperations,
-    implementedOperations
+    implementedOperations,
   );
 
   if (hasError) {
     for (const error of errors) {
       console.error(error);
     }
-    console.error(`\nContract operation count (${documentedSet.size}) vs implemented operation count (${implementedSet.size}).`);
+    console.error(
+      `\nContract operation count (${documentedSet.size}) vs implemented operation count (${implementedSet.size}).`,
+    );
     console.error('The OpenAPI contract does not match the implemented operations.');
     process.exit(1);
   }
 
-  console.log(`✅ API contract is in sync. All ${implementedSet.size} implemented operations are documented.`);
+  console.log(
+    `✅ API contract is in sync. All ${implementedSet.size} implemented operations are documented.`,
+  );
   process.exit(0);
 }
 
