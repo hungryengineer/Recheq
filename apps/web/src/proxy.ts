@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { isSafeRelativePath } from '@/lib/safe-path';
 
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
@@ -48,8 +49,10 @@ export async function proxy(request: NextRequest) {
   // R5.3 - Auth routes with valid session
   if (isAuthRoute && isValidSession) {
     const nextUrl = searchParams.get('next');
-    // Security: Only redirect to relative paths to prevent open redirect
-    if (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//')) {
+    // Security: Only redirect to relative paths to prevent open redirect.
+    // Reject protocol-relative ('//host') and backslash variants ('/\host',
+    // '\host') which URL parsers normalize into cross-host references.
+    if (nextUrl && isSafeRelativePath(nextUrl)) {
       return NextResponse.redirect(new URL(nextUrl, request.url));
     }
     return NextResponse.redirect(new URL('/cases', request.url));

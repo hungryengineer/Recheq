@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, ShieldCheck, Zap, Server, Shield, Building2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loginAction } from '@/lib/api/auth';
+import { isSafeRelativePath } from '@/lib/safe-path';
 import { toast } from 'sonner';
 
 function LoginContent() {
@@ -14,7 +15,7 @@ function LoginContent() {
 
   const getRedirectUrl = () => {
     const nextParam = searchParams.get('next');
-    if (nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')) {
+    if (nextParam && isSafeRelativePath(nextParam)) {
       return nextParam;
     }
     return '/cases';
