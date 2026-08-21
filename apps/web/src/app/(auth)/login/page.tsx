@@ -431,7 +431,13 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#0B1528] text-white">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#0B1528] text-white">
+          Loading...
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );
