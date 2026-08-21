@@ -20,14 +20,16 @@ vi.mock('next/server', async (importOriginal) => {
     ...actual,
     NextResponse: {
       ...actual.NextResponse,
-      redirect: vi.fn().mockImplementation((...args: Parameters<typeof actual.NextResponse.redirect>) => {
-        mockRedirect(...args);
-        return {
-          cookies: {
-            delete: mockCookieDelete,
-          },
-        };
-      }),
+      redirect: vi
+        .fn()
+        .mockImplementation((...args: Parameters<typeof actual.NextResponse.redirect>) => {
+          mockRedirect(...args);
+          return {
+            cookies: {
+              delete: mockCookieDelete,
+            },
+          };
+        }),
       next: vi.fn().mockImplementation((...args: Parameters<typeof actual.NextResponse.next>) => {
         mockNext(...args);
         return {

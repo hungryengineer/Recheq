@@ -338,9 +338,9 @@ describe('Step Engine', () => {
         provenance: { source: 'derived', model: null, licence: 'none' },
         startedAt: new Date(),
         completedAt: new Date(),
-      })
+      }),
     );
-    
+
     const engine = new Engine([errorStep]);
     const result = await engine.run({ caseId: '123' });
 
@@ -377,7 +377,7 @@ describe('Step Engine', () => {
         },
       );
 
-    // Create 10 slow steps. 
+    // Create 10 slow steps.
     // They will all time out at 50ms, resolving the engine run fast.
     // However, they will linger in the background for 200ms.
     // Concurrency must NEVER exceed 4 in the background.
@@ -387,11 +387,11 @@ describe('Step Engine', () => {
 
     // The engine run completes quickly because everything timed out
     expect(result.verdict).toBe('insufficient_evidence');
-    expect(result.steps.every(s => s.state === 'timed_out')).toBe(true);
+    expect(result.steps.every((s) => s.state === 'timed_out')).toBe(true);
 
     // Wait until all background steps are completely finished
     await new Promise((r) => setTimeout(r, 300));
-    
+
     // Max concurrency must not exceed 4, even across background lingering steps
     expect(maxActive).toBeLessThanOrEqual(4);
   });
