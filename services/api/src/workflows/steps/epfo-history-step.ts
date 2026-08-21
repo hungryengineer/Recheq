@@ -14,7 +14,7 @@ export class EpfoHistoryStep implements VerificationStep<{ uan: string }> {
     licence: 'consented',
   };
 
-  requires(_ctx: CaseStepContext): boolean {
+  requires(_ctx: unknown): boolean {
     // We always attempt it, but if UAN is missing, it will return not_assessed.
     return true;
   }
