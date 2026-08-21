@@ -242,8 +242,14 @@ export class Engine {
 
     for (const s of stepsArray) {
       if (s.provenance.model) modelsUsed.add(s.provenance.model);
-      if (s.provenance.inputTokens) totalInputTokens += s.provenance.inputTokens;
-      if (s.provenance.outputTokens) totalOutputTokens += s.provenance.outputTokens;
+      const inT = s.provenance.inputTokens;
+      if (inT !== undefined && Number.isSafeInteger(inT) && inT >= 0) {
+        totalInputTokens += inT;
+      }
+      const outT = s.provenance.outputTokens;
+      if (outT !== undefined && Number.isSafeInteger(outT) && outT >= 0) {
+        totalOutputTokens += outT;
+      }
     }
 
     // Gemini 1.5 Flash rates at $0.075/1M in, $0.30/1M out. Assuming 1 USD = 83 INR.

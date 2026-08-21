@@ -600,9 +600,64 @@ describe('Step Engine', () => {
     expect(result.cost.modelsUsed).toEqual(['gemini-2.5-flash']);
 
     // (1500 / 1_000_000) * 6.225 + (300 / 1_000_000) * 24.9
-    // = 0.0015 * 6.225 + 0.0003 * 24.9
     // = 0.0093375 + 0.00747
     // = 0.0168075
-    expect(result.cost.computedInr).toBeCloseTo(0.0168075);
+    expect(result.cost.computedInr).toBeCloseTo(0.0168075, 7);
+  });
+
+  it('rejects invalid negative, fractional, or infinite tokens from aggregation', async () => {
+    const invalidStep = new FakeStep(
+      's1',
+      'Step1',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => true,
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: {
+          source: 'derived',
+          model: 'gemini-2.5-flash',
+          licence: 'none',
+          inputTokens: -500, // Negative
+          outputTokens: 10.5, // Fractional
+        },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    );
+    const validStep = new FakeStep(
+      's2',
+      'Step2',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => true,
+      async () => ({
+        state: 'succeeded',
+        artifact: 'art',
+        reason: null,
+        provenance: {
+          source: 'derived',
+          model: 'gemini-2.5-flash',
+          licence: 'none',
+          inputTokens: Infinity, // Infinite
+          outputTokens: 100, // Valid
+        },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    );
+
+    const engine = new Engine([invalidStep, validStep]);
+    const result = await engine.run({ caseId: '123' });
+
+    expect(result.cost).toBeDefined();
+    expect(result.cost.totalInputTokens).toBe(0); // -500 and Infinity are filtered
+    expect(result.cost.totalOutputTokens).toBe(100); // 10.5 is filtered, 100 is valid
   });
 });
