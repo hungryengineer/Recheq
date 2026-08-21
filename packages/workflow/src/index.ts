@@ -5,6 +5,7 @@ export type {
   DataSourceDeclaration,
   StepContext,
   VerificationStep,
+  RecoverableWorkflowError,
 } from './types.js';
 export { PROVENANCE_REGISTER } from './types.js';
 export { Engine } from './engine.js';

@@ -75,10 +75,20 @@ export async function processCase(
   try {
     engineResult = await engine.run(ctx);
   } catch (err) {
+    if (err instanceof Error && err.name === 'RecoverableWorkflowError') {
+      throw err; // Re-throw to the worker so it retries
+    }
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`Engine failed for case ${caseId}:`, err);
     await deps.db.transaction(async (tx) => {
-      await deps.db.updateCaseStatusAndVerdict(tx, caseId, 'complete', 'insufficient_evidence', 100);
+      await deps.db.replaceFindings(tx, caseId, []);
+      await deps.db.updateCaseStatusAndVerdict(
+        tx,
+        caseId,
+        'complete',
+        'insufficient_evidence',
+        100,
+      );
       await deps.audit.appendEvent(tx, {
         case_id: caseId,
         kind: 'verdict_calculated',

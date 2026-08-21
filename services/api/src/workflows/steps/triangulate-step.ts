@@ -52,10 +52,11 @@ export class TriangulateStep implements VerificationStep<CaseStepContext, Triang
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.error(`Triangulation failed for case ${caseId}:`, err);
       return {
         state: 'failed',
         artifact: null,
-        reason: `Triangulation failed: ${msg}`,
+        reason: 'Triangulation failed',
         provenance: { source: 'derived', model: 'system', licence: 'none' },
         startedAt,
         completedAt: new Date(),

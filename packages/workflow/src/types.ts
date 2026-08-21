@@ -68,6 +68,20 @@ export interface StepContext {
 }
 
 /**
+ * An error thrown by a step to indicate a transient failure (e.g. rate limit, provider outage)
+ * that should abort the workflow and trigger a job retry, rather than failing the step and continuing.
+ */
+export class RecoverableWorkflowError extends Error {
+  constructor(
+    message: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = 'RecoverableWorkflowError';
+  }
+}
+
+/**
  * A single unit of the verification workflow (RCQ-20108 contract).
  *
  * I/O contract:
@@ -83,7 +97,11 @@ export interface StepContext {
  *   `ctx.input`. The engine never sets it in v1; it exists so typed wiring
  *   can be added later without a breaking rename.
  */
-export interface VerificationStep<TCtx extends StepContext = StepContext, TIn = unknown, TOut = unknown> {
+export interface VerificationStep<
+  TCtx extends StepContext = StepContext,
+  TIn = unknown,
+  TOut = unknown,
+> {
   readonly id: string;
   readonly label: string;
   readonly speed: 'fast' | 'slow';

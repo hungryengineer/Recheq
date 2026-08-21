@@ -82,10 +82,11 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.error(`Raw EPFO error for case ${caseId}: ${msg}`);
       return {
         state: 'failed',
         artifact: null,
-        reason: `Failed to sync EPFO history: ${msg}`,
+        reason: 'Failed to sync EPFO history',
         provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
         startedAt,
         completedAt: new Date(),

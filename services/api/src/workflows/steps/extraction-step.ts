@@ -1,4 +1,4 @@
-import type { VerificationStep, StepResult } from '@tieout/workflow';
+import { type VerificationStep, type StepResult, RecoverableWorkflowError } from '@tieout/workflow';
 import type { CaseProcessingDeps } from '../case-processing.js';
 import {
   createExtraction,
@@ -13,10 +13,13 @@ import {
 
 import type { CaseStepContext } from '../case-processing.js';
 
-export class ExtractionStep implements VerificationStep<CaseStepContext, {
-  extractedCount: number;
-  failedCount: number;
-}> {
+export class ExtractionStep implements VerificationStep<
+  CaseStepContext,
+  {
+    extractedCount: number;
+    failedCount: number;
+  }
+> {
   readonly id = 'doc.extract';
   readonly label = 'Document Extraction';
   readonly speed = 'fast';
@@ -32,7 +35,9 @@ export class ExtractionStep implements VerificationStep<CaseStepContext, {
     return true;
   }
 
-  async run(ctx: CaseStepContext): Promise<StepResult<{ extractedCount: number; failedCount: number }>> {
+  async run(
+    ctx: CaseStepContext,
+  ): Promise<StepResult<{ extractedCount: number; failedCount: number }>> {
     const { caseId, deps } = ctx;
     const startedAt = new Date();
 
@@ -56,12 +61,12 @@ export class ExtractionStep implements VerificationStep<CaseStepContext, {
     let failedCount = 0;
 
     const documentsToExtract = documents.filter((doc) => !extractedDocIds.has(doc.id));
-    
+
     // Process extractions in chunks of 3 to bound concurrency
     const concurrencyLimit = 3;
     for (let i = 0; i < documentsToExtract.length; i += concurrencyLimit) {
       const chunk = documentsToExtract.slice(i, i + concurrencyLimit);
-      
+
       await Promise.all(
         chunk.map(async (doc) => {
           if (doc.kind !== 'payslip' && doc.kind !== 'form_16') {
@@ -108,7 +113,10 @@ export class ExtractionStep implements VerificationStep<CaseStepContext, {
                 err.failureType === ExtractionFailureType.RATE_LIMITED)
             ) {
               // Do not swallow transient infrastructure errors - fail job for retry
-              throw err;
+              throw new RecoverableWorkflowError(
+                'Extraction provider unavailable or rate limited',
+                err,
+              );
             }
             const msg = err instanceof Error ? err.message : String(err);
             failedCount++;
@@ -118,7 +126,7 @@ export class ExtractionStep implements VerificationStep<CaseStepContext, {
               console.error(`Failed to record extraction failure for doc ${doc.id}:`, dbErr);
             }
           }
-        })
+        }),
       );
     }
 

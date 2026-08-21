@@ -1,7 +1,10 @@
 import type { VerificationStep, StepResult } from '@tieout/workflow';
 import type { CaseStepContext } from '../case-processing.js';
 
-export class ForensicsStep implements VerificationStep<CaseStepContext, { forensicsCount: number }> {
+export class ForensicsStep implements VerificationStep<
+  CaseStepContext,
+  { forensicsCount: number }
+> {
   readonly id = 'doc.forensics';
   readonly label = 'PDF Forensics Inspection';
   readonly speed = 'fast';

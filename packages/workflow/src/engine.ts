@@ -345,7 +345,11 @@ export class Engine<TCtx extends StepContext = StepContext> {
 
       results.set(stepId, res);
       return res;
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'RecoverableWorkflowError') {
+        clearTimeout(timer);
+        throw err;
+      }
       if (deadlineExceeded) {
         const res: StepResult = {
           state: 'timed_out',
