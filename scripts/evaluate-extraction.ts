@@ -9,9 +9,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pdfParse from 'pdf-parse';
-import {
-  createGeminiExtractorFromEnv,
-} from '../services/api/src/extraction/providers/gemini-extractor.js';
+import { createGeminiExtractorFromEnv } from '../services/api/src/extraction/providers/gemini-extractor.js';
 import {
   evaluateExtraction,
   FailureMode,
@@ -98,7 +96,8 @@ async function main() {
       documentKind,
       documentContent: pdfText,
       mimeType: 'text/plain',
-      schemaVersion: typeof expected.schema_version === 'string' ? expected.schema_version : `${docType}-v1`,
+      schemaVersion:
+        typeof expected.schema_version === 'string' ? expected.schema_version : `${docType}-v1`,
     };
 
     // Run extraction

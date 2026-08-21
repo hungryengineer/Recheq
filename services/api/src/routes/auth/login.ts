@@ -37,10 +37,10 @@ class RollingRateLimiter {
   check(key: string, maxAttempts: number): { allowed: boolean; retryAfterSeconds?: number } {
     const now = Date.now();
     let attempts = this.store.get(key) || [];
-    
+
     // Remove expired attempts
     attempts = attempts.filter((timestamp) => now - timestamp < this.windowMs);
-    
+
     if (attempts.length >= maxAttempts) {
       this.store.set(key, attempts);
       const oldest = attempts[0]!;
@@ -49,13 +49,13 @@ class RollingRateLimiter {
     }
 
     attempts.push(now);
-    
+
     // Evict old entries if Map gets too large (bounding)
     if (this.store.size >= this.maxEntries && !this.store.has(key)) {
       const firstKey = this.store.keys().next().value;
       if (firstKey !== undefined) this.store.delete(firstKey);
     }
-    
+
     this.store.set(key, attempts);
     return { allowed: true };
   }
@@ -91,7 +91,7 @@ export async function loginHandler(
     }
 
     const { email, password } = parseResult.data;
-    
+
     // R6.3 Require a valid IP
     if (!req.ip) {
       throw new AppError(400, 'BAD_REQUEST', 'Client IP is required');

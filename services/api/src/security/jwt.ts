@@ -3,7 +3,9 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is missing. The API refuses to start without it.');
+  throw new Error(
+    'FATAL: JWT_SECRET environment variable is missing. The API refuses to start without it.',
+  );
 }
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
