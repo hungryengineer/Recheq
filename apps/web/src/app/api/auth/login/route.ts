@@ -9,8 +9,10 @@ export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
   try {
     const body = await request.json().catch(() => ({}));
+    const ip =
+      (request.headers.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0]?.trim() ?? '127.0.0.1';
 
-    const result = await loginHandler({ body }, { db: getDb() });
+    const result = await loginHandler({ body, ip }, { db: getDb() });
 
     if (result.status >= 400 && result.body && (result.body as Record<string, unknown>).error) {
       ((result.body as Record<string, unknown>).error as Record<string, unknown>).request_id =
