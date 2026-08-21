@@ -9,7 +9,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pdfParse from 'pdf-parse';
-import { GeminiExtractor } from '../services/api/src/extraction/providers/gemini-extractor.js';
+import {
+  GeminiExtractor,
+  createGeminiExtractorFromEnv,
+} from '../services/api/src/extraction/providers/gemini-extractor.js';
 import {
   evaluateExtraction,
   FailureMode,
@@ -47,7 +50,7 @@ async function main() {
   const allFailures: (Failure & { document: string })[] = [];
 
   // Initialize the real LLM extractor
-  const extractor = new GeminiExtractor();
+  const extractor = createGeminiExtractorFromEnv();
 
   for (const file of files) {
     console.log(`\n📄 Evaluating: ${file}`);
@@ -151,7 +154,7 @@ async function main() {
   };
 
   allFailures.forEach((f) => {
-    failureCounts[f.mode]++;
+    failureCounts[f.mode]!++;
   });
 
   Object.entries(failureCounts).forEach(([mode, count]) => {

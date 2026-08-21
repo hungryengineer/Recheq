@@ -71,8 +71,8 @@ describe('Evaluator', () => {
       expect(result.falseNegatives).toBe(1);
       expect(result.recall).toBe(0.5);
       expect(result.precision).toBe(1);
-      expect(result.failures[0].mode).toBe(FailureMode.MISSING_FIELD);
-      expect(result.failures[0].path).toBe('b');
+      expect(result.failures[0]!.mode).toBe(FailureMode.MISSING_FIELD);
+      expect(result.failures[0]!.path).toBe('b');
     });
 
     it('identifies hallucinated fields (False Positives)', () => {
@@ -85,8 +85,8 @@ describe('Evaluator', () => {
       expect(result.falseNegatives).toBe(0);
       expect(result.recall).toBe(1);
       expect(result.precision).toBe(0.5);
-      expect(result.failures[0].mode).toBe(FailureMode.HALLUCINATED_FIELD);
-      expect(result.failures[0].path).toBe('b');
+      expect(result.failures[0]!.mode).toBe(FailureMode.HALLUCINATED_FIELD);
+      expect(result.failures[0]!.path).toBe('b');
     });
 
     it('identifies value mismatches', () => {
@@ -99,7 +99,7 @@ describe('Evaluator', () => {
       expect(result.falseNegatives).toBe(1);
       expect(result.precision).toBe(0);
       expect(result.recall).toBe(0);
-      expect(result.failures[0].mode).toBe(FailureMode.VALUE_MISMATCH);
+      expect(result.failures[0]!.mode).toBe(FailureMode.VALUE_MISMATCH);
     });
 
     it('identifies type mismatches', () => {
@@ -110,7 +110,7 @@ describe('Evaluator', () => {
       expect(result.truePositives).toBe(0);
       expect(result.falsePositives).toBe(1);
       expect(result.falseNegatives).toBe(1);
-      expect(result.failures[0].mode).toBe(FailureMode.TYPE_MISMATCH);
+      expect(result.failures[0]!.mode).toBe(FailureMode.TYPE_MISMATCH);
     });
 
     it('identifies explicit null in actual as missing field', () => {
@@ -121,7 +121,7 @@ describe('Evaluator', () => {
       expect(result.truePositives).toBe(0);
       expect(result.falsePositives).toBe(0);
       expect(result.falseNegatives).toBe(1);
-      expect(result.failures[0].mode).toBe(FailureMode.MISSING_FIELD);
+      expect(result.failures[0]!.mode).toBe(FailureMode.MISSING_FIELD);
     });
 
     it('ignores schema metadata fields', () => {
