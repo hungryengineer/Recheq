@@ -221,6 +221,36 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
         '500': { $ref: '#/components/responses/InternalServerError' }
 
+  /api/public/{token}/candidate:
+    get:
+      operationId: getCandidateSummary
+      summary: Get candidate summary overview
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      responses:
+        '200':
+          description: Candidate summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orgName: { type: string, example: Tieout }
+                  employerName: { type: string, example: Acme Technologies Pvt Ltd }
+                  candidateName: { type: string, example: Arun Kumar }
+                  title: { type: string, example: Senior Analyst }
+                  status: { type: string, example: awaiting_documents }
+                  consent_status: { type: string, example: granted }
+                  documentsRequired:
+                    type: array
+                    items: { type: string, example: payslip }
+                  documentsProvided:
+                    type: array
+                    items: { type: string, example: payslip }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
   /api/public/{token}/consent:
     post:
       operationId: grantConsent
@@ -366,6 +396,55 @@ paths:
         '410': { $ref: '#/components/responses/Gone' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
         '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/public/{token}/withdraw:
+    post:
+      operationId: withdrawConsent
+      summary: Withdraw consent and delete candidate data
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      responses:
+        '200':
+          description: Consent withdrawn successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  withdrawn: { type: boolean, example: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/public/{token}/dispute:
+    post:
+      operationId: submitDispute
+      summary: Dispute an open finding
+      tags: [public-candidate]
+      parameters: [{ $ref: '#/components/parameters/Token' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rule_id, explanation]
+              properties:
+                rule_id: { type: string, example: 'MISSING_EPFO_RECORD' }
+                explanation: { type: string, example: 'I was an intern then.' }
+      responses:
+        '200':
+          description: Dispute filed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disputed: { type: boolean, example: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
   /api/settings/keys:
     get:
       operationId: listApiKeys
@@ -594,9 +673,9 @@ components:
           employer_name,
           title,
           status,
-          findings,
-          not_assessed,
           origins,
+          documents,
+          steps,
         ]
       properties:
         id: { type: string, example: 3f9c1a44-7d2e-4b81-a0c5-19ee1f2b7c60 }
@@ -637,6 +716,26 @@ components:
               kind: { type: string }
               uploaded_at: { type: string, format: date-time }
               extraction_status: { type: string, enum: [ok, failed, pending] }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [id, label, state, started_at]
+            properties:
+              id: { type: string, enum: [payslip, form16, epfo, rules], example: payslip }
+              label: { type: string, example: Payslip read }
+              state: { type: string, enum: [done, active, pending, failed, timed_out], example: done }
+              started_at: { type: string, format: date-time }
+              completed_at: { type: string, format: date-time, nullable: true }
+              human_summary: { type: string, example: 'Successfully processed payslips' }
+              reason: { type: string, nullable: true, example: 'Extraction service unavailable' }
+              evidence:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    provider: { type: string, example: openai }
+                    model_version: { type: string, example: gpt-4o-2024-08-06 }
 
     Finding:
       type: object
@@ -733,11 +832,15 @@ components:
           type: array
           items:
             type: object
-            required: [key, label, state]
+            required: [id, label, state, started_at]
             properties:
-              key: { type: string, enum: [payslip, form16, epfo, rules], example: payslip }
+              id: { type: string, enum: [payslip, form16, epfo, rules], example: payslip }
               label: { type: string, example: Payslip read }
-              state: { type: string, enum: [done, active, pending, failed], example: done }
+              state: { type: string, enum: [done, active, pending, failed, timed_out], example: done }
+              started_at: { type: string, format: date-time }
+              completed_at: { type: string, format: date-time, nullable: true }
+              human_summary: { type: string, example: 'Successfully processed payslips' }
+              reason: { type: string, nullable: true, example: 'Extraction service unavailable' }
         error:
           type: object
           nullable: true

@@ -68,6 +68,9 @@ jobs:
       - name: 🚨 Run linter
         run: pnpm lint
 
+      - name: 📜 Check API Contract
+        run: pnpm check:contract
+
   unit-tests:
     name: 🧪 Stage 3 - Unit Testing
     needs: static-analysis
