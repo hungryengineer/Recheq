@@ -598,7 +598,7 @@ describe('Step Engine', () => {
     expect(result.cost.totalInputTokens).toBe(1500);
     expect(result.cost.totalOutputTokens).toBe(300);
     expect(result.cost.modelsUsed).toEqual(['gemini-2.5-flash']);
-    
+
     // (1500 / 1_000_000) * 6.225 + (300 / 1_000_000) * 24.9
     // = 0.0015 * 6.225 + 0.0003 * 24.9
     // = 0.0093375 + 0.00747

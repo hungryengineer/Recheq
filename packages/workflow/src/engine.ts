@@ -254,7 +254,12 @@ export class Engine {
     return {
       verdict,
       steps: stepsArray,
-      cost: { totalInputTokens, totalOutputTokens, modelsUsed: Array.from(modelsUsed), computedInr },
+      cost: {
+        totalInputTokens,
+        totalOutputTokens,
+        modelsUsed: Array.from(modelsUsed),
+        computedInr,
+      },
     };
   }
 
