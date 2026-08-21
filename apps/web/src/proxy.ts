@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { isSafeRelativePath } from '@/lib/safe-path';
 
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
@@ -9,6 +10,7 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith('/c/') || pathname.startsWith('/e/')) {
     return NextResponse.next();
   }
+
   const isProtectedRoute =
     pathname.startsWith('/cases') ||
     pathname.startsWith('/settings') ||
@@ -57,16 +59,6 @@ export async function proxy(request: NextRequest) {
   }
 
   return NextResponse.next();
-}
-
-/**
- * True only for same-origin relative paths (R5.x open-redirect guard).
- * Blocks absolute URLs, protocol-relative '//evil.com', and the backslash
- * bypasses '/\evil.com' and '\evil.com' that URL parsers treat as
- * authority separators.
- */
-export function isSafeRelativePath(path: string): boolean {
-  return path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\');
 }
 
 export const config = {

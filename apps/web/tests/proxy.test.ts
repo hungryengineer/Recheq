@@ -147,7 +147,7 @@ describe('RCQ-20110 — route protection proxy', () => {
     });
 
     it('exports a guard that rejects cross-host shapes only', async () => {
-      const { isSafeRelativePath } = await import('../src/proxy.js');
+      const { isSafeRelativePath } = await import('../src/lib/safe-path.js');
       for (const bad of ['https://x.com', '//x.com', '/\\x.com', '\\x.com', '']) {
         expect(isSafeRelativePath(bad)).toBe(false);
       }
