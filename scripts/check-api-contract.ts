@@ -57,12 +57,16 @@ function checkContract() {
   }
 
   if (hasError) {
-    console.error(`\nContract path count (${documentedSet.size}) vs implemented route count (${implementedSet.size}).`);
+    console.error(
+      `\nContract path count (${documentedSet.size}) vs implemented route count (${implementedSet.size}).`,
+    );
     console.error('The OpenAPI contract does not match the implemented routes.');
     process.exit(1);
   }
 
-  console.log(`✅ API contract is in sync. All ${implementedSet.size} implemented routes are documented.`);
+  console.log(
+    `✅ API contract is in sync. All ${implementedSet.size} implemented routes are documented.`,
+  );
   process.exit(0);
 }
 

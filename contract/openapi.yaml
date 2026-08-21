@@ -724,7 +724,8 @@ components:
             properties:
               id: { type: string, enum: [payslip, form16, epfo, rules], example: payslip }
               label: { type: string, example: Payslip read }
-              state: { type: string, enum: [done, active, pending, failed, timed_out], example: done }
+              state:
+                { type: string, enum: [done, active, pending, failed, timed_out], example: done }
               started_at: { type: string, format: date-time }
               completed_at: { type: string, format: date-time, nullable: true }
               human_summary: { type: string, example: 'Successfully processed payslips' }
@@ -836,7 +837,8 @@ components:
             properties:
               id: { type: string, enum: [payslip, form16, epfo, rules], example: payslip }
               label: { type: string, example: Payslip read }
-              state: { type: string, enum: [done, active, pending, failed, timed_out], example: done }
+              state:
+                { type: string, enum: [done, active, pending, failed, timed_out], example: done }
               started_at: { type: string, format: date-time }
               completed_at: { type: string, format: date-time, nullable: true }
               human_summary: { type: string, example: 'Successfully processed payslips' }
