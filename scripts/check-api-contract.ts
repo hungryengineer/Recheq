@@ -10,8 +10,13 @@ const rootDir = path.resolve(__dirname, '..');
 const openapiPath = path.join(rootDir, 'contract', 'openapi.yaml');
 const apiRoutesDir = path.join(rootDir, 'apps', 'web', 'src', 'app', 'api');
 
-function getImplementedRoutes(dir: string, baseRoute = '/api'): string[] {
-  let routes: string[] = [];
+export interface Operation {
+  path: string;
+  method: string;
+}
+
+export function getImplementedOperations(dir: string, baseRoute = '/api'): Operation[] {
+  let operations: Operation[] = [];
   const items = fs.readdirSync(dir, { withFileTypes: true });
 
   for (const item of items) {
@@ -19,55 +24,111 @@ function getImplementedRoutes(dir: string, baseRoute = '/api'): string[] {
     if (item.isDirectory()) {
       // Convert Next.js dynamic segment [param] to OpenAPI parameter {param}
       const routeSegment = item.name.replace(/\[(.*?)\]/g, '{$1}');
-      routes = routes.concat(getImplementedRoutes(fullPath, `${baseRoute}/${routeSegment}`));
+      operations = operations.concat(getImplementedOperations(fullPath, `${baseRoute}/${routeSegment}`));
     } else if (item.isFile() && item.name === 'route.ts') {
-      routes.push(baseRoute);
+      const fileContent = fs.readFileSync(fullPath, 'utf8');
+      
+      // Match export const GET = ... or export async function POST(...) ...
+      const methodRegex = /export\s+(?:async\s+)?(?:const|function|let)\s+(GET|POST|PUT|DELETE|PATCH)\b/g;
+      let match;
+      while ((match = methodRegex.exec(fileContent)) !== null) {
+        operations.push({
+          path: baseRoute,
+          method: match[1].toLowerCase(),
+        });
+      }
     }
   }
 
-  return routes;
+  return operations;
+}
+
+function isObject(val: unknown): val is Record<string, unknown> {
+  return typeof val === 'object' && val !== null && !Array.isArray(val);
+}
+
+export function parseDocumentedOperations(fileContents: string): Operation[] {
+  const doc = yaml.load(fileContents);
+  
+  if (!isObject(doc)) {
+    throw new Error('OpenAPI document is not a valid object');
+  }
+  
+  if (!isObject(doc.paths)) {
+    throw new Error('OpenAPI document .paths is missing or not a valid object');
+  }
+
+  const operations: Operation[] = [];
+  for (const [docPath, methods] of Object.entries(doc.paths)) {
+    if (isObject(methods)) {
+      for (const method of Object.keys(methods)) {
+        operations.push({
+          path: docPath,
+          method: method.toLowerCase(),
+        });
+      }
+    }
+  }
+
+  return operations;
+}
+
+export function compareOperations(documented: Operation[], implemented: Operation[]) {
+  const documentedSet = new Set(documented.map((o) => `${o.method.toUpperCase()} ${o.path}`));
+  const implementedSet = new Set(implemented.map((o) => `${o.method.toUpperCase()} ${o.path}`));
+
+  let hasError = false;
+  const errors: string[] = [];
+
+  for (const route of implementedSet) {
+    if (!documentedSet.has(route)) {
+      errors.push(`❌ Undocumented implemented operation: ${route}`);
+      hasError = true;
+    }
+  }
+
+  for (const route of documentedSet) {
+    if (!implementedSet.has(route)) {
+      errors.push(`❌ Documented operation is not implemented: ${route}`);
+      hasError = true;
+    }
+  }
+
+  return { hasError, errors, documentedSet, implementedSet };
 }
 
 function checkContract() {
-  // Parse OpenAPI YAML
   const fileContents = fs.readFileSync(openapiPath, 'utf8');
-  const doc = yaml.load(fileContents) as { paths?: Record<string, unknown> };
-  const documentedPaths = Object.keys(doc.paths || {});
-
-  // Find implemented routes
-  const implementedPaths = getImplementedRoutes(apiRoutesDir);
-
-  let hasError = false;
-
-  const documentedSet = new Set(documentedPaths);
-  const implementedSet = new Set(implementedPaths);
-
-  for (const route of implementedPaths) {
-    if (!documentedSet.has(route)) {
-      console.error(`❌ Undocumented implemented route: ${route}`);
-      hasError = true;
-    }
-  }
-
-  for (const route of documentedPaths) {
-    if (!implementedSet.has(route)) {
-      console.error(`❌ Documented route is not implemented: ${route}`);
-      hasError = true;
-    }
-  }
-
-  if (hasError) {
-    console.error(
-      `\nContract path count (${documentedSet.size}) vs implemented route count (${implementedSet.size}).`,
-    );
-    console.error('The OpenAPI contract does not match the implemented routes.');
+  let documentedOperations: Operation[];
+  
+  try {
+    documentedOperations = parseDocumentedOperations(fileContents);
+  } catch (error: any) {
+    console.error(`❌ Failed to parse OpenAPI document: ${error.message}`);
     process.exit(1);
   }
 
-  console.log(
-    `✅ API contract is in sync. All ${implementedSet.size} implemented routes are documented.`,
+  const implementedOperations = getImplementedOperations(apiRoutesDir);
+
+  const { hasError, errors, documentedSet, implementedSet } = compareOperations(
+    documentedOperations,
+    implementedOperations
   );
+
+  if (hasError) {
+    for (const error of errors) {
+      console.error(error);
+    }
+    console.error(`\nContract operation count (${documentedSet.size}) vs implemented operation count (${implementedSet.size}).`);
+    console.error('The OpenAPI contract does not match the implemented operations.');
+    process.exit(1);
+  }
+
+  console.log(`✅ API contract is in sync. All ${implementedSet.size} implemented operations are documented.`);
   process.exit(0);
 }
 
-checkContract();
+// Only run if executed directly
+if (process.argv[1] === __filename) {
+  checkContract();
+}
