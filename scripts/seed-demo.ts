@@ -36,7 +36,6 @@ import { employerRequests } from '../services/api/src/db/schema/employer-request
 import { AuditService } from '../services/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '../services/api/src/audit/db-audit-repository.js';
 import { loadEnvFile } from './lib/load-env.js';
-import bcrypt from 'bcryptjs';
 import type { EventInput } from '@tieout/schema';
 
 // Seed the identity/credentials the dev app authenticates as, which live in the
@@ -111,7 +110,7 @@ const EPFO_DOCTORED = readJson(path.join(EPFO_FIXTURES, 'arun-doctored.json'));
  * Computes a content fingerprint for a demo document PDF. When the file is
  * missing (ENOENT), falls back to a hash of the relative path and warns so the
  * operator can tell which fixture was absent. All other filesystem errors are
- * rethrown.
+ * rethrown so a broken environment is surfaced instead of silently seeded.
  */
 function docFingerprint(relPath: string): { sha256: string; sizeBytes: number } {
   const abs = path.join(ROOT, relPath);
@@ -341,22 +340,18 @@ try {
     .onConflictDoNothing()
     .execute();
 
-  const password_hash = await bcrypt.hash('password123', 10);
-
   await db
     .insert(users)
     .values({
       id: DEV_USER_ID,
       org_id: DEV_ORG_ID,
       email: 'demo@tieout.local',
-      password_hash,
       name: 'Tieout Demo User',
-      role: 'admin',
+      role: 'verifier',
     })
-    .onConflictDoUpdate({
-      target: users.id,
-      set: { password_hash, role: 'admin' },
-    })
+    // Upsert so an existing demo user is promoted to the verifier role the
+    // demo expects, instead of silently keeping a stale role.
+    .onConflictDoUpdate({ target: users.id, set: { role: 'verifier' } })
     .execute();
 
   console.log(`  ✓ Org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);
