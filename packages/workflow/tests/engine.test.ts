@@ -326,10 +326,17 @@ describe('Step Engine', () => {
     );
 
     const settled: { id: string; result: StepResult | null; error: unknown | null }[] = [];
+    let resolveSettled!: () => void;
+    const firstSettled = new Promise<void>((resolve) => {
+      resolveSettled = resolve;
+    });
     const result = await new Engine([slow]).run(
       { caseId: '123' },
       {
-        onSlowStepSettled: (id, res, err) => settled.push({ id, result: res, error: err }),
+        onSlowStepSettled: (id, res, err) => {
+          settled.push({ id, result: res, error: err });
+          resolveSettled();
+        },
       },
     );
 
@@ -337,8 +344,8 @@ describe('Step Engine', () => {
     expect(settled).toHaveLength(0);
     expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
 
-    // …then the callback delivers the outcome.
-    await new Promise((r) => setTimeout(r, 60));
+    // …then the callback delivers the outcome (awaited, no fixed-delay race).
+    await firstSettled;
     expect(settled).toHaveLength(1);
     expect(settled[0]?.id).toBe('slow');
     expect(settled[0]?.result?.state).toBe('succeeded');

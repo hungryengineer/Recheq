@@ -37,21 +37,96 @@ export function needsAutocommit(sql: string): boolean {
 }
 
 /**
- * Removes SQL comments (-- line and /* block) and dollar-quoted bodies
- * ($$...$$ or $tag$...$tag$) so classification sees only executable SQL.
+ * Removes SQL comments (-- line and nested-capable block comments) and
+ * dollar-quoted bodies ($$...$$ or $tag$...$tag$), and blanks out the contents
+ * of single-quoted string literals, so classification only ever sees
+ * executable SQL.
+ *
+ * This is a character-level scanner rather than a regex pipeline: regexes
+ * cannot tell `SELECT 'VACUUM'` from a real VACUUM, would treat a `'--'`
+ * literal as a comment opener, and PostgreSQL block comments nest — none of
+ * which the classifier may trip on.
  */
 export function scrubSql(sql: string): string {
-  return sql
-    .replace(/\$[A-Za-z_][A-Za-z0-9_]*\$[\s\S]*?\$[A-Za-z_][A-Za-z0-9_]*\$|\$\$[\s\S]*?\$\$/g, '')
-    .replace(/--[^\n]*/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
+  let out = '';
+  let i = 0;
+  const n = sql.length;
+
+  while (i < n) {
+    const ch = sql[i];
+
+    // Line comment: skip through end of line (newline kept via main loop).
+    if (ch === '-' && sql[i + 1] === '-') {
+      while (i < n && sql[i] !== '\n') i += 1;
+      continue;
+    }
+
+    // Block comment with nesting (PostgreSQL supports /* /* */ */).
+    if (ch === '/' && sql[i + 1] === '*') {
+      let depth = 1;
+      i += 2;
+      while (i < n && depth > 0) {
+        if (sql[i] === '/' && sql[i + 1] === '*') {
+          depth += 1;
+          i += 2;
+        } else if (sql[i] === '*' && sql[i + 1] === '/') {
+          depth -= 1;
+          i += 2;
+        } else {
+          i += 1;
+        }
+      }
+      out += ' ';
+      continue;
+    }
+
+    // Single-quoted string literal ('' is an escaped quote): blank the body
+    // but keep the quotes so statement structure survives scrubbing.
+    if (ch === "'") {
+      i += 1;
+      while (i < n) {
+        if (sql[i] === "'" && sql[i + 1] === "'") {
+          i += 2;
+          continue;
+        }
+        if (sql[i] === "'") {
+          i += 1;
+          break;
+        }
+        i += 1;
+      }
+      out += "''";
+      continue;
+    }
+
+    // Dollar-quoted string ($$ or $tag$): strip body entirely.
+    if (ch === '$') {
+      const match = /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/.exec(sql.slice(i));
+      if (match) {
+        const tag = match[0];
+        const end = sql.indexOf(tag, i + tag.length);
+        i = end === -1 ? n : end + tag.length;
+        out += ' ';
+        continue;
+      }
+    }
+
+    out += ch;
+    i += 1;
+  }
+
+  return out;
 }
 
 /** Returns the .sql files in `dir`, sorted in strict filename order (R4.1). */
 export async function listMigrationFiles(dir: string): Promise<string[]> {
   const { readdir } = await import('node:fs/promises');
-  const entries = await readdir(dir);
-  return entries.filter((f) => f.endsWith('.sql')).sort();
+  try {
+    const entries = await readdir(dir);
+    return entries.filter((f) => f.endsWith('.sql')).sort();
+  } catch (cause) {
+    throw new Error(`Cannot list migrations in ${dir}: ${String(cause)}`, { cause });
+  }
 }
 
 /**

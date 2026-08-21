@@ -113,11 +113,24 @@ export class Engine {
     // Slow steps are scheduled independently of the fast path (R1.14) and are
     // not awaited here; the interim verdict is computed without them (R1.6).
     // Their outcomes surface through onSlowStepSettled instead of being
-    // silently discarded.
+    // silently discarded. The observer itself is fault-contained: a throwing
+    // callback must not become an unhandled rejection after run() returned.
+    const notifySlowStepSettled = (
+      id: string,
+      result: StepResult | null,
+      error: unknown | null,
+    ) => {
+      try {
+        opts.onSlowStepSettled?.(id, result, error);
+      } catch {
+        // Observer failures are non-fatal by contract; swallow deliberately.
+      }
+    };
+
     for (const id of this.steps.filter((s) => s.speed === 'slow').map((s) => s.id)) {
       void executeStep(id).then(
-        (res) => opts.onSlowStepSettled?.(id, res, null),
-        (err) => opts.onSlowStepSettled?.(id, null, err),
+        (res) => notifySlowStepSettled(id, res, null),
+        (err) => notifySlowStepSettled(id, null, err),
       );
     }
 
