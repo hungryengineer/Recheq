@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import PgBoss from 'pg-boss';
 
-const hasDb = !!process.env.DATABASE_URL;
-
-describe.skipIf(!hasDb)('Worker Safety', () => {
+describe('Worker Safety', () => {
   let boss: PgBoss;
 
   beforeEach(async () => {
