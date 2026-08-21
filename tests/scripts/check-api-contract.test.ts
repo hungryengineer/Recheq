@@ -3,7 +3,7 @@ import {
   compareOperations,
   parseDocumentedOperations,
   type Operation,
-} from '../../scripts/check-api-contract.ts';
+} from '../../scripts/check-api-contract.js';
 
 describe('API Contract Checker', () => {
   describe('parseDocumentedOperations', () => {
