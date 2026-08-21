@@ -41,7 +41,14 @@ export interface StepResult<T = unknown> {
   artifact: T | null;
   /** Candidate-safe, never internal error text. */
   reason: string | null; // candidate-safe, never internal
-  provenance: Provenance; // R1.15 - the diligence field
+  provenance: {
+    // R1.15 - the diligence field
+    source: string; // 'epfo:signzy' | 'mca:data.gov.in' | 'derived'
+    model: string | null; // 'gemini-2.5-flash' | null
+    licence: string; // 'consented' | 'licensed' | 'public-api'
+    inputTokens?: number;
+    outputTokens?: number;
+  };
   startedAt: Date;
   completedAt: Date | null;
 }
