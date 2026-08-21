@@ -17,7 +17,7 @@ export function proxy(request: NextRequest) {
   const session = request.cookies.get('recheq_session');
 
   // 1. Unauthenticated users trying to access protected routes
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !session?.value) {
     const url = new URL('/login', request.url);
     // Optional: add a callback URL to return the user to their intended destination
     url.searchParams.set('callbackUrl', pathname);
@@ -25,7 +25,7 @@ export function proxy(request: NextRequest) {
   }
 
   // 2. Authenticated users trying to access auth pages (login/signup)
-  if (isAuthRoute && session) {
+  if (isAuthRoute && session?.value) {
     return NextResponse.redirect(new URL('/cases', request.url));
   }
 
