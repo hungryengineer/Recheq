@@ -3,6 +3,15 @@
 import type { LoginResponse } from '@tieout/schema';
 import { LoginInputSchema, SignupInputSchema } from '@tieout/schema';
 import { cookies } from 'next/headers';
+import { loginHandler } from '@tieout/api/src/routes/auth/login.js';
+import { signupHandler } from '@tieout/api/src/routes/auth/signup.js';
+import { getDb } from '@/lib/server/db';
+
+// SSO, forgot-password, reset-password handlers take no arguments in this phase.
+// They are stub implementations that will be expanded later.
+import { ssoHandler } from '@tieout/api/src/routes/auth/sso.js';
+import { forgotPasswordHandler } from '@tieout/api/src/routes/auth/forgot-password.js';
+import { resetPasswordHandler } from '@tieout/api/src/routes/auth/reset-password.js';
 
 export type AuthActionResult = {
   success: boolean;
@@ -26,31 +35,25 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, rememberMe } = parsed.data;
 
-    const baseUrl =
-      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, rememberMe }),
-    });
+    // Call handler directly instead of self-fetching via HTTP.
+    // Server actions run inside the same Next.js process, so a self-fetch
+    // via APP_BASE_URL is fragile on Vercel (URL mismatch, cold starts, etc.).
+    const result = await loginHandler(
+      { body: { email, password, rememberMe }, ip: 'server-action' },
+      { db: getDb() },
+    );
 
-    if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        if (errorData.error?.message) {
-          return { success: false, error: errorData.error.message };
-        }
-      } catch {
-        // Fallback for non-JSON or missing error body
+    if (result.status >= 400) {
+      const errorBody = result.body as { error?: { message?: string } };
+      if (errorBody.error?.message) {
+        return { success: false, error: errorBody.error.message };
       }
       return { success: false, error: 'Authentication failed. Please verify your credentials.' };
     }
 
-    const data = (await response.json()) as LoginResponse;
+    const data = result.body as LoginResponse;
 
-    // Set a secure mock cookie for session
+    // Set a secure cookie for session
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'recheq_session',
@@ -71,28 +74,17 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
 export async function ssoLoginAction(): Promise<AuthActionResult> {
   try {
-    const baseUrl =
-      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/auth/sso`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const result = await ssoHandler();
 
-    if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        if (errorData.error?.message) {
-          return { success: false, error: errorData.error.message };
-        }
-      } catch {
-        // Fallback for non-JSON or missing error body
+    if (result.status >= 400) {
+      const errorBody = result.body as { error?: { message?: string } };
+      if (errorBody.error?.message) {
+        return { success: false, error: errorBody.error.message };
       }
       return { success: false, error: 'SSO Login failed.' };
     }
 
-    const data = (await response.json()) as LoginResponse;
+    const data = result.body as LoginResponse;
 
     const cookieStore = await cookies();
     cookieStore.set({
@@ -111,24 +103,14 @@ export async function ssoLoginAction(): Promise<AuthActionResult> {
   }
 }
 
-export async function forgotPasswordAction(email: string): Promise<AuthActionResult> {
+export async function forgotPasswordAction(_email: string): Promise<AuthActionResult> {
   try {
-    const baseUrl =
-      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+    const result = await forgotPasswordHandler();
 
-    if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        if (errorData.error?.message) {
-          return { success: false, error: errorData.error.message };
-        }
-      } catch {
-        // Fallback
+    if (result.status >= 400) {
+      const errorBody = result.body as { error?: { message?: string } };
+      if (errorBody.error?.message) {
+        return { success: false, error: errorBody.error.message };
       }
       return { success: false, error: 'Failed to request password reset.' };
     }
@@ -141,27 +123,17 @@ export async function forgotPasswordAction(email: string): Promise<AuthActionRes
 }
 
 export async function resetPasswordAction(
-  email: string,
-  code: string,
-  newPassword: string,
+  _email: string,
+  _code: string,
+  _newPassword: string,
 ): Promise<AuthActionResult> {
   try {
-    const baseUrl =
-      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/auth/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code, newPassword }),
-    });
+    const result = await resetPasswordHandler();
 
-    if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        if (errorData.error?.message) {
-          return { success: false, error: errorData.error.message };
-        }
-      } catch {
-        // Fallback
+    if (result.status >= 400) {
+      const errorBody = result.body as { error?: { message?: string } };
+      if (errorBody.error?.message) {
+        return { success: false, error: errorBody.error.message };
       }
       return { success: false, error: 'Failed to reset password.' };
     }
@@ -187,31 +159,22 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, fullName, company } = parsed.data;
 
-    const baseUrl =
-      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, fullName, company }),
-    });
+    const result = await signupHandler(
+      { body: { email, password, fullName, company } },
+      { db: getDb() },
+    );
 
-    if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        if (errorData.error?.message) {
-          return { success: false, error: errorData.error.message };
-        }
-      } catch {
-        // Fallback for non-JSON or missing error body
+    if (result.status >= 400) {
+      const errorBody = result.body as { error?: { message?: string } };
+      if (errorBody.error?.message) {
+        return { success: false, error: errorBody.error.message };
       }
       return { success: false, error: 'Registration failed. Please try again.' };
     }
 
-    const data = (await response.json()) as LoginResponse;
+    const data = result.body as LoginResponse;
 
-    // Set a secure mock cookie for session
+    // Set a secure cookie for session
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'recheq_session',

@@ -213,17 +213,6 @@ function LoginContent() {
 
             {authMode === 'password' ? (
               <>
-                {/* Dev Hint */}
-                <div className="mb-6 p-3 bg-blue-50/50 text-blue-800 text-xs rounded-lg border border-blue-100/50 flex flex-col gap-1 text-center">
-                  <span className="font-semibold text-blue-900">Development Credentials</span>
-                  <span>
-                    Email: <span className="font-mono font-bold">admin@gmail.com</span>
-                  </span>
-                  <span>
-                    Password: <span className="font-mono font-bold">Admin123</span>
-                  </span>
-                </div>
-
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700" htmlFor="email">

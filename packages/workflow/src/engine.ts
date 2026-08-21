@@ -8,6 +8,12 @@ import {
 export interface EngineResult {
   verdict: 'verified' | 'verified_with_notes' | 'needs_review' | 'insufficient_evidence';
   steps: (StepResult & { id: string })[];
+  cost: {
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    modelsUsed: string[];
+    computedInr: number;
+  };
 }
 
 /** Options for {@link Engine.run}. */
@@ -135,7 +141,11 @@ export class Engine<TCtx extends StepContext = StepContext> {
 
   async run(ctx: TCtx, opts: EngineRunOptions = {}): Promise<EngineResult> {
     if (this.steps.length === 0) {
-      return { verdict: 'insufficient_evidence', steps: [] };
+      return {
+        verdict: 'insufficient_evidence',
+        steps: [],
+        cost: { totalInputTokens: 0, totalOutputTokens: 0, modelsUsed: [], computedInr: 0 },
+      };
     }
 
     const results = new Map<string, StepResult>();
@@ -226,7 +236,37 @@ export class Engine<TCtx extends StepContext = StepContext> {
       verdict = 'insufficient_evidence';
     }
 
-    return { verdict, steps: stepsArray };
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    const modelsUsed = new Set<string>();
+
+    for (const s of stepsArray) {
+      if (s.provenance.model) modelsUsed.add(s.provenance.model);
+      const inT = s.provenance.inputTokens;
+      if (inT !== undefined && Number.isSafeInteger(inT) && inT >= 0) {
+        totalInputTokens += inT;
+      }
+      const outT = s.provenance.outputTokens;
+      if (outT !== undefined && Number.isSafeInteger(outT) && outT >= 0) {
+        totalOutputTokens += outT;
+      }
+    }
+
+    // Gemini 1.5 Flash rates at $0.075/1M in, $0.30/1M out. Assuming 1 USD = 83 INR.
+    // INR 6.225 per 1M input, INR 24.9 per 1M output
+    const computedInr =
+      (totalInputTokens / 1_000_000) * 6.225 + (totalOutputTokens / 1_000_000) * 24.9;
+
+    return {
+      verdict,
+      steps: stepsArray,
+      cost: {
+        totalInputTokens,
+        totalOutputTokens,
+        modelsUsed: Array.from(modelsUsed),
+        computedInr,
+      },
+    };
   }
 
   private async execute(
