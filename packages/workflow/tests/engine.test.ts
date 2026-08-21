@@ -45,6 +45,31 @@ describe('Step Engine', () => {
     expect(result.verdict).toBe('insufficient_evidence');
   });
 
+  it('degrades a throwing requires() to failed instead of crashing run() (R2.2)', async () => {
+    const step = new FakeStep('s1', 'Throws in requires', 'fast', 1000, [], undefined, () => {
+      throw new Error('predicate exploded');
+    });
+    const healthy = new FakeStep('s2', 'Ok', 'fast', 1000, []);
+
+    const engine = new Engine([step, healthy]);
+    const result = await engine.run({ caseId: '123' });
+
+    expect(result.steps.find((s) => s.id === 's1')?.state).toBe('failed');
+    // Candidate-safe reason only (R2.2).
+    expect(result.steps.find((s) => s.id === 's1')?.reason).toBe(
+      'This check could not be completed',
+    );
+    expect(result.steps.find((s) => s.id === 's2')?.state).toBe('succeeded');
+  });
+
+  it('rejects a fast step that depends on a slow step at construction (R1.14)', () => {
+    const fast = new FakeStep('fast', 'Fast', 'fast', 1000, ['slow']);
+    const slowStep = new FakeStep('slow', 'Slow', 'slow', 60000, []);
+    expect(() => new Engine([fast, slowStep])).toThrow(
+      /Fast step fast cannot depend on slow step slow/,
+    );
+  });
+
   it('catches throwing step and marks failed without aborting others', async () => {
     const stepFail = new FakeStep(
       's1',
@@ -210,8 +235,46 @@ describe('Step Engine', () => {
     const steps = Array.from({ length: 12 }, (_, i) => mk(`s${i}`));
     const result = await new Engine(steps).run({ caseId: '123' });
 
-    expect(maxActive).toBeLessThanOrEqual(4);
+    expect(maxActive).toBe(4);
     expect(result.verdict).toBe('verified');
+  });
+
+  it('reports mixed fast outcomes as verified_with_notes (R1.12)', async () => {
+    const ok = new FakeStep('ok', 'Ok', 'fast', 1000, []);
+    const bad = new FakeStep(
+      'bad',
+      'Bad',
+      'fast',
+      1000,
+      [],
+      undefined,
+      () => true,
+      async () => {
+        throw new Error('Boom');
+      },
+    );
+
+    const result = await new Engine([ok, bad]).run({ caseId: '123' });
+    expect(result.verdict).toBe('verified_with_notes');
+  });
+
+  it('reports needs_review when every fast step failed or timed out', async () => {
+    const mkFail = (id: string) =>
+      new FakeStep(
+        id,
+        id,
+        'fast',
+        1000,
+        [],
+        undefined,
+        () => true,
+        async () => {
+          throw new Error('Boom');
+        },
+      );
+
+    const result = await new Engine([mkFail('a'), mkFail('b')]).run({ caseId: '123' });
+    expect(result.verdict).toBe('needs_review');
   });
 
   it('returns the interim verdict without waiting for slow steps (R1.6/R1.14)', async () => {
@@ -238,5 +301,47 @@ describe('Step Engine', () => {
     expect(result.steps.find((s) => s.id === 'quick')?.state).toBe('succeeded');
     expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
     expect(elapsed).toBeLessThan(1000);
+  });
+
+  it('surfaces slow-step completion through onSlowStepSettled (R1.14)', async () => {
+    const slow = new FakeStep(
+      'slow',
+      'Slow',
+      'slow',
+      60000,
+      [],
+      undefined,
+      () => true,
+      async () => {
+        await new Promise((r) => setTimeout(r, 20));
+        return {
+          state: 'succeeded',
+          artifact: 'slow-artifact',
+          reason: null,
+          provenance: { source: 'derived', model: null, licence: 'none' },
+          startedAt: new Date(),
+          completedAt: new Date(),
+        };
+      },
+    );
+
+    const settled: { id: string; result: StepResult | null; error: unknown | null }[] = [];
+    const result = await new Engine([slow]).run(
+      { caseId: '123' },
+      {
+        onSlowStepSettled: (id, res, err) => settled.push({ id, result: res, error: err }),
+      },
+    );
+
+    // run() resolves at the fast boundary before the slow step finishes…
+    expect(settled).toHaveLength(0);
+    expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
+
+    // …then the callback delivers the outcome.
+    await new Promise((r) => setTimeout(r, 60));
+    expect(settled).toHaveLength(1);
+    expect(settled[0]?.id).toBe('slow');
+    expect(settled[0]?.result?.state).toBe('succeeded');
+    expect(settled[0]?.error).toBeNull();
   });
 });

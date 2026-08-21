@@ -340,6 +340,20 @@ try {
     .onConflictDoNothing()
     .execute();
 
+  // Reconcile id/email drift before the upsert: users.email is UNIQUE, so a
+  // row with the demo email but a different id would otherwise leave seeded
+  // cases' created_by FK pointing at DEV_USER_ID with no matching user. Repoint
+  // such a row to the configured DEV_USER_ID so both identifiers agree.
+  const byEmail = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, 'demo@tieout.local'))
+    .limit(1);
+  const existing = byEmail[0];
+  if (existing && existing.id !== DEV_USER_ID) {
+    await db.update(users).set({ id: DEV_USER_ID }).where(eq(users.email, 'demo@tieout.local'));
+  }
+
   await db
     .insert(users)
     .values({

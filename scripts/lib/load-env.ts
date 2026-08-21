@@ -12,8 +12,11 @@ const PLACEHOLDER_RE = /^<.*>$/;
  * - Lines whose value is a `<...>` placeholder are skipped and reported so a
  *   half-configured .env.local fails with a clear message instead of a
  *   confusing connection error.
+ * - By default every unset placeholder is fatal. Pass `requiredKeys` to scope
+ *   the check to the variables the caller actually needs (e.g. the migration
+ *   runner requires DATABASE_URL but not OPENAI_API_KEY).
  */
-export function loadEnvFile(file = '.env.local') {
+export function loadEnvFile(file = '.env.local', requiredKeys: readonly string[] | null = null) {
   const envPath = path.resolve(process.cwd(), file);
   if (!fs.existsSync(envPath)) {
     return;
@@ -40,7 +43,8 @@ export function loadEnvFile(file = '.env.local') {
       continue;
     }
     if (PLACEHOLDER_RE.test(value)) {
-      if (process.env[key] === undefined) {
+      const isRequired = requiredKeys === null || requiredKeys.includes(key);
+      if (isRequired && process.env[key] === undefined) {
         missing.push(key);
       }
       continue;
