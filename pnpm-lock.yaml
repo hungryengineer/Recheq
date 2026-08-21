@@ -258,6 +258,9 @@ importers:
       '@tieout/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@tieout/workflow':
+        specifier: workspace:*
+        version: link:../../packages/workflow
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
