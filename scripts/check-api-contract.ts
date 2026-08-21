@@ -37,7 +37,7 @@ export function getImplementedOperations(dir: string, baseRoute = '/api'): Opera
       while ((match = methodRegex.exec(fileContent)) !== null) {
         operations.push({
           path: baseRoute,
-          method: match[1].toLowerCase(),
+          method: match[1]!.toLowerCase(),
         });
       }
     }
