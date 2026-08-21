@@ -1,4 +1,4 @@
-import { VerificationStep, StepContext, StepResult } from './types';
+import type { VerificationStep, StepContext, StepResult } from './types';
 
 export interface EngineResult {
   verdict: 'verified' | 'verified_with_notes' | 'needs_review' | 'insufficient_evidence';
@@ -44,14 +44,14 @@ export class Engine {
     }
 
     const results = new Map<string, StepResult>();
-    const stepById = new Map(this.steps.map(s => [s.id, s]));
+    const stepById = new Map(this.steps.map((s) => [s.id, s]));
 
     const executeStep = async (stepId: string): Promise<StepResult> => {
       if (results.has(stepId)) return results.get(stepId)!;
 
       const step = stepById.get(stepId);
       if (!step) {
-          throw new Error(`Step ${stepId} not found`);
+        throw new Error(`Step ${stepId} not found`);
       }
 
       // Check dependencies
@@ -64,7 +64,7 @@ export class Engine {
             reason: `Dependency ${dep} did not succeed`,
             provenance: { source: 'derived', model: null, licence: 'none' },
             startedAt: new Date(),
-            completedAt: new Date()
+            completedAt: new Date(),
           };
           results.set(stepId, res);
           return res;
@@ -78,7 +78,7 @@ export class Engine {
           reason: 'Requirements not met',
           provenance: { source: 'derived', model: null, licence: 'none' },
           startedAt: new Date(),
-          completedAt: new Date()
+          completedAt: new Date(),
         };
         results.set(stepId, res);
         return res;
@@ -88,28 +88,30 @@ export class Engine {
         const res = await step.run(ctx);
         results.set(stepId, res);
         return res;
-      } catch (err: any) {
+      } catch (err: unknown) {
         const res: StepResult = {
           state: 'failed',
           artifact: null,
-          reason: err.message,
+          reason: err instanceof Error ? err.message : 'Step failed',
           provenance: { source: 'derived', model: null, licence: 'none' },
           startedAt: new Date(),
-          completedAt: new Date()
+          completedAt: new Date(),
         };
         results.set(stepId, res);
         return res;
       }
     };
 
-    await Promise.all(this.steps.map(s => executeStep(s.id)));
+    await Promise.all(this.steps.map((s) => executeStep(s.id)));
 
     const stepsArray = Array.from(results.entries()).map(([id, res]) => ({ ...res, id }));
-    const anyValid = stepsArray.some(s => s.state === 'succeeded' || s.state === 'awaiting_external');
-    
+    const anyValid = stepsArray.some(
+      (s) => s.state === 'succeeded' || s.state === 'awaiting_external',
+    );
+
     return {
       verdict: anyValid ? 'verified' : 'insufficient_evidence',
-      steps: stepsArray
+      steps: stepsArray,
     };
   }
 }
