@@ -10,7 +10,6 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pdfParse from 'pdf-parse';
 import {
-  GeminiExtractor,
   createGeminiExtractorFromEnv,
 } from '../services/api/src/extraction/providers/gemini-extractor.js';
 import {

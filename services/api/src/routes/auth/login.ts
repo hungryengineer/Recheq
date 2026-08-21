@@ -23,47 +23,57 @@ import { createHash } from 'node:crypto';
 const DUMMY_HASH = bcrypt.hashSync('__dummy_timing_padding__', 10);
 
 // ─── Rate-limit state ───────────────────────────────────────────
-// In-memory sliding window. For production, use Redis.
-interface RateLimitEntry {
-  count: number;
-  windowStart: number;
+// Rolling window rate limiter. For production, use Redis.
+class RollingRateLimiter {
+  private store = new Map<string, number[]>();
+  private readonly windowMs: number;
+  private readonly maxEntries: number;
+
+  constructor(windowMs: number, maxEntries = 10000) {
+    this.windowMs = windowMs;
+    this.maxEntries = maxEntries;
+  }
+
+  check(key: string, maxAttempts: number): { allowed: boolean; retryAfterSeconds?: number } {
+    const now = Date.now();
+    let attempts = this.store.get(key) || [];
+    
+    // Remove expired attempts
+    attempts = attempts.filter((timestamp) => now - timestamp < this.windowMs);
+    
+    if (attempts.length >= maxAttempts) {
+      this.store.set(key, attempts);
+      const oldest = attempts[0]!;
+      const retryAfterSeconds = Math.ceil((oldest + this.windowMs - now) / 1000);
+      return { allowed: false, retryAfterSeconds };
+    }
+
+    attempts.push(now);
+    
+    // Evict old entries if Map gets too large (bounding)
+    if (this.store.size >= this.maxEntries && !this.store.has(key)) {
+      const firstKey = this.store.keys().next().value;
+      if (firstKey !== undefined) this.store.delete(firstKey);
+    }
+    
+    this.store.set(key, attempts);
+    return { allowed: true };
+  }
 }
 
-const emailLimits = new Map<string, RateLimitEntry>();
-const ipLimits = new Map<string, RateLimitEntry>();
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const emailLimits = new RollingRateLimiter(WINDOW_MS, 10000);
+const ipLimits = new RollingRateLimiter(WINDOW_MS, 10000);
 
 const EMAIL_MAX_ATTEMPTS = 5;
 const IP_MAX_ATTEMPTS = 20;
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function checkRateLimit(
-  store: Map<string, RateLimitEntry>,
-  key: string,
-  maxAttempts: number,
-): { allowed: boolean; retryAfterSeconds?: number } {
-  const now = Date.now();
-  const entry = store.get(key);
-
-  if (!entry || now - entry.windowStart > WINDOW_MS) {
-    // New window
-    store.set(key, { count: 1, windowStart: now });
-    return { allowed: true };
-  }
-
-  entry.count++;
-
-  if (entry.count > maxAttempts) {
-    const retryAfterSeconds = Math.ceil((entry.windowStart + WINDOW_MS - now) / 1000);
-    return { allowed: false, retryAfterSeconds };
-  }
-
-  return { allowed: true };
-}
 
 /** Hash the email for logging — never log the raw email on failed attempts */
 function hashEmail(email: string): string {
   return createHash('sha256').update(email.toLowerCase().trim()).digest('hex').slice(0, 12);
 }
+
+import { toErrorResponse } from '../../http/errors.js';
 
 export async function loginHandler(
   req: { body: unknown; ip?: string },
@@ -73,81 +83,94 @@ export async function loginHandler(
   body: LoginResponse | { error: { code: string; message: string } };
   headers?: Record<string, string>;
 }> {
-  const parseResult = LoginInputSchema.safeParse(req.body);
+  try {
+    const parseResult = LoginInputSchema.safeParse(req.body);
 
-  if (!parseResult.success) {
-    throw new AppError(400, 'VALIDATION_ERROR', 'Invalid credentials');
-  }
+    if (!parseResult.success) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid credentials');
+    }
 
-  const { email, password } = parseResult.data;
-  const ip = req.ip || 'unknown';
+    const { email, password } = parseResult.data;
+    
+    // R6.3 Require a valid IP
+    if (!req.ip) {
+      throw new AppError(400, 'BAD_REQUEST', 'Client IP is required');
+    }
+    const ip = req.ip;
 
-  // R6.2: Per-email rate limit
-  const emailKey = email.toLowerCase().trim();
-  const emailCheck = checkRateLimit(emailLimits, emailKey, EMAIL_MAX_ATTEMPTS);
-  if (!emailCheck.allowed) {
-    // R6.4: Log with hashed email, never log password
-    console.warn(`Rate limit exceeded for email=${hashEmail(email)} ip=${ip}`);
+    // R6.2: Per-email rate limit
+    const emailKey = email.toLowerCase().trim();
+    const emailCheck = emailLimits.check(emailKey, EMAIL_MAX_ATTEMPTS);
+    if (!emailCheck.allowed) {
+      // R6.4: Log with hashed email, never log password
+      console.warn(`Rate limit exceeded for email=${hashEmail(email)} ip=${ip}`);
+      return {
+        status: 429,
+        body: {
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Too many login attempts. Please try again later.',
+          },
+        },
+        headers: { 'Retry-After': String(emailCheck.retryAfterSeconds) },
+      };
+    }
+
+    // R6.3: Per-IP rate limit
+    const ipCheck = ipLimits.check(ip, IP_MAX_ATTEMPTS);
+    if (!ipCheck.allowed) {
+      console.warn(`Rate limit exceeded for ip=${ip}`);
+      return {
+        status: 429,
+        body: {
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Too many login attempts. Please try again later.',
+          },
+        },
+        headers: { 'Retry-After': String(ipCheck.retryAfterSeconds) },
+      };
+    }
+
+    // Find user by email
+    const [user] = await deps.db.select().from(schema.users).where(eq(schema.users.email, email));
+
+    // R6.1: Always perform bcrypt comparison to eliminate timing oracle.
+    // If no user exists, compare against the dummy hash so the timing
+    // is indistinguishable from a real comparison.
+    const hashToCompare = user?.password_hash || DUMMY_HASH;
+    const isMatch = await bcrypt.compare(password, hashToCompare);
+
+    if (!user || !user.password_hash || !isMatch) {
+      // R6.4: Log failed attempt with hashed email + IP, never the password
+      console.warn(`Failed login attempt email=${hashEmail(email)} ip=${ip}`);
+      throw new AppError(401, 'UNAUTHORIZED', 'Invalid email or password');
+    }
+
+    // Sign JWT
+    const token = await signToken({
+      userId: user.id,
+      orgId: user.org_id,
+      role: user.role,
+    });
+
     return {
-      status: 429,
+      status: 200,
       body: {
-        error: {
-          code: 'RATE_LIMITED',
-          message: 'Too many login attempts. Please try again later.',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
         },
       },
-      headers: { 'Retry-After': String(emailCheck.retryAfterSeconds) },
     };
-  }
-
-  // R6.3: Per-IP rate limit
-  const ipCheck = checkRateLimit(ipLimits, ip, IP_MAX_ATTEMPTS);
-  if (!ipCheck.allowed) {
-    console.warn(`Rate limit exceeded for ip=${ip}`);
+  } catch (error) {
+    const errorResponse = toErrorResponse(error);
     return {
-      status: 429,
-      body: {
-        error: {
-          code: 'RATE_LIMITED',
-          message: 'Too many login attempts. Please try again later.',
-        },
-      },
-      headers: { 'Retry-After': String(ipCheck.retryAfterSeconds) },
+      status: errorResponse.status,
+      body: errorResponse.body,
     };
   }
-
-  // Find user by email
-  const [user] = await deps.db.select().from(schema.users).where(eq(schema.users.email, email));
-
-  // R6.1: Always perform bcrypt comparison to eliminate timing oracle.
-  // If no user exists, compare against the dummy hash so the timing
-  // is indistinguishable from a real comparison.
-  const hashToCompare = user?.password_hash || DUMMY_HASH;
-  const isMatch = await bcrypt.compare(password, hashToCompare);
-
-  if (!user || !user.password_hash || !isMatch) {
-    // R6.4: Log failed attempt with hashed email + IP, never the password
-    console.warn(`Failed login attempt email=${hashEmail(email)} ip=${ip}`);
-    throw new AppError(401, 'UNAUTHORIZED', 'Invalid email or password');
-  }
-
-  // Sign JWT
-  const token = await signToken({
-    userId: user.id,
-    orgId: user.org_id,
-    role: user.role,
-  });
-
-  return {
-    status: 200,
-    body: {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-    },
-  };
 }
