@@ -98,8 +98,8 @@ async function main() {
       documentId: file.replace('.json', ''),
       documentKind,
       documentContent: pdfText,
-      mimeType: 'application/pdf',
-      schemaVersion: expected.schema_version || `${docType}-v1`,
+      mimeType: 'text/plain',
+      schemaVersion: typeof expected.schema_version === 'string' ? expected.schema_version : `${docType}-v1`,
     };
 
     // Run extraction

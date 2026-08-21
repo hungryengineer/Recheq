@@ -25,21 +25,25 @@ export interface EvaluationResult {
  * Flattens an object to a dot-notation key-value map.
  * E.g. { basic: { amount: 55000 } } => { "basic.amount": 55000 }
  */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 export function flattenObject(obj: unknown, prefix = ''): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
-  if (obj === null || obj === undefined || typeof obj !== 'object') {
+  if (!isRecord(obj)) {
     return result;
   }
 
-  for (const key of Object.keys(obj as Record<string, unknown>)) {
+  for (const key of Object.keys(obj)) {
     // Skip internal fields
     if (key.startsWith('_')) continue;
 
     const path = prefix ? `${prefix}.${key}` : key;
-    const value = (obj as Record<string, unknown>)[key];
+    const value = obj[key];
 
-    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    if (isRecord(value)) {
       Object.assign(result, flattenObject(value, path));
     } else if (Array.isArray(value)) {
       value.forEach((item, index) => {

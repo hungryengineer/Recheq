@@ -124,6 +124,19 @@ describe('Evaluator', () => {
       expect(result.failures[0]!.mode).toBe(FailureMode.MISSING_FIELD);
     });
 
+    it('identifies a value for an expected null field as hallucinated', () => {
+      const result = evaluateExtraction({ a: null }, { a: 1 });
+
+      expect(result.truePositives).toBe(0);
+      expect(result.falsePositives).toBe(1);
+      expect(result.falseNegatives).toBe(0);
+      expect(result.failures[0]).toMatchObject({
+        path: 'a',
+        mode: FailureMode.HALLUCINATED_FIELD,
+        expected: null,
+        actual: 1,
+      });
+    });
     it('ignores schema metadata fields', () => {
       const expected = { a: 1, schema_version: 'v1' };
       const actual = { a: 1, schema_version: 'v2' };
