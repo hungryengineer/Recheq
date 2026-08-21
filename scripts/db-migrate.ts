@@ -24,7 +24,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import postgres from 'postgres';
 import { loadEnvFile } from './lib/load-env.js';
-import { needsAutocommit } from './lib/migrations.js';
+import { listMigrationFiles, needsAutocommit } from './lib/migrations.js';
 
 loadEnvFile('.env.local', ['DATABASE_URL']);
 
@@ -40,9 +40,9 @@ const migrationsDir = path.resolve(process.cwd(), 'db/migrations');
 
 let files: string[];
 try {
-  files = (await fs.readdir(migrationsDir)).filter((f) => f.endsWith('.sql')).sort();
+  files = await listMigrationFiles(migrationsDir);
 } catch (err) {
-  console.error(`Cannot read migrations directory ${migrationsDir}: ${String(err)}`);
+  console.error(String(err instanceof Error ? err.message : err));
   process.exitCode = 1;
   process.exit();
 }

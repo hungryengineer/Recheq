@@ -123,6 +123,18 @@ describe('autocommit classification (needsAutocommit)', () => {
     expect(needsAutocommit("SELECT 'it''s a VACUUM day';")).toBe(false);
   });
 
+  it('does not classify tokens inside E-string escape constants', () => {
+    // Backslash escapes must not terminate the literal scan early.
+    expect(needsAutocommit("SELECT E'it\\'s a VACUUM day';")).toBe(false);
+    expect(needsAutocommit("SELECT e'-- not a comment\\' CONCURRENTLY';")).toBe(false);
+  });
+
+  it('does not confuse quoted identifiers with statements', () => {
+    // "VACUUM" is an identifier here, not the VACUUM command.
+    expect(needsAutocommit('CREATE TABLE "VACUUM" (id int);')).toBe(false);
+    expect(needsAutocommit('SELECT "BEGIN" FROM t;')).toBe(false);
+  });
+
   it('does not treat quote/comment markers inside literals as comments', () => {
     // The '--' literal must not swallow the rest of the statement as a comment.
     expect(needsAutocommit("SELECT '--'; CREATE INDEX CONCURRENTLY idx ON t(col);")).toBe(true);
@@ -163,6 +175,19 @@ describe('SQL scrubbing (scrubSql)', () => {
     expect(out).not.toContain('VACUUM');
     expect(out).toContain("SELECT ''");
     expect(out).toContain('FROM t;');
+  });
+
+  it('blanks E-string bodies honouring backslash escapes', () => {
+    // The \' escape must not end the scan; content stays hidden.
+    const out = scrubSql("SELECT E'a\\'VACUUM b', 1;");
+    expect(out).not.toContain('VACUUM');
+    expect(out).toContain(', 1;');
+  });
+
+  it('blanks double-quoted identifier bodies', () => {
+    const out = scrubSql('CREATE TABLE "VACUUM" (id int);');
+    expect(out).not.toContain('VACUUM');
+    expect(out).toContain('CREATE TABLE ""');
   });
 
   it('handles escaped quotes in literals', () => {

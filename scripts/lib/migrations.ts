@@ -44,8 +44,9 @@ export function needsAutocommit(sql: string): boolean {
  *
  * This is a character-level scanner rather than a regex pipeline: regexes
  * cannot tell `SELECT 'VACUUM'` from a real VACUUM, would treat a `'--'`
- * literal as a comment opener, and PostgreSQL block comments nest — none of
- * which the classifier may trip on.
+ * literal as a comment opener, miss backslash escapes in E'' constants, or
+ * confuse the identifier "VACUUM" with the VACUUM statement — and PostgreSQL
+ * block comments nest. None of which the classifier may trip on.
  */
 export function scrubSql(sql: string): string {
   let out = '';
@@ -80,6 +81,35 @@ export function scrubSql(sql: string): string {
       continue;
     }
 
+    // E'...' escape-string constant (backslash escapes honoured). Only treated
+    // as such when not preceded by an identifier character, so names ending in
+    // e/E followed by a normal string are not misread.
+    if (
+      (ch === 'E' || ch === 'e') &&
+      sql[i + 1] === "'" &&
+      !/[A-Za-z0-9_$"]/.test(sql[i - 1] ?? '')
+    ) {
+      i += 2;
+      while (i < n) {
+        if (sql[i] === '\\') {
+          i += 2; // backslash escapes the next character
+          continue;
+        }
+        if (sql[i] === "'" && sql[i + 1] === "'") {
+          // In E-strings '' is also a valid escaped quote.
+          i += 2;
+          continue;
+        }
+        if (sql[i] === "'") {
+          i += 1;
+          break;
+        }
+        i += 1;
+      }
+      out += "''";
+      continue;
+    }
+
     // Single-quoted string literal ('' is an escaped quote): blank the body
     // but keep the quotes so statement structure survives scrubbing.
     if (ch === "'") {
@@ -96,6 +126,25 @@ export function scrubSql(sql: string): string {
         i += 1;
       }
       out += "''";
+      continue;
+    }
+
+    // Double-quoted identifier ("VACUUM" is a column named VACUUM, not the
+    // VACUUM statement): blank the body like a literal body.
+    if (ch === '"') {
+      i += 1;
+      while (i < n) {
+        if (sql[i] === '"' && sql[i + 1] === '"') {
+          i += 2; // "" is an escaped quote inside an identifier
+          continue;
+        }
+        if (sql[i] === '"') {
+          i += 1;
+          break;
+        }
+        i += 1;
+      }
+      out += '""';
       continue;
     }
 

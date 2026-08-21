@@ -8,12 +8,24 @@ export interface EngineResult {
 /** Options for {@link Engine.run}. */
 export interface EngineRunOptions {
   /**
-   * Invoked when a background (slow) step settles — either when it resolves
-   * (`result` set) or rejects (`error` set). Slow steps are scheduled behind
-   * the fast boundary, so this is the only way their outcome becomes
+   * Invoked when a background (slow) step settles. Slow steps are scheduled
+   * behind the fast boundary, so this is the only way their outcome becomes
    * observable to the caller.
+   *
+   * Contract (mirrors `execute()` failure semantics):
+   * - A step whose `run()` throws or rejects is delivered as a normal result:
+   *   `(id, failedResult, null)` with `result.state === 'failed'`.
+   * - `error` is reserved for unexpected engine-level rejections (faults in
+   *   the engine itself), which should never occur in normal operation.
+   *
+   * Observer faults are contained: a throwing callback, or one that returns a
+   * rejected promise, must not produce an unhandled rejection after run().
    */
-  onSlowStepSettled?: (id: string, result: StepResult | null, error: unknown | null) => void;
+  onSlowStepSettled?: (
+    id: string,
+    result: StepResult | null,
+    error: unknown | null,
+  ) => void | Promise<void>;
 }
 
 /** Maximum number of steps executing concurrently (R1.4 / RCQ-121). */
@@ -121,7 +133,12 @@ export class Engine {
       error: unknown | null,
     ) => {
       try {
-        opts.onSlowStepSettled?.(id, result, error);
+        // The observer may be async; a rejected promise must not escape as an
+        // unhandled rejection after run() has returned.
+        const observed = opts.onSlowStepSettled?.(id, result, error);
+        if (observed instanceof Promise && typeof observed.catch === 'function') {
+          observed.catch(() => undefined);
+        }
       } catch {
         // Observer failures are non-fatal by contract; swallow deliberately.
       }

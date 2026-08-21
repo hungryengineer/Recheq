@@ -344,11 +344,54 @@ describe('Step Engine', () => {
     expect(settled).toHaveLength(0);
     expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
 
-    // …then the callback delivers the outcome (awaited, no fixed-delay race).
+    // …then the callback delivers the outcome exactly once (awaited, no
+    // fixed-delay race).
     await firstSettled;
     expect(settled).toHaveLength(1);
     expect(settled[0]?.id).toBe('slow');
     expect(settled[0]?.result?.state).toBe('succeeded');
     expect(settled[0]?.error).toBeNull();
+
+    // The step has long resolved (20 ms); allow ample margin and confirm no
+    // duplicate settlement ever arrives.
+    await new Promise((r) => setTimeout(r, 100));
+    expect(settled).toHaveLength(1);
+  });
+
+  it('contains async-observer rejections without unhandled rejections', async () => {
+    const slow = new FakeStep(
+      'slow',
+      'Slow',
+      'slow',
+      60000,
+      [],
+      undefined,
+      () => true,
+      async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        return {
+          state: 'succeeded',
+          artifact: null,
+          reason: null,
+          provenance: { source: 'derived', model: null, licence: 'none' },
+          startedAt: new Date(),
+          completedAt: new Date(),
+        };
+      },
+    );
+
+    // The observer returns a rejected promise. If the engine failed to
+    // contain it, vitest reports an unhandled rejection and this test fails.
+    const result = await new Engine([slow]).run(
+      { caseId: '123' },
+      {
+        onSlowStepSettled: async () => {
+          throw new Error('observer exploded');
+        },
+      },
+    );
+
+    expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('pending');
+    await new Promise((r) => setTimeout(r, 50));
   });
 });
