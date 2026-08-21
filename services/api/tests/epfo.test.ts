@@ -23,9 +23,9 @@ describe('EPFO Service with Dependencies', () => {
       epfoProvider: epfoProviderMock,
     };
 
-    const recordId = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000001');
+    const result = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000001');
 
-    expect(recordId).toBe('rec-123');
+    expect(result).toEqual({ ok: true, recordId: 'rec-123' });
     expect(dbMock.createPendingRecord).toHaveBeenCalledWith(
       'case-123',
       'consent-123',
@@ -55,9 +55,9 @@ describe('EPFO Service with Dependencies', () => {
       epfoProvider: epfoProviderMock,
     };
 
-    const recordId = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000002');
+    const result = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000002');
 
-    expect(recordId).toBe('rec-123');
+    expect(result).toEqual({ ok: false, recordId: 'rec-123', error: 'EPFO history not found for UAN' });
     expect(dbMock.updateRecordFailure).toHaveBeenCalledWith(
       'rec-123',
       'EPFO history not found for UAN',

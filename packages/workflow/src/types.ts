@@ -35,13 +35,13 @@ export interface StepContext {
   [key: string]: unknown;
 }
 
-export interface VerificationStep<TOut = unknown> {
+export interface VerificationStep<TCtx extends StepContext = StepContext, TOut = unknown> {
   readonly id: string;
   readonly label: string;
   readonly speed: 'fast' | 'slow';
   readonly timeoutMs: number;
   readonly dependsOn: readonly string[];
   readonly dataSource: DataSourceDeclaration; // R1.16
-  requires(ctx: StepContext): boolean; // pure
-  run(ctx: StepContext): Promise<StepResult<TOut>>;
+  requires(ctx: TCtx): boolean; // pure
+  run(ctx: TCtx): Promise<StepResult<TOut>>;
 }

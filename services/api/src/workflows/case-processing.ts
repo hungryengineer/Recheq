@@ -4,7 +4,7 @@ import { checkProcessingIdempotency } from './idempotency.js';
 import type { EvidenceServiceDeps } from '../evidence/evidence-service.js';
 import type { EpfoProvider } from '../epfo/epfo-provider.js';
 import type { LlmDocumentExtractor } from '../extraction/llm-document-extractor.js';
-import { Engine } from '@tieout/workflow';
+import { Engine, type StepContext, type EngineResult } from '@tieout/workflow';
 import { ExtractionStep } from './steps/extraction-step.js';
 import { ForensicsStep } from './steps/forensics-step.js';
 import { EpfoHistoryStep } from './steps/epfo-history-step.js';
@@ -39,6 +39,11 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
   extractor: LlmDocumentExtractor;
 }
 
+export interface CaseStepContext extends StepContext {
+  caseId: string;
+  deps: CaseProcessingDeps;
+}
+
 export async function processCase(
   caseId: string,
   isReprocess: boolean,
@@ -53,20 +58,42 @@ export async function processCase(
   checkProcessingIdempotency(caseRecord.status, isReprocess);
 
   // 2. Initialize Workflow Engine
-  const engine = new Engine([
+  const engine = new Engine<CaseStepContext>([
     new ExtractionStep(),
     new ForensicsStep(),
     new EpfoHistoryStep(),
     new TriangulateStep(),
   ]);
 
-  const ctx = {
+  const ctx: CaseStepContext = {
     caseId,
     deps,
   };
 
   // 3. Execute Verification Steps
-  const engineResult = await engine.run(ctx);
+  let engineResult: EngineResult;
+  try {
+    engineResult = await engine.run(ctx);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`Engine failed for case ${caseId}:`, err);
+    await deps.db.transaction(async (tx) => {
+      await deps.db.updateCaseStatusAndVerdict(tx, caseId, 'complete', 'insufficient_evidence', 100);
+      await deps.audit.appendEvent(tx, {
+        case_id: caseId,
+        kind: 'verdict_calculated',
+        payload: {
+          verdict: 'insufficient_evidence',
+          risk_score: 100,
+          finding_count: 0,
+          is_reprocess: isReprocess,
+          failure_reason: `Engine failure: ${msg}`,
+        },
+        actor: 'system',
+      });
+    });
+    return;
+  }
 
   // 4. Retrieve Triangulate Result
   const triangulateResult = engineResult.steps.find((s) => s.id === 'rules.triangulate');
@@ -93,14 +120,31 @@ export async function processCase(
     });
   } else {
     // If triangulation failed or didn't run due to dependencies, fail the case
+    const UNVERIFIED_RISK_SCORE = 100;
+    const failureReason = triangulateResult?.reason ?? 'Triangulation did not run';
+
     await deps.db.transaction(async (tx) => {
+      await deps.db.replaceFindings(tx, caseId, []);
       await deps.db.updateCaseStatusAndVerdict(
         tx,
         caseId,
         'complete',
         engineResult.verdict,
-        100, // max risk for unverified
+        UNVERIFIED_RISK_SCORE,
       );
+
+      await deps.audit.appendEvent(tx, {
+        case_id: caseId,
+        kind: 'verdict_calculated',
+        payload: {
+          verdict: engineResult.verdict,
+          risk_score: UNVERIFIED_RISK_SCORE,
+          finding_count: 0,
+          is_reprocess: isReprocess,
+          failure_reason: failureReason,
+        },
+        actor: 'system',
+      });
     });
   }
 }

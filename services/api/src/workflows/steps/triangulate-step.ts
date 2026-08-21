@@ -1,16 +1,16 @@
 import type { VerificationStep, StepResult } from '@tieout/workflow';
-import type { CaseStepContext } from './extraction-step.js';
+import type { CaseStepContext } from '../case-processing.js';
 import { calculateVerdict, calculateRiskScore, runAllChecks } from '@tieout/rules';
-import type { ScorableFinding } from '@tieout/rules';
+import type { FindingInput } from '@tieout/schema';
 import { assembleEvidence } from '../../evidence/evidence-service.js';
 
 export interface TriangulateArtifact {
-  findings: ScorableFinding[];
+  findings: FindingInput[];
   verdict: ReturnType<typeof calculateVerdict>;
   score: number;
 }
 
-export class TriangulateStep implements VerificationStep<TriangulateArtifact> {
+export class TriangulateStep implements VerificationStep<CaseStepContext, TriangulateArtifact> {
   readonly id = 'rules.triangulate';
   readonly label = 'Rule Triangulation';
   readonly speed = 'fast';
@@ -22,31 +22,26 @@ export class TriangulateStep implements VerificationStep<TriangulateArtifact> {
     licence: 'none',
   };
 
-  requires(_ctx: unknown): boolean {
+  requires(_ctx: CaseStepContext): boolean {
     return true;
   }
 
-  async run(ctx: unknown): Promise<StepResult<TriangulateArtifact>> {
-    const context = ctx as CaseStepContext;
-    const { caseId, deps } = context;
+  async run(ctx: CaseStepContext): Promise<StepResult<TriangulateArtifact>> {
+    const { caseId, deps } = ctx;
     const startedAt = new Date();
 
     try {
       const evidenceCtx = await assembleEvidence(deps, caseId);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findings = runAllChecks(evidenceCtx) as any[];
+      const findings = runAllChecks(evidenceCtx);
 
-      const score = calculateRiskScore(findings as ScorableFinding[]);
-      const verdict = calculateVerdict(
-        findings as Parameters<typeof calculateVerdict>[0],
-        evidenceCtx.assembly.origins.length,
-      );
+      const score = calculateRiskScore(findings);
+      const verdict = calculateVerdict(findings, evidenceCtx.assembly.origins.length);
 
       return {
         state: 'succeeded',
         artifact: {
-          findings: findings as ScorableFinding[],
+          findings,
           verdict,
           score,
         },
@@ -55,12 +50,13 @@ export class TriangulateStep implements VerificationStep<TriangulateArtifact> {
         startedAt,
         completedAt: new Date(),
       };
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       return {
         state: 'failed',
         artifact: null,
-        reason: 'Triangulation failed',
-        provenance: { source: 'derived', model: null, licence: 'none' },
+        reason: `Triangulation failed: ${msg}`,
+        provenance: { source: 'derived', model: 'system', licence: 'none' },
         startedAt,
         completedAt: new Date(),
       };

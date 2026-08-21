@@ -1,7 +1,7 @@
 import type { VerificationStep, StepResult } from '@tieout/workflow';
-import type { CaseStepContext } from './extraction-step.js';
+import type { CaseStepContext } from '../case-processing.js';
 
-export class ForensicsStep implements VerificationStep<{ forensicsCount: number }> {
+export class ForensicsStep implements VerificationStep<CaseStepContext, { forensicsCount: number }> {
   readonly id = 'doc.forensics';
   readonly label = 'PDF Forensics Inspection';
   readonly speed = 'fast';
@@ -13,21 +13,26 @@ export class ForensicsStep implements VerificationStep<{ forensicsCount: number 
     licence: 'none',
   };
 
-  requires(_ctx: unknown): boolean {
+  requires(_ctx: CaseStepContext): boolean {
     return true;
   }
 
-  async run(ctx: unknown): Promise<StepResult<{ forensicsCount: number }>> {
-    const context = ctx as CaseStepContext;
-    const { caseId, deps } = context;
+  async run(ctx: CaseStepContext): Promise<StepResult<{ forensicsCount: number }>> {
+    const { caseId, deps } = ctx;
     const startedAt = new Date();
 
     const forensicsRecords = await deps.db.getCompletedForensics(caseId);
 
-    // In processCase, forensics is initiated when documents are uploaded.
-    // This step simply retrieves the results if they are completed.
-    // If not completed, we might just assume they failed or aren't ready,
-    // but typically forensics operates quickly or synchronously in tests.
+    if (forensicsRecords.length === 0) {
+      return {
+        state: 'not_assessed',
+        artifact: null,
+        reason: 'No forensic records available',
+        provenance: { source: 'derived', model: 'system', licence: 'none' },
+        startedAt,
+        completedAt: new Date(),
+      };
+    }
 
     return {
       state: 'succeeded',

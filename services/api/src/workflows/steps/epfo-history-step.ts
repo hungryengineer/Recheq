@@ -1,8 +1,8 @@
 import type { VerificationStep, StepResult } from '@tieout/workflow';
-import type { CaseStepContext } from './extraction-step.js';
+import type { CaseStepContext } from '../case-processing.js';
 import { syncEpfoHistory } from '../../epfo/epfo-service.js';
 
-export class EpfoHistoryStep implements VerificationStep<{ uan: string }> {
+export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan: string }> {
   readonly id = 'epfo.history';
   readonly label = 'EPFO Employment History';
   readonly speed = 'fast';
@@ -14,14 +14,13 @@ export class EpfoHistoryStep implements VerificationStep<{ uan: string }> {
     licence: 'consented',
   };
 
-  requires(_ctx: unknown): boolean {
+  requires(_ctx: CaseStepContext): boolean {
     // We always attempt it, but if UAN is missing, it will return not_assessed.
     return true;
   }
 
-  async run(ctx: unknown): Promise<StepResult<{ uan: string }>> {
-    const context = ctx as CaseStepContext;
-    const { caseId, deps } = context;
+  async run(ctx: CaseStepContext): Promise<StepResult<{ uan: string }>> {
+    const { caseId, deps } = ctx;
     const startedAt = new Date();
 
     const caseRecord = await deps.db.getCaseById(caseId);
@@ -60,21 +59,33 @@ export class EpfoHistoryStep implements VerificationStep<{ uan: string }> {
     }
 
     try {
-      await syncEpfoHistory(deps, caseId, consent.id, caseRecord.uan);
+      const result = await syncEpfoHistory(deps, caseId, consent.id, caseRecord.uan);
 
-      return {
-        state: 'succeeded',
-        artifact: { uan: caseRecord.uan },
-        reason: null,
-        provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
-        startedAt,
-        completedAt: new Date(),
-      };
-    } catch {
+      if (result.ok) {
+        return {
+          state: 'succeeded',
+          artifact: { uan: caseRecord.uan },
+          reason: null,
+          provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
+          startedAt,
+          completedAt: new Date(),
+        };
+      } else {
+        return {
+          state: 'failed',
+          artifact: null,
+          reason: result.error ?? 'Failed to sync EPFO history',
+          provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
+          startedAt,
+          completedAt: new Date(),
+        };
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       return {
         state: 'failed',
         artifact: null,
-        reason: 'Failed to sync EPFO history',
+        reason: `Failed to sync EPFO history: ${msg}`,
         provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
         startedAt,
         completedAt: new Date(),

@@ -18,7 +18,7 @@ export async function syncEpfoHistory(
   caseId: string,
   consentId: string,
   uan: string,
-): Promise<string> {
+): Promise<{ ok: boolean; recordId: string; error?: string }> {
   // Create pending record
   const recordId = await deps.db.createPendingRecord(caseId, consentId, uan);
 
@@ -27,13 +27,14 @@ export async function syncEpfoHistory(
 
     if (history) {
       await deps.db.updateRecordSuccess(recordId, history);
+      return { ok: true, recordId };
     } else {
       await deps.db.updateRecordFailure(recordId, 'EPFO history not found for UAN');
+      return { ok: false, recordId, error: 'EPFO history not found for UAN' };
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await deps.db.updateRecordFailure(recordId, `Provider error: ${msg}`);
+    return { ok: false, recordId, error: `Provider error: ${msg}` };
   }
-
-  return recordId;
 }
