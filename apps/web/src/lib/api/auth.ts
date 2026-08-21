@@ -1,7 +1,7 @@
 'use server';
 
 import type { LoginResponse } from '@tieout/schema';
-import { LoginInputSchema, SignupInputSchema } from '@tieout/schema';
+import { LoginInputSchema, SignupInputSchema, LoginResponseSchema } from '@tieout/schema';
 import { cookies } from 'next/headers';
 import { loginHandler } from '@tieout/api/src/routes/auth/login.js';
 import { signupHandler } from '@tieout/api/src/routes/auth/signup.js';
@@ -19,6 +19,22 @@ export type AuthActionResult = {
   error?: string;
   data?: LoginResponse;
 };
+
+// Safely narrow the error body without using type assertions (as)
+function getErrorMessage(body: unknown): string | undefined {
+  if (
+    body &&
+    typeof body === 'object' &&
+    'error' in body &&
+    body.error &&
+    typeof body.error === 'object' &&
+    'message' in body.error &&
+    typeof body.error.message === 'string'
+  ) {
+    return body.error.message;
+  }
+  return undefined;
+}
 
 export async function loginAction(input: unknown): Promise<AuthActionResult> {
   try {
@@ -44,14 +60,19 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
     );
 
     if (result.status >= 400) {
-      const errorBody = result.body as { error?: { message?: string } };
-      if (errorBody.error?.message) {
-        return { success: false, error: errorBody.error.message };
+      const errorMessage = getErrorMessage(result.body);
+      if (errorMessage) {
+        return { success: false, error: errorMessage };
       }
       return { success: false, error: 'Authentication failed. Please verify your credentials.' };
     }
 
-    const data = result.body as LoginResponse;
+    const parsedData = LoginResponseSchema.safeParse(result.body);
+    if (!parsedData.success) {
+      console.error('Invalid success response from loginHandler:', parsedData.error);
+      return { success: false, error: 'Invalid response from server.' };
+    }
+    const data = parsedData.data;
 
     // Set a secure cookie for session
     const cookieStore = await cookies();
@@ -77,14 +98,19 @@ export async function ssoLoginAction(): Promise<AuthActionResult> {
     const result = await ssoHandler();
 
     if (result.status >= 400) {
-      const errorBody = result.body as { error?: { message?: string } };
-      if (errorBody.error?.message) {
-        return { success: false, error: errorBody.error.message };
+      const errorMessage = getErrorMessage(result.body);
+      if (errorMessage) {
+        return { success: false, error: errorMessage };
       }
       return { success: false, error: 'SSO Login failed.' };
     }
 
-    const data = result.body as LoginResponse;
+    const parsedData = LoginResponseSchema.safeParse(result.body);
+    if (!parsedData.success) {
+      console.error('Invalid success response from ssoHandler:', parsedData.error);
+      return { success: false, error: 'Invalid response from server.' };
+    }
+    const data = parsedData.data;
 
     const cookieStore = await cookies();
     cookieStore.set({
@@ -108,9 +134,9 @@ export async function forgotPasswordAction(_email: string): Promise<AuthActionRe
     const result = await forgotPasswordHandler();
 
     if (result.status >= 400) {
-      const errorBody = result.body as { error?: { message?: string } };
-      if (errorBody.error?.message) {
-        return { success: false, error: errorBody.error.message };
+      const errorMessage = getErrorMessage(result.body);
+      if (errorMessage) {
+        return { success: false, error: errorMessage };
       }
       return { success: false, error: 'Failed to request password reset.' };
     }
@@ -131,9 +157,9 @@ export async function resetPasswordAction(
     const result = await resetPasswordHandler();
 
     if (result.status >= 400) {
-      const errorBody = result.body as { error?: { message?: string } };
-      if (errorBody.error?.message) {
-        return { success: false, error: errorBody.error.message };
+      const errorMessage = getErrorMessage(result.body);
+      if (errorMessage) {
+        return { success: false, error: errorMessage };
       }
       return { success: false, error: 'Failed to reset password.' };
     }
@@ -165,14 +191,19 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
     );
 
     if (result.status >= 400) {
-      const errorBody = result.body as { error?: { message?: string } };
-      if (errorBody.error?.message) {
-        return { success: false, error: errorBody.error.message };
+      const errorMessage = getErrorMessage(result.body);
+      if (errorMessage) {
+        return { success: false, error: errorMessage };
       }
       return { success: false, error: 'Registration failed. Please try again.' };
     }
 
-    const data = result.body as LoginResponse;
+    const parsedData = LoginResponseSchema.safeParse(result.body);
+    if (!parsedData.success) {
+      console.error('Invalid success response from signupHandler:', parsedData.error);
+      return { success: false, error: 'Invalid response from server.' };
+    }
+    const data = parsedData.data;
 
     // Set a secure cookie for session
     const cookieStore = await cookies();
