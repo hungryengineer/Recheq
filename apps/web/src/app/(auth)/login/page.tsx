@@ -14,7 +14,14 @@ function LoginContent() {
 
   const getRedirectUrl = () => {
     const nextParam = searchParams.get('next');
-    if (nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')) {
+    // Mirrors proxy.isSafeRelativePath: relative-only, no protocol-relative
+    // ('//host') or backslash ('/\host') cross-host bypasses.
+    if (
+      nextParam &&
+      nextParam.startsWith('/') &&
+      !nextParam.startsWith('//') &&
+      !nextParam.startsWith('/\\')
+    ) {
       return nextParam;
     }
     return '/cases';

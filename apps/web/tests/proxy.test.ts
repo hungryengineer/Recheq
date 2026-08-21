@@ -1,137 +1,212 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { NextRequest } from 'next/server';
-import { proxy } from '../src/proxy';
-import * as jwt from '@tieout/api/src/security/jwt.js';
+import { SignJWT } from 'jose';
 
-// Mock the JWT verification module
-vi.mock('@tieout/api/src/security/jwt.js', () => ({
-  verifyToken: vi.fn(),
-}));
+/**
+ * RCQ-20110 (KAN-20 / plan RCQ-20106) — dashboard route protection.
+ *
+ * Next 16 renamed middleware -> proxy; apps/web/src/proxy.ts is the
+ * middleware.ts the ticket asks for. These tests drive the real handler
+ * with real NextRequest objects.
+ *
+ * JWT_SECRET is read at module scope inside @tieout/api's jwt.ts, so the
+ * secret must be set before those modules are imported — hence the lazy
+ * dynamic imports below instead of top-level static imports.
+ */
+const TEST_SECRET = 'proxy-test-secret';
 
-// Provide a mock for NextResponse to spy on redirect and cookies
-const mockRedirect = vi.fn();
-const mockNext = vi.fn();
-const mockCookieDelete = vi.fn();
+let proxyFn: (request: NextRequest) => Promise<Response>;
+let signToken: (payload: { userId: string; orgId: string; role: string }) => Promise<string>;
 
-vi.mock('next/server', async (importOriginal) => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await importOriginal<typeof import('next/server')>();
-  return {
-    ...actual,
-    NextResponse: {
-      ...actual.NextResponse,
-      redirect: vi
-        .fn()
-        .mockImplementation((...args: Parameters<typeof actual.NextResponse.redirect>) => {
-          mockRedirect(...args);
-          return {
-            cookies: {
-              delete: mockCookieDelete,
-            },
-          };
-        }),
-      next: vi.fn().mockImplementation((...args: Parameters<typeof actual.NextResponse.next>) => {
-        mockNext(...args);
-        return {
-          cookies: {
-            delete: mockCookieDelete,
-          },
-        };
-      }),
-    },
-  };
+beforeAll(async () => {
+  process.env.JWT_SECRET ??= TEST_SECRET;
+  ({ proxy: proxyFn } = await import('../src/proxy.js'));
+  ({ signToken } = await import('@tieout/api/src/security/jwt.js'));
 });
 
-describe('Dashboard Middleware', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+function req(path: string, sessionCookie?: string): NextRequest {
+  const request = new NextRequest(new URL(`http://localhost${path}`));
+  if (sessionCookie !== undefined) {
+    request.cookies.set('recheq_session', sessionCookie);
+  }
+  return request;
+}
 
-  const createRequest = (url: string, cookieValue?: string) => {
-    const req = new NextRequest(new URL(url, 'http://localhost'));
-    if (cookieValue) {
-      req.cookies.set('recheq_session', cookieValue);
-    }
-    return req;
-  };
+async function expiredToken(): Promise<string> {
+  const key = new TextEncoder().encode(process.env.JWT_SECRET ?? TEST_SECRET);
+  return new SignJWT({ userId: 'u1', orgId: 'o1', role: 'candidate' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
+    .setExpirationTime(Math.floor(Date.now() / 1000) - 60)
+    .sign(key);
+}
 
-  it('R5.1: unauthenticated GET /cases -> 307 to /login?next=/cases', async () => {
-    const req = createRequest('/cases/123');
-    await proxy(req);
+const clearsCookie = (response: Response): boolean =>
+  response.headers
+    .getSetCookie()
+    .some(
+      (c) =>
+        c.startsWith('recheq_session=') &&
+        (/Max-Age=0/i.test(c) || /Expires=Thu, 01 Jan 1970/i.test(c)),
+    );
 
-    expect(mockRedirect).toHaveBeenCalledTimes(1);
-    const redirectUrl = mockRedirect.mock.calls[0][0] as URL;
-    const status = mockRedirect.mock.calls[0][1];
-
-    expect(redirectUrl.pathname).toBe('/login');
-    expect(redirectUrl.searchParams.get('next')).toBe('/cases/123');
-    expect(status).toBe(307);
-  });
-
-  it('R5.2: /c/<token> reachable with no session', async () => {
-    const req = createRequest('/c/token123');
-    await proxy(req);
-
-    expect(mockNext).toHaveBeenCalledTimes(1);
-    expect(mockRedirect).not.toHaveBeenCalled();
-  });
-
-  it('R5.4: tampered cookie clears and redirects', async () => {
-    vi.mocked(jwt.verifyToken).mockResolvedValueOnce(null); // Simulate expired/malformed
-
-    const req = createRequest('/settings/keys', 'bad_token');
-    await proxy(req);
-
-    expect(jwt.verifyToken).toHaveBeenCalledWith('bad_token');
-    expect(mockRedirect).toHaveBeenCalledTimes(1);
-    expect(mockCookieDelete).toHaveBeenCalledWith('recheq_session');
-
-    const redirectUrl = mockRedirect.mock.calls[0][0] as URL;
-    expect(redirectUrl.pathname).toBe('/login');
-    expect(redirectUrl.searchParams.get('next')).toBe('/settings/keys');
-  });
-
-  it('R5.3: Authenticated user requests /login -> redirects to /cases', async () => {
-    vi.mocked(jwt.verifyToken).mockResolvedValueOnce({
-      userId: '1',
-      orgId: '2',
-      role: 'admin',
+describe('RCQ-20110 — route protection proxy', () => {
+  describe('R5.1 unauthenticated access to protected routes', () => {
+    it('redirects GET /cases to /login?next=/cases with 307', async () => {
+      const response = await proxyFn(req('/cases'));
+      expect(response.status).toBe(307);
+      const location = new URL(response.headers.get('location')!);
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('next')).toBe('/cases');
     });
 
-    const req = createRequest('/login', 'valid_token');
-    await proxy(req);
-
-    expect(mockRedirect).toHaveBeenCalledTimes(1);
-    const redirectUrl = mockRedirect.mock.calls[0][0] as URL;
-    expect(redirectUrl.pathname).toBe('/cases');
-  });
-
-  it('R5.3 & Open Redirect Prevention: redirects to valid next param but ignores absolute URL', async () => {
-    vi.mocked(jwt.verifyToken).mockResolvedValue({
-      userId: '1',
-      orgId: '2',
-      role: 'admin',
+    it('preserves deep path and query in the next parameter', async () => {
+      const response = await proxyFn(req('/cases/abc123?tab=docs'));
+      expect(response.status).toBe(307);
+      const location = new URL(response.headers.get('location')!);
+      expect(location.searchParams.get('next')).toBe('/cases/abc123?tab=docs');
     });
 
-    // Valid relative redirect
-    const req1 = createRequest('/login?next=/settings');
-    req1.cookies.set('recheq_session', 'valid_token');
-    await proxy(req1);
+    it('protects /settings and /docs as well', async () => {
+      for (const path of ['/settings', '/docs']) {
+        const response = await proxyFn(req(path));
+        expect(response.status).toBe(307);
+        expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
+      }
+    });
+  });
 
-    expect(mockRedirect).toHaveBeenCalledTimes(1);
-    let redirectUrl = mockRedirect.mock.calls[0][0] as URL;
-    expect(redirectUrl.pathname).toBe('/settings');
+  describe('R5.2 token-authenticated routes bypass session middleware', () => {
+    it('lets /c/<token> through with no session at all', async () => {
+      const response = await proxyFn(req('/c/some-candidate-token'));
+      expect([200, 307]).toContain(response.status);
+      expect(response.headers.get('location')).toBeNull();
+    });
 
-    mockRedirect.mockClear();
+    it('lets /e/<token> through untouched', async () => {
+      const response = await proxyFn(req('/e/some-employer-token'));
+      expect(response.headers.get('location')).toBeNull();
+    });
 
-    // Invalid absolute redirect
-    const req2 = createRequest('/login?next=https://evil.com');
-    req2.cookies.set('recheq_session', 'valid_token');
-    await proxy(req2);
+    it('still passes /c/<token> through even with a garbage cookie', async () => {
+      const response = await proxyFn(req('/c/tok', 'not.a.jwt'));
+      expect(response.headers.get('location')).toBeNull();
+    });
+  });
 
-    expect(mockRedirect).toHaveBeenCalledTimes(1);
-    redirectUrl = mockRedirect.mock.calls[0][0] as URL;
-    // Should fallback to /cases because the next URL is absolute
-    expect(redirectUrl.pathname).toBe('/cases');
+  describe('R5.3 authenticated users on auth routes', () => {
+    it('redirects /login to /cases by default', async () => {
+      const token = await signToken({
+        userId: 'u1',
+        orgId: 'o1',
+        role: 'ops',
+      });
+      const response = await proxyFn(req('/login', token));
+      expect(response.status).toBe(307);
+      expect(new URL(response.headers.get('location')!).pathname).toBe('/cases');
+    });
+
+    it('honours a safe relative next parameter', async () => {
+      const token = await signToken({
+        userId: 'u1',
+        orgId: 'o1',
+        role: 'ops',
+      });
+      const response = await proxyFn(req('/login?next=/settings', token));
+      expect(new URL(response.headers.get('location')!).pathname).toBe('/settings');
+    });
+
+    it('also redirects signed-in visitors away from signup', async () => {
+      const token = await signToken({
+        userId: 'u1',
+        orgId: 'o1',
+        role: 'ops',
+      });
+      const response = await proxyFn(req('/signup', token));
+      expect(response.status).toBe(307);
+    });
+  });
+
+  describe('open redirect hardening', () => {
+    it.each([
+      'https://evil.com',
+      '//evil.com',
+      '/\\evil.com',
+      '\\\\evil.com',
+      'javascript:alert(1)',
+    ])('ignores next=%s and falls back to /cases', async (next) => {
+      const token = await signToken({
+        userId: 'u1',
+        orgId: 'o1',
+        role: 'ops',
+      });
+      const response = await proxyFn(req(`/login?next=${encodeURIComponent(next)}`, token));
+      const location = new URL(response.headers.get('location')!);
+      expect(location.origin).toBe('http://localhost');
+      expect(location.pathname).toBe('/cases');
+    });
+
+    it('exports a guard that rejects cross-host shapes only', async () => {
+      const { isSafeRelativePath } = await import('../src/proxy.js');
+      for (const bad of ['https://x.com', '//x.com', '/\\x.com', '\\x.com', '']) {
+        expect(isSafeRelativePath(bad)).toBe(false);
+      }
+      for (const good of ['/', '/cases', '/cases/1?x=2', '/settings#a']) {
+        expect(isSafeRelativePath(good)).toBe(true);
+      }
+    });
+  });
+
+  describe('R5.4 expired or malformed sessions', () => {
+    it('clears an expired cookie and redirects to /login', async () => {
+      const token = await expiredToken();
+      const response = await proxyFn(req('/cases', token));
+      expect(response.status).toBe(307);
+      expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
+      expect(clearsCookie(response)).toBe(true);
+    });
+
+    it.each([
+      'garbage',
+      'not.a.jwt',
+      '{"userId":"u1"}',
+      'a.b.c.d.e',
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.tampered-signature',
+    ])('never 500s on cookie %j — clears and redirects', async (bad) => {
+      const response = await proxyFn(req('/settings', bad));
+      expect(response.status).toBe(307);
+      expect(clearsCookie(response)).toBe(true);
+    });
+
+    it('does not clear a valid session hitting protected routes', async () => {
+      const token = await signToken({
+        userId: 'u1',
+        orgId: 'o1',
+        role: 'ops',
+      });
+      const response = await proxyFn(req('/cases', token));
+      expect(response.headers.getSetCookie()).toHaveLength(0);
+    });
+  });
+
+  describe('matcher contract', () => {
+    it('excludes api and static assets, includes pages', async () => {
+      const { config } = await import('../src/proxy.js');
+      // Next evaluates matchers anchored to the start of the path.
+      const matcher = new RegExp(`^${config.matcher[0]}$`);
+
+      expect(matcher.test('/api/cases')).toBe(false);
+      expect(matcher.test('/api/public/tok/status')).toBe(false);
+      expect(matcher.test('/_next/static/chunk.js')).toBe(false);
+      expect(matcher.test('/_next/image?a=b')).toBe(false);
+      expect(matcher.test('/favicon.ico')).toBe(false);
+      expect(matcher.test('/sitemap.xml')).toBe(false);
+      expect(matcher.test('/robots.txt')).toBe(false);
+
+      expect(matcher.test('/cases')).toBe(true);
+      expect(matcher.test('/login')).toBe(true);
+      expect(matcher.test('/c/token')).toBe(true); // matched but passes through
+      expect(matcher.test('/e/token')).toBe(true); // matched but passes through
+    });
   });
 });

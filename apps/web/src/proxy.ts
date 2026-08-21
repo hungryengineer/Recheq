@@ -9,7 +9,6 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith('/c/') || pathname.startsWith('/e/')) {
     return NextResponse.next();
   }
-
   const isProtectedRoute =
     pathname.startsWith('/cases') ||
     pathname.startsWith('/settings') ||
@@ -48,14 +47,26 @@ export async function proxy(request: NextRequest) {
   // R5.3 - Auth routes with valid session
   if (isAuthRoute && isValidSession) {
     const nextUrl = searchParams.get('next');
-    // Security: Only redirect to relative paths to prevent open redirect
-    if (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//')) {
+    // Security: Only redirect to relative paths to prevent open redirect.
+    // Reject protocol-relative ('//host') and backslash variants ('/\host',
+    // '\host') which URL parsers normalize into cross-host references.
+    if (nextUrl && isSafeRelativePath(nextUrl)) {
       return NextResponse.redirect(new URL(nextUrl, request.url));
     }
     return NextResponse.redirect(new URL('/cases', request.url));
   }
 
   return NextResponse.next();
+}
+
+/**
+ * True only for same-origin relative paths (R5.x open-redirect guard).
+ * Blocks absolute URLs, protocol-relative '//evil.com', and the backslash
+ * bypasses '/\evil.com' and '\evil.com' that URL parsers treat as
+ * authority separators.
+ */
+export function isSafeRelativePath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\');
 }
 
 export const config = {
