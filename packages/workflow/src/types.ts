@@ -28,6 +28,8 @@ export interface DataSourceDeclaration {
 
 export interface StepContext {
   caseId: string;
+  /** Abort signal fired when the step exceeds its declared timeoutMs (R1.11). */
+  signal?: AbortSignal;
   [key: string]: unknown;
 }
 

@@ -5,7 +5,7 @@
 - `packages/workflow/package.json` - Initialize the new workflow package as an independent workspace.
 - `packages/workflow/src/types.ts` - Define the `VerificationStep`, `StepResult`, and `StepState` contracts.
 - `packages/workflow/src/engine.ts` - Implement the DAG execution, concurrent scheduling, and error handling logic.
-- `packages/workflow/src/engine.test.ts` - Test suite for the engine using fake steps and zero external dependencies (TDD).
+- `packages/workflow/tests/engine.test.ts` - Test suite for the engine using fake steps and zero external dependencies (TDD).
 - `services/api/src/repositories/case_steps.ts` - Persistence layer for tracking individual step states.
 - `db/migrations/0004_create_case_steps.sql` - Schema migration for the `case_steps` table.
 

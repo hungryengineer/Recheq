@@ -1,14 +1,20 @@
 {
   "name": "@recheq/workflow",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "private": true,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
   "scripts": {
-    "build": "tsc",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "vitest": "^0.34.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
   }
 }

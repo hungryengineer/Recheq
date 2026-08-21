@@ -89,36 +89,46 @@ const db = createDb(connectionString);
 const FIXTURES = path.join(ROOT, 'fixtures', 'extraction');
 const EPFO_FIXTURES = path.join(ROOT, 'fixtures', 'epfo');
 
-/** Reads a JSON fixture file and returns the parsed value. */
-function readJson<T>(filePath: string): T {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
+/**
+ * Reads a JSON fixture file and returns the parsed object. Throws when the
+ * file does not contain a non-null, non-array object.
+ */
+function readJson(filePath: string): Record<string, unknown> {
+  const value: unknown = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Fixture ${filePath} must contain a JSON object`);
+  }
+  return value as Record<string, unknown>;
 }
-const CLEAN_PAYSLIP = readJson<Record<string, unknown>>(
-  path.join(FIXTURES, 'payslip-clean-01.json'),
-);
-const CLEAN_FORM16 = readJson<Record<string, unknown>>(path.join(FIXTURES, 'form16-clean-01.json'));
-const FORGED_PAYSLIP = readJson<Record<string, unknown>>(
-  path.join(FIXTURES, 'payslip-arun-doctored.json'),
-);
-const EPFO_CLEAN = readJson<Record<string, unknown>>(path.join(EPFO_FIXTURES, 'arun-clean.json'));
-const EPFO_DOCTORED = readJson<Record<string, unknown>>(
-  path.join(EPFO_FIXTURES, 'arun-doctored.json'),
-);
+const CLEAN_PAYSLIP = readJson(path.join(FIXTURES, 'payslip-clean-01.json'));
+const CLEAN_FORM16 = readJson(path.join(FIXTURES, 'form16-clean-01.json'));
+const FORGED_PAYSLIP = readJson(path.join(FIXTURES, 'payslip-arun-doctored.json'));
+const EPFO_CLEAN = readJson(path.join(EPFO_FIXTURES, 'arun-clean.json'));
+const EPFO_DOCTORED = readJson(path.join(EPFO_FIXTURES, 'arun-doctored.json'));
 
 /**
  * Computes a content fingerprint for a demo document PDF. When the file is
- * missing, falls back to a hash of the relative path and warns so the operator
- * can tell which fixture was absent.
+ * missing (ENOENT), falls back to a hash of the relative path and warns so the
+ * operator can tell which fixture was absent. All other filesystem errors are
+ * rethrown so a broken environment is surfaced instead of silently seeded.
  */
 function docFingerprint(relPath: string): { sha256: string; sizeBytes: number } {
   const abs = path.join(ROOT, relPath);
   try {
     const buf = fs.readFileSync(abs);
     return { sha256: crypto.createHash('sha256').update(buf).digest('hex'), sizeBytes: buf.length };
-  } catch {
+  } catch (err) {
+    if (!isErrnoError(err) || err.code !== 'ENOENT') {
+      throw err;
+    }
     console.warn(`  ⚠️  Missing demo document ${relPath}; seeding a placeholder fingerprint.`);
     return { sha256: crypto.createHash('sha256').update(relPath).digest('hex'), sizeBytes: 0 };
   }
+}
+
+/** Returns true when the thrown value is a Node.js errno (filesystem) error. */
+function isErrnoError(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && 'code' in err;
 }
 
 // ─── Idempotency helper ─────────────────────────────────────────
@@ -339,7 +349,9 @@ try {
       name: 'Tieout Demo User',
       role: 'verifier',
     })
-    .onConflictDoNothing()
+    // Upsert so an existing demo user is promoted to the verifier role the
+    // demo expects, instead of silently keeping a stale role.
+    .onConflictDoUpdate({ target: users.id, set: { role: 'verifier' } })
     .execute();
 
   console.log(`  ✓ Org ${DEV_ORG_ID} + user ${DEV_USER_ID}`);
