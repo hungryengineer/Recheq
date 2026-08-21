@@ -8,16 +8,16 @@ describe('Evaluator', () => {
         a: 1,
         b: {
           c: 2,
-          d: { e: 3 }
+          d: { e: 3 },
         },
-        _ignore: 4
+        _ignore: 4,
       };
-      
+
       const flat = flattenObject(obj);
       expect(flat).toEqual({
-        'a': 1,
+        a: 1,
         'b.c': 2,
-        'b.d.e': 3
+        'b.d.e': 3,
       });
     });
 
@@ -25,16 +25,16 @@ describe('Evaluator', () => {
       const obj = {
         items: [
           { name: 'apple', amount: 1 },
-          { name: 'banana', amount: 2 }
-        ]
+          { name: 'banana', amount: 2 },
+        ],
       };
-      
+
       const flat = flattenObject(obj);
       expect(flat).toEqual({
         'items[0].name': 'apple',
         'items[0].amount': 1,
         'items[1].name': 'banana',
-        'items[1].amount': 2
+        'items[1].amount': 2,
       });
     });
   });
@@ -44,14 +44,14 @@ describe('Evaluator', () => {
       const expected = {
         name: 'Priya',
         basic: { amount: 50000, raw_label: 'Basic' },
-        other: null
+        other: null,
       };
       const actual = {
         name: 'Priya',
         basic: { amount: 50000, raw_label: 'Basic' },
-        other: null
+        other: null,
       };
-      
+
       const result = evaluateExtraction(expected, actual);
       expect(result.truePositives).toBe(3); // name, basic.amount, basic.raw_label
       expect(result.falsePositives).toBe(0);
@@ -64,7 +64,7 @@ describe('Evaluator', () => {
     it('identifies missing fields (False Negatives)', () => {
       const expected = { a: 1, b: 2 };
       const actual = { a: 1 };
-      
+
       const result = evaluateExtraction(expected, actual);
       expect(result.truePositives).toBe(1);
       expect(result.falsePositives).toBe(0);
@@ -78,7 +78,7 @@ describe('Evaluator', () => {
     it('identifies hallucinated fields (False Positives)', () => {
       const expected = { a: 1 };
       const actual = { a: 1, b: 2 };
-      
+
       const result = evaluateExtraction(expected, actual);
       expect(result.truePositives).toBe(1);
       expect(result.falsePositives).toBe(1);
@@ -92,7 +92,7 @@ describe('Evaluator', () => {
     it('identifies value mismatches', () => {
       const expected = { a: 1 };
       const actual = { a: 2 };
-      
+
       const result = evaluateExtraction(expected, actual);
       expect(result.truePositives).toBe(0);
       expect(result.falsePositives).toBe(1);
@@ -105,7 +105,7 @@ describe('Evaluator', () => {
     it('ignores schema metadata fields', () => {
       const expected = { a: 1, schema_version: 'v1' };
       const actual = { a: 1 };
-      
+
       const result = evaluateExtraction(expected, actual);
       expect(result.falseNegatives).toBe(0);
     });

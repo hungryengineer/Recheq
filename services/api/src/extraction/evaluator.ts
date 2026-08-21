@@ -2,7 +2,7 @@ export enum FailureMode {
   MISSING_FIELD = 'MISSING_FIELD',
   HALLUCINATED_FIELD = 'HALLUCINATED_FIELD',
   VALUE_MISMATCH = 'VALUE_MISMATCH',
-  TYPE_MISMATCH = 'TYPE_MISMATCH'
+  TYPE_MISMATCH = 'TYPE_MISMATCH',
 }
 
 export interface Failure {
@@ -27,7 +27,7 @@ export interface EvaluationResult {
  */
 export function flattenObject(obj: any, prefix = ''): Record<string, any> {
   const result: Record<string, any> = {};
-  
+
   if (obj === null || obj === undefined) {
     return result;
   }
@@ -35,10 +35,10 @@ export function flattenObject(obj: any, prefix = ''): Record<string, any> {
   for (const key of Object.keys(obj)) {
     // Skip internal fields
     if (key.startsWith('_')) continue;
-    
+
     const path = prefix ? `${prefix}.${key}` : key;
     const value = obj[key];
-    
+
     if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
       Object.assign(result, flattenObject(value, path));
     } else if (Array.isArray(value)) {
@@ -53,7 +53,7 @@ export function flattenObject(obj: any, prefix = ''): Record<string, any> {
       result[path] = value;
     }
   }
-  
+
   return result;
 }
 
@@ -63,18 +63,18 @@ export function flattenObject(obj: any, prefix = ''): Record<string, any> {
 export function evaluateExtraction(expected: any, actual: any): EvaluationResult {
   const flatExpected = flattenObject(expected);
   const flatActual = flattenObject(actual);
-  
+
   let truePositives = 0;
   let falsePositives = 0;
   let falseNegatives = 0;
   const failures: Failure[] = [];
-  
+
   const allPaths = new Set([...Object.keys(flatExpected), ...Object.keys(flatActual)]);
-  
+
   for (const path of allPaths) {
     // Ignore schema version metadata and extraction notes as they are not extracted fields
     if (path === 'schema_version' || path === 'extraction_notes') continue;
-    // Also ignore labels from the expected if we just want to match amount (but sometimes labels matter). 
+    // Also ignore labels from the expected if we just want to match amount (but sometimes labels matter).
     // We will keep them for strict matching.
 
     const hasExpected = path in flatExpected;
@@ -98,27 +98,32 @@ export function evaluateExtraction(expected: any, actual: any): EvaluationResult
       // Field exists in both
       if (valExpected === null && valActual !== null) {
         falsePositives++;
-        failures.push({ path, mode: FailureMode.HALLUCINATED_FIELD, actual: valActual, expected: null });
+        failures.push({
+          path,
+          mode: FailureMode.HALLUCINATED_FIELD,
+          actual: valActual,
+          expected: null,
+        });
         continue;
       }
 
       if (typeof valExpected !== typeof valActual && valActual !== null && valExpected !== null) {
         falsePositives++;
         falseNegatives++;
-        failures.push({ 
-          path, 
-          mode: FailureMode.TYPE_MISMATCH, 
-          expected: valExpected, 
-          actual: valActual 
+        failures.push({
+          path,
+          mode: FailureMode.TYPE_MISMATCH,
+          expected: valExpected,
+          actual: valActual,
         });
       } else if (valExpected !== valActual) {
         falsePositives++;
         falseNegatives++;
-        failures.push({ 
-          path, 
-          mode: FailureMode.VALUE_MISMATCH, 
-          expected: valExpected, 
-          actual: valActual 
+        failures.push({
+          path,
+          mode: FailureMode.VALUE_MISMATCH,
+          expected: valExpected,
+          actual: valActual,
         });
       } else {
         // Only count as true positive if it's a real value (not null)
@@ -129,13 +134,11 @@ export function evaluateExtraction(expected: any, actual: any): EvaluationResult
     }
   }
 
-  const precision = truePositives + falsePositives > 0 
-    ? truePositives / (truePositives + falsePositives) 
-    : 0;
-    
-  const recall = truePositives + falseNegatives > 0 
-    ? truePositives / (truePositives + falseNegatives) 
-    : 0;
+  const precision =
+    truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
+
+  const recall =
+    truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
 
   return {
     truePositives,
@@ -143,6 +146,6 @@ export function evaluateExtraction(expected: any, actual: any): EvaluationResult
     falseNegatives,
     precision,
     recall,
-    failures
+    failures,
   };
 }

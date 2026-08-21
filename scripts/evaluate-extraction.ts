@@ -10,7 +10,11 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pdfParse from 'pdf-parse';
 import { FixtureExtractor } from '../services/api/src/extraction/fixture-extractor.js';
-import { evaluateExtraction, FailureMode, Failure } from '../services/api/src/extraction/evaluator.js';
+import {
+  evaluateExtraction,
+  FailureMode,
+  Failure,
+} from '../services/api/src/extraction/evaluator.js';
 import type { ExtractionRequest } from '../services/api/src/extraction/llm-document-extractor.js';
 
 // Load environment
@@ -35,29 +39,29 @@ async function main() {
     process.exit(1);
   }
 
-  const files = fs.readdirSync(fixturesDir).filter(f => f.endsWith('.json'));
-  
+  const files = fs.readdirSync(fixturesDir).filter((f) => f.endsWith('.json'));
+
   let totalTP = 0;
   let totalFP = 0;
   let totalFN = 0;
   const allFailures: (Failure & { document: string })[] = [];
-  
+
   // Use fixture extractor for now to guarantee deterministic results for the test.
   // In a real run, this would be replaced with OpenAIExtractor or AnthropicExtractor.
   const extractor = new FixtureExtractor();
 
   for (const file of files) {
     console.log(`\n📄 Evaluating: ${file}`);
-    
+
     // Parse the expected label
     const expectedContent = fs.readFileSync(path.join(fixturesDir, file), 'utf8');
     const expected = JSON.parse(expectedContent);
-    
+
     // Infer the document path
     // E.g. payslip-clean-01.json -> clean-01/payslip.pdf
     let docType = 'payslip';
     let docDir = file.replace('.json', '');
-    
+
     if (file.startsWith('payslip-')) {
       docType = 'payslip';
       docDir = file.replace('payslip-', '').replace('.json', '');
@@ -65,10 +69,10 @@ async function main() {
       docType = 'form16';
       docDir = file.replace('form16-', '').replace('.json', '');
     }
-    
+
     const pdfPath = path.join(documentsDir, docDir, `${docType}.pdf`);
     let pdfText = '';
-    
+
     if (fs.existsSync(pdfPath)) {
       try {
         const pdfBuffer = fs.readFileSync(pdfPath);
@@ -76,12 +80,12 @@ async function main() {
         pdfText = pdfData.text;
       } catch (err) {
         console.warn(`   ⚠️ Error parsing PDF at ${pdfPath}: ${(err as Error).message}`);
-        pdfText = "mock text fallback";
+        pdfText = 'mock text fallback';
       }
     } else {
       console.warn(`   ⚠️ Source PDF not found at ${pdfPath}, skipping extraction logic...`);
       // We still run evaluation by simulating actual extraction equal to expected
-      pdfText = "mock text";
+      pdfText = 'mock text';
     }
 
     // Prepare extraction request
@@ -90,7 +94,7 @@ async function main() {
       documentKind: docType as any,
       documentContent: pdfText,
       mimeType: 'application/pdf',
-      schemaVersion: expected.schema_version || `${docType}-v1`
+      schemaVersion: expected.schema_version || `${docType}-v1`,
     };
 
     // Run extraction
@@ -105,16 +109,18 @@ async function main() {
 
     // Evaluate
     const evalResult = evaluateExtraction(expected, actualResult);
-    
+
     totalTP += evalResult.truePositives;
     totalFP += evalResult.falsePositives;
     totalFN += evalResult.falseNegatives;
-    
-    evalResult.failures.forEach(f => {
+
+    evalResult.failures.forEach((f) => {
       allFailures.push({ ...f, document: file });
     });
 
-    console.log(`   ✓ Precision: ${(evalResult.precision * 100).toFixed(1)}% | Recall: ${(evalResult.recall * 100).toFixed(1)}%`);
+    console.log(
+      `   ✓ Precision: ${(evalResult.precision * 100).toFixed(1)}% | Recall: ${(evalResult.recall * 100).toFixed(1)}%`,
+    );
     if (evalResult.failures.length > 0) {
       console.log(`   ⚠️ ${evalResult.failures.length} failures detected.`);
     }
@@ -124,32 +130,32 @@ async function main() {
   console.log('\n=============================================================');
   console.log('📊 AGGREGATE RELIABILITY METRICS (OVER LABELLED CORPUS)');
   console.log('=============================================================');
-  
+
   const overallPrecision = totalTP + totalFP > 0 ? totalTP / (totalTP + totalFP) : 0;
   const overallRecall = totalTP + totalFN > 0 ? totalTP / (totalTP + totalFN) : 0;
-  
+
   console.log(`Total True Positives  : ${totalTP}`);
   console.log(`Total False Positives : ${totalFP}`);
   console.log(`Total False Negatives : ${totalFN}`);
   console.log(`Overall Precision     : ${(overallPrecision * 100).toFixed(2)}%`);
   console.log(`Overall Recall        : ${(overallRecall * 100).toFixed(2)}%`);
-  
+
   console.log('\n⚠️ CATEGORISED FAILURE MODES:');
   const failureCounts: Record<string, number> = {
     [FailureMode.MISSING_FIELD]: 0,
     [FailureMode.HALLUCINATED_FIELD]: 0,
     [FailureMode.VALUE_MISMATCH]: 0,
-    [FailureMode.TYPE_MISMATCH]: 0
+    [FailureMode.TYPE_MISMATCH]: 0,
   };
-  
-  allFailures.forEach(f => {
+
+  allFailures.forEach((f) => {
     failureCounts[f.mode]++;
   });
-  
+
   Object.entries(failureCounts).forEach(([mode, count]) => {
     console.log(`- ${mode}: ${count}`);
   });
-  
+
   if (allFailures.length > 0) {
     console.log('\nTop 5 Failure Examples:');
     allFailures.slice(0, 5).forEach((f, idx) => {
@@ -160,7 +166,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('Fatal evaluation error:', err);
   process.exit(1);
 });
