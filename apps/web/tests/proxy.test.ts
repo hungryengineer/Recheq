@@ -19,9 +19,17 @@ let proxyFn: (request: NextRequest) => Promise<Response>;
 let signToken: (payload: { userId: string; orgId: string; role: string }) => Promise<string>;
 
 beforeAll(async () => {
-  process.env.JWT_SECRET ??= TEST_SECRET;
-  ({ proxy: proxyFn } = await import('../src/proxy.js'));
-  ({ signToken } = await import('@tieout/api/src/security/jwt.js'));
+  try {
+    process.env.JWT_SECRET ??= TEST_SECRET;
+    ({ proxy: proxyFn } = await import('../src/proxy.js'));
+    ({ signToken } = await import('@tieout/api/src/security/jwt.js'));
+  } catch (cause) {
+    throw new Error(
+      'proxy test setup failed: could not load proxy or jwt modules — ' +
+        'check that JWT_SECRET is set and @tieout/api is built',
+      { cause },
+    );
+  }
 });
 
 function req(path: string, sessionCookie?: string): NextRequest {
@@ -79,18 +87,22 @@ describe('RCQ-20110 — route protection proxy', () => {
   describe('R5.2 token-authenticated routes bypass session middleware', () => {
     it('lets /c/<token> through with no session at all', async () => {
       const response = await proxyFn(req('/c/some-candidate-token'));
-      expect([200, 307]).toContain(response.status);
+      expect(response.status).toBe(200);
       expect(response.headers.get('location')).toBeNull();
     });
 
     it('lets /e/<token> through untouched', async () => {
       const response = await proxyFn(req('/e/some-employer-token'));
+      expect(response.status).toBe(200);
       expect(response.headers.get('location')).toBeNull();
     });
 
     it('still passes /c/<token> through even with a garbage cookie', async () => {
       const response = await proxyFn(req('/c/tok', 'not.a.jwt'));
+      expect(response.status).toBe(200);
       expect(response.headers.get('location')).toBeNull();
+      // Token routes are session-free: no cookie mutation may be emitted.
+      expect(response.headers.getSetCookie()).toHaveLength(0);
     });
   });
 
@@ -134,7 +146,10 @@ describe('RCQ-20110 — route protection proxy', () => {
       '/\\evil.com',
       '\\\\evil.com',
       'javascript:alert(1)',
-    ])('ignores next=%s and falls back to /cases', async (next) => {
+      '/\n/evil.example',
+      '/\r/evil.example',
+      '/\t/evil.example',
+    ])('ignores next=%j and falls back to /cases', async (next) => {
       const token = await signToken({
         userId: 'u1',
         orgId: 'o1',
@@ -148,8 +163,18 @@ describe('RCQ-20110 — route protection proxy', () => {
 
     it('exports a guard that rejects cross-host shapes only', async () => {
       const { isSafeRelativePath } = await import('../src/lib/safe-path.js');
-      for (const bad of ['https://x.com', '//x.com', '/\\x.com', '\\x.com', '']) {
-        expect(isSafeRelativePath(bad)).toBe(false);
+      const bad = [
+        'https://x.com',
+        '//x.com',
+        '/\\x.com',
+        '\\x.com',
+        '',
+        '/\n/x.com',
+        '/\r/x.com',
+        '/\t/x.com',
+      ];
+      for (const path of bad) {
+        expect(isSafeRelativePath(path)).toBe(false);
       }
       for (const good of ['/', '/cases', '/cases/1?x=2', '/settings#a']) {
         expect(isSafeRelativePath(good)).toBe(true);
