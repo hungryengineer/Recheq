@@ -749,7 +749,7 @@ components:
                   type: object
                   properties:
                     provider: { type: string, example: openai }
-                    model_version: { type: string, example: gpt-4o-2024-08-06 }
+                    model_version: { type: string, nullable: true, example: gpt-4o-2024-08-06 }
 
     Finding:
       type: object
