@@ -34,5 +34,7 @@ export function isUpdateCaseError(result: UpdateCaseResult): result is CreateCas
 }
 
 export function isActionError(result: unknown): result is ActionError {
-  return typeof result === 'object' && result !== null && 'error' in (result as Record<string, unknown>);
+  return (
+    typeof result === 'object' && result !== null && 'error' in (result as Record<string, unknown>)
+  );
 }
