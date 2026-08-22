@@ -22,6 +22,9 @@ function toCaseSummary(row: CaseRow): CaseSummary {
   };
 }
 
+import { AuditService } from '../audit/audit-service.js';
+import { DbAuditRepository } from '../audit/db-audit-repository.js';
+
 /**
  * Production adapter that backs the case service with the real database.
  * Drizzle numeric columns come back as strings and timestamps as Date objects,
@@ -69,6 +72,26 @@ export function createCaseDeps(db: Database): CaseServiceDeps {
           .where(and(eq(cases.id, caseId), eq(cases.org_id, orgId)))
           .limit(1);
         return rows[0] ? toCaseRecord(rows[0]) : null;
+      },
+      async updateCaseDetails(tx, caseId, input) {
+        const queryBuilder = (tx as Database) ?? db;
+        await queryBuilder
+          .update(cases)
+          .set({
+            ...input,
+            claimed_ctc: input.claimed_ctc !== undefined ? String(input.claimed_ctc) : undefined,
+            updated_at: new Date(),
+          })
+          .where(eq(cases.id, caseId));
+      },
+      async transaction(cb) {
+        return await db.transaction(async (tx) => cb(tx));
+      },
+    },
+    audit: {
+      async appendEvent(tx, input) {
+        const auditService = new AuditService(new DbAuditRepository(db));
+        return await auditService.appendEvent(tx, input);
       },
     },
   };

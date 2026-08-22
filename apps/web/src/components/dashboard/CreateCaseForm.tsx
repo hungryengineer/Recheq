@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createCase } from '../../lib/api/actions';
 import { isCreateCaseError } from '../../lib/api/actions-types';
+import { CaseCreateInput } from '@tieout/schema';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, QrCode } from 'lucide-react';
 
@@ -35,9 +36,28 @@ export function CreateCaseForm() {
       uan: (formData.get('uan') as string) || undefined,
     };
 
+    // Client-side validation (KAN-64)
+    const parsed = CaseCreateInput.safeParse(input);
+    if (!parsed.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        errors[issue.path.join('.')] = issue.message;
+      }
+      setFieldErrors(errors);
+      setIsSubmitting(false);
+
+      // Accessibility focus on first invalid field
+      if (parsed.error.issues.length > 0) {
+        const firstField = parsed.error.issues[0].path[0];
+        const element = document.getElementById(String(firstField));
+        if (element) element.focus();
+      }
+      return;
+    }
+
     try {
       // createCase is a Server Action
-      const result = await createCase(input);
+      const result = await createCase(parsed.data);
 
       if (isCreateCaseError(result)) {
         const { error } = result;

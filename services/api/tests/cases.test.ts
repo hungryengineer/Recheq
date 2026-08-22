@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createCase,
+  updateCase,
   listCases,
   getCase,
   type CaseServiceDeps,
@@ -12,8 +13,13 @@ describe('Case Service', () => {
   const mockDeps: CaseServiceDeps = {
     db: {
       createCase: vi.fn(),
+      updateCaseDetails: vi.fn(),
       listCasesByOrg: vi.fn(),
       getCaseByIdAndOrg: vi.fn(),
+      transaction: vi.fn(async (cb) => cb('mock-tx')),
+    },
+    audit: {
+      appendEvent: vi.fn(),
     },
   };
 
@@ -129,6 +135,63 @@ describe('Case Service', () => {
           orgId,
           mockDeps,
         ),
+      ).rejects.toThrowError(AppError);
+    });
+  });
+
+  describe('updateCase', () => {
+    it('updates case fields and writes an audit event', async () => {
+      const mockCase = {
+        id: 'case-1',
+        org_id: orgId,
+        employment_start: '2020-01-01',
+        employment_end: '2023-01-01',
+      } as CaseRecord;
+      vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
+
+      const updateInput = {
+        title: 'New Title',
+      };
+
+      await updateCase('case-1', updateInput, userId, orgId, mockDeps);
+
+      expect(mockDeps.db.updateCaseDetails).toHaveBeenCalledWith('mock-tx', 'case-1', updateInput);
+      expect(mockDeps.audit.appendEvent).toHaveBeenCalledWith('mock-tx', {
+        case_id: 'case-1',
+        kind: 'case_updated',
+        payload: { changes: updateInput },
+        actor: userId,
+      });
+    });
+
+    it('rejects end date before start date', async () => {
+      const mockCase = {
+        id: 'case-1',
+        org_id: orgId,
+        employment_start: '2020-01-01',
+        employment_end: '2023-01-01',
+      } as CaseRecord;
+      vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
+
+      await expect(
+        updateCase('case-1', { employment_end: '2019-01-01' }, userId, orgId, mockDeps),
+      ).rejects.toThrowError(AppError);
+    });
+
+    it('throws 404 when case not found', async () => {
+      vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(null);
+
+      await expect(
+        updateCase('case-1', { title: 'New' }, userId, orgId, mockDeps),
+      ).rejects.toThrowError(AppError);
+    });
+
+    it('rejects invalid schema inputs', async () => {
+      const mockCase = { id: 'case-1', org_id: orgId } as CaseRecord;
+      vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
+
+      await expect(
+        updateCase('case-1', { claimed_ctc: -100 }, userId, orgId, mockDeps),
       ).rejects.toThrowError(AppError);
     });
   });

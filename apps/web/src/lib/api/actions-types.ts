@@ -23,3 +23,10 @@ export type CreateCaseResult = CreateCaseSuccess | CreateCaseError;
 export function isCreateCaseError(result: CreateCaseResult): result is CreateCaseError {
   return 'error' in result;
 }
+
+export type UpdateCaseSuccess = { message?: string };
+export type UpdateCaseResult = UpdateCaseSuccess | CreateCaseError;
+
+export function isUpdateCaseError(result: UpdateCaseResult): result is CreateCaseError {
+  return 'error' in result;
+}

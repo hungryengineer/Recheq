@@ -1,4 +1,10 @@
-import { CaseCreateInput, type CaseRecord, type CaseSummary } from '@tieout/schema';
+import {
+  CaseCreateInput,
+  type CaseRecord,
+  type CaseSummary,
+  type EventInput,
+  type EventRecord,
+} from '@tieout/schema';
 import { validationError, notFoundError } from '../../http/errors.js';
 
 // Minimal interface for database operations we need in this service,
@@ -8,8 +14,29 @@ export interface CaseServiceDeps {
     createCase: (
       input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>,
     ) => Promise<CaseRecord>;
+    updateCaseDetails: (
+      tx: unknown,
+      caseId: string,
+      input: Partial<
+        Omit<
+          CaseRecord,
+          | 'id'
+          | 'org_id'
+          | 'created_by'
+          | 'created_at'
+          | 'updated_at'
+          | 'status'
+          | 'verdict'
+          | 'risk_score'
+        >
+      >,
+    ) => Promise<void>;
     listCasesByOrg: (orgId: string) => Promise<CaseSummary[]>;
     getCaseByIdAndOrg: (caseId: string, orgId: string) => Promise<CaseRecord | null>;
+    transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
+  };
+  audit: {
+    appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
   };
 }
 
@@ -51,6 +78,52 @@ export async function createCase(
   };
 
   return await deps.db.createCase(recordToCreate);
+}
+
+export async function updateCase(
+  caseId: string,
+  input: unknown,
+  userId: string,
+  orgId: string,
+  deps: CaseServiceDeps,
+): Promise<void> {
+  const caseRecord = await deps.db.getCaseByIdAndOrg(caseId, orgId);
+  if (!caseRecord) {
+    throw notFoundError(`Case ${caseId} not found`);
+  }
+
+  // We lazily import CaseUpdateInput to avoid circular issues, or use it directly if imported.
+  // We'll import it at the top of the file via the schema package.
+  const parsed = (await import('@tieout/schema')).CaseUpdateInput.safeParse(input);
+  if (!parsed.success) {
+    throw validationError('Invalid case update input', parsed.error.errors);
+  }
+  const data = parsed.data;
+
+  if (Object.keys(data).length === 0) {
+    return; // nothing to update
+  }
+
+  // If employment dates are being updated, ensure end >= start
+  const startRaw = data.employment_start ?? caseRecord.employment_start;
+  const endRaw = data.employment_end ?? caseRecord.employment_end;
+  const start = new Date(startRaw);
+  const end = new Date(endRaw);
+  if (end < start) {
+    throw validationError('Employment end date cannot be before start date');
+  }
+
+  await deps.db.transaction(async (tx) => {
+    await deps.db.updateCaseDetails(tx, caseId, data);
+
+    // Write audit trail entry
+    await deps.audit.appendEvent(tx, {
+      case_id: caseId,
+      kind: 'case_updated',
+      payload: { changes: data },
+      actor: userId, // The user performing the edit
+    });
+  });
 }
 
 export async function listCases(orgId: string, deps: CaseServiceDeps): Promise<CaseSummary[]> {
