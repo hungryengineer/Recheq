@@ -65,6 +65,26 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
+      # Pulled settings carry the dashboard Root Directory; we already run
+      # inside apps/web, so a non-empty rootDirectory double-prefixes paths
+      # (apps/web/apps/web/.next) and breaks output collection.
+      - name: '🧹 Scrub rootDirectory from pulled settings'
+        working-directory: apps/web
+        run: |
+          node -e "
+            const fs = require('fs');
+            const f = '.vercel/project.json';
+            const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+            const scrub = (o) => {
+              if (o && typeof o === 'object') {
+                delete o.rootDirectory;
+                for (const v of Object.values(o)) scrub(v);
+              }
+            };
+            scrub(j);
+            fs.writeFileSync(f, JSON.stringify(j));
+          "
+
       - name: 🏗️ Build with Vercel
         working-directory: apps/web
         run: npx vercel@50 build --prod --token="$VERCEL_TOKEN"
