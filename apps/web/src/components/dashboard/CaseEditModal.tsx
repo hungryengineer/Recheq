@@ -93,8 +93,10 @@ export function CaseEditModal({ caseRecord, onClose }: CaseEditModalProps) {
             Edit Case Details
           </h2>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] transition-colors"
+            disabled={isSubmitting}
+            className="p-1 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] transition-colors disabled:opacity-50"
             aria-label="Close"
           >
             <X className="w-5 h-5" />

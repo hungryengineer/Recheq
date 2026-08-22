@@ -104,88 +104,128 @@ export function CreateCaseForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+            <label
+              htmlFor="candidate_name"
+              className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+            >
               Candidate name
             </label>
             <input
               type="text"
+              id="candidate_name"
               name="candidate_name"
+              aria-describedby={fieldErrors.candidate_name ? 'candidate_name-error' : undefined}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.candidate_name ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.candidate_name && (
-              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.candidate_name}</p>
+              <p id="candidate_name-error" className="mt-1 text-sm text-[var(--color-high)]">
+                {fieldErrors.candidate_name}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+            <label
+              htmlFor="candidate_email"
+              className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+            >
               Candidate email
             </label>
             <input
               type="email"
+              id="candidate_email"
               name="candidate_email"
+              aria-describedby={fieldErrors.candidate_email ? 'candidate_email-error' : undefined}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.candidate_email ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.candidate_email && (
-              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.candidate_email}</p>
+              <p id="candidate_email-error" className="mt-1 text-sm text-[var(--color-high)]">
+                {fieldErrors.candidate_email}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+            <label
+              htmlFor="employer_name"
+              className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+            >
               Claimed employer
             </label>
             <input
               type="text"
+              id="employer_name"
               name="employer_name"
+              aria-describedby={fieldErrors.employer_name ? 'employer_name-error' : undefined}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employer_name ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.employer_name && (
-              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.employer_name}</p>
+              <p id="employer_name-error" className="mt-1 text-sm text-[var(--color-high)]">
+                {fieldErrors.employer_name}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+            >
               Title
             </label>
             <input
               type="text"
+              id="title"
               name="title"
+              aria-describedby={fieldErrors.title ? 'title-error' : undefined}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.title ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.title && (
-              <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.title}</p>
+              <p id="title-error" className="mt-1 text-sm text-[var(--color-high)]">
+                {fieldErrors.title}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              <label
+                htmlFor="employment_start"
+                className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+              >
                 Start date
               </label>
               <input
                 type="date"
+                id="employment_start"
                 name="employment_start"
+                aria-describedby={
+                  fieldErrors.employment_start ? 'employment_start-error' : undefined
+                }
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employment_start ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.employment_start && (
-                <p className="mt-1 text-sm text-[var(--color-high)]">
+                <p id="employment_start-error" className="mt-1 text-sm text-[var(--color-high)]">
                   {fieldErrors.employment_start}
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              <label
+                htmlFor="employment_end"
+                className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+              >
                 End date
               </label>
               <input
                 type="date"
+                id="employment_end"
                 name="employment_end"
+                aria-describedby={fieldErrors.employment_end ? 'employment_end-error' : undefined}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employment_end ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.employment_end && (
-                <p className="mt-1 text-sm text-[var(--color-high)]">
+                <p id="employment_end-error" className="mt-1 text-sm text-[var(--color-high)]">
                   {fieldErrors.employment_end}
                 </p>
               )}
@@ -194,29 +234,43 @@ export function CreateCaseForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              <label
+                htmlFor="claimed_ctc"
+                className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+              >
                 Claimed CTC (annual)
               </label>
               <input
                 type="number"
+                id="claimed_ctc"
                 name="claimed_ctc"
+                aria-describedby={fieldErrors.claimed_ctc ? 'claimed_ctc-error' : undefined}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.claimed_ctc ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.claimed_ctc && (
-                <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.claimed_ctc}</p>
+                <p id="claimed_ctc-error" className="mt-1 text-sm text-[var(--color-high)]">
+                  {fieldErrors.claimed_ctc}
+                </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1">
+              <label
+                htmlFor="uan"
+                className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1"
+              >
                 UAN (optional)
               </label>
               <input
                 type="text"
+                id="uan"
                 name="uan"
+                aria-describedby={fieldErrors.uan ? 'uan-error' : undefined}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.uan ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.uan && (
-                <p className="mt-1 text-sm text-[var(--color-high)]">{fieldErrors.uan}</p>
+                <p id="uan-error" className="mt-1 text-sm text-[var(--color-high)]">
+                  {fieldErrors.uan}
+                </p>
               )}
             </div>
           </div>
