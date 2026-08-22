@@ -70,5 +70,15 @@ We maintain strict engineering standards. Before opening a PR, ensure you:
 
 For detailed architectural guidelines and team workflows, please refer to the [Project Constitution](docs/CONSTITUTION.md).
 
+## 👨‍💻 Core Engineering Team
+
+Recheq.bvg was architected and built by a dedicated team of engineers, with development officially kicking off on **August 14th, 2026**.
+
+| Name | Role |
+| :--- | :--- |
+| **Guddu Kumar Yadav** | Developer (Frontend & Core Product) |
+| **Sachin** | Developer (Backend & Architecture) |
+| **Anshuman** | AI & ML Ops (Extraction & Forensics) |
+
 ---
 *Built with ❤️ for a more trustworthy world.*
