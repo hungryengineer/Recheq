@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { generateToken } from '../src/tokens/generate-token.js';
 import type { TokenRecord } from '../src/tokens/verify-token.js';
 import {
@@ -17,6 +17,40 @@ describe('generateToken', () => {
     // 32 bytes base64url encoded is exactly 43 characters, plus prefix length (4) = 47
     expect(rawToken.length).toBe(47);
     expect(tokenHash).toHaveLength(64); // SHA-256 hex length
+  });
+});
+
+import { signToken, _clearSecretKeyForTest } from '../src/security/jwt.js';
+
+describe('JWT Secret Validation', () => {
+  const originalSecret = process.env.JWT_SECRET;
+
+  afterEach(() => {
+    process.env.JWT_SECRET = originalSecret;
+    _clearSecretKeyForTest();
+  });
+
+  it('throws an error if JWT_SECRET is not set', async () => {
+    delete process.env.JWT_SECRET;
+    _clearSecretKeyForTest();
+    await expect(signToken({ userId: 'u1', orgId: 'o1', role: 'admin' })).rejects.toThrow(
+      /missing or less than 32 characters/,
+    );
+  });
+
+  it('throws an error if JWT_SECRET is 31 characters', async () => {
+    process.env.JWT_SECRET = 'a'.repeat(31);
+    _clearSecretKeyForTest();
+    await expect(signToken({ userId: 'u1', orgId: 'o1', role: 'admin' })).rejects.toThrow(
+      /missing or less than 32 characters/,
+    );
+  });
+
+  it('succeeds if JWT_SECRET is exactly 32 characters', async () => {
+    process.env.JWT_SECRET = 'a'.repeat(32);
+    _clearSecretKeyForTest();
+    const token = await signToken({ userId: 'u1', orgId: 'o1', role: 'admin' });
+    expect(typeof token).toBe('string');
   });
 });
 
