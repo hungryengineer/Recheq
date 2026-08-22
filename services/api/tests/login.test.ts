@@ -25,7 +25,7 @@ describe('loginHandler', () => {
 
   it('rejects with 400 if client IP is missing', async () => {
     const req = { body: { email: 'test@example.com', password: 'password123' } };
-    const response = await loginHandler(req as any, { repo: mockRepo });
+    const response = await loginHandler(req as { body: unknown; ip?: string }, { repo: mockRepo });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
@@ -102,7 +102,7 @@ describe('loginHandler', () => {
       ip: mockIp,
     };
 
-    const measureTime = async (req: any) => {
+    const measureTime = async (req: { body: unknown; ip?: string }) => {
       _clearLoginRateLimitsForTest();
       const start = process.hrtime.bigint();
       const response = await loginHandler(req, { repo: mockRepo });
