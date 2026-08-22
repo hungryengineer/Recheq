@@ -269,9 +269,6 @@ function validateEpfo(raw: Record<string, unknown>, caseId: string): EpfoHistory
 }
 
 function validateForensics(raw: Record<string, unknown>, caseId: string): ForensicsData {
-  const fail = (msg: string): never => {
-    throw new ExtractionError(caseId, `_forensics side-data is malformed: ${msg}`);
-  };
   const fontRunsRaw = raw['font_runs'];
   let fontRuns: ForensicsData['font_runs'] = null;
   if (fontRunsRaw !== null) {
