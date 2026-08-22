@@ -1,8 +1,5 @@
 import type PgBoss from 'pg-boss';
 import { getPgBoss } from '../workflows/pgboss.js';
-import { createDb } from '../db/client.js';
-import { eq } from 'drizzle-orm';
-import { cases } from '../db/schema/cases.js';
 
 export interface JobContext {
   case_id: string;
@@ -11,33 +8,9 @@ export interface JobContext {
   [key: string]: unknown;
 }
 
-let db: ReturnType<typeof createDb>;
-
-async function processCaseJob(jobs: PgBoss.Job[]): Promise<void> {
-  for (const job of jobs) {
-    const { case_id, org_id } = job.data as unknown as JobContext;
-    console.log('case processing started', { case_id, org_id });
-
-    if (!db) db = createDb(process.env.DATABASE_URL!);
-    const caseRecord = await db.select().from(cases).where(eq(cases.id, case_id)).limit(1);
-
-    if (!caseRecord.length) {
-      throw new Error(`Case not found: ${case_id}`);
-    }
-
-    // Update status to processing
-    await db
-      .update(cases)
-      .set({
-        status: 'processing',
-        updated_at: new Date(),
-      })
-      .where(eq(cases.id, case_id));
-
-    // Placeholder for actual processing logic
-    console.log('case processing completed', { case_id });
-  }
-}
+// Case processing runs in-process from the submit route (see
+// apps/web/src/lib/server/process.ts) rather than through pg-boss, per the
+// platform decision. This worker only owns employer/retention/webhook jobs.
 
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
 async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
@@ -64,7 +37,6 @@ export async function startWorkers(): Promise<void> {
       );
 
     await Promise.all([
-      startQueue('case_processing', 4, processCaseJob),
       startQueue('employer_workflow', 2, processEmployerJob),
       startQueue('retention_cleanup', 1, retentionJob),
       startQueue('webhook_delivery', 3, webhookJob),
