@@ -1,10 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
 import { apiClient, ApiError } from './client';
-import type { CreateCaseResult, CreateCaseError, CreateCaseSuccess, UpdateCaseResult, UpdateCaseSuccess } from './actions-types';
+import type {
+  CreateCaseResult,
+  CreateCaseError,
+  CreateCaseSuccess,
+  UpdateCaseResult,
+  UpdateCaseSuccess,
+} from './actions-types';
 
 // Re-export types only — value exports (non-async functions) are not allowed in 'use server' files
 export type {
