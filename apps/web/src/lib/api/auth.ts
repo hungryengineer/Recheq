@@ -88,7 +88,7 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
     return { success: true, data };
   } catch (error) {
-    console.error('Login action error:', error);
+    console.error('Login action error:', error instanceof Error ? error.stack : error);
     return { success: false, error: 'An unexpected error occurred. Please try again later.' };
   }
 }
@@ -124,7 +124,7 @@ export async function ssoLoginAction(): Promise<AuthActionResult> {
     });
     return { success: true, data };
   } catch (error) {
-    console.error('SSO Login action error:', error);
+    console.error('SSO Login action error:', error instanceof Error ? error.stack : error);
     return { success: false, error: 'SSO Login failed' };
   }
 }
@@ -143,7 +143,7 @@ export async function forgotPasswordAction(_email: string): Promise<AuthActionRe
 
     return { success: true };
   } catch (error) {
-    console.error('Forgot password action error:', error);
+    console.error('Forgot password action error:', error instanceof Error ? error.stack : error);
     return { success: false, error: 'An unexpected error occurred. Please try again later.' };
   }
 }
@@ -166,7 +166,7 @@ export async function resetPasswordAction(
 
     return { success: true };
   } catch (error) {
-    console.error('Reset password action error:', error);
+    console.error('Reset password action error:', error instanceof Error ? error.stack : error);
     return { success: false, error: 'An unexpected error occurred. Please try again later.' };
   }
 }
@@ -219,7 +219,7 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
 
     return { success: true, data };
   } catch (error) {
-    console.error('Signup action error:', error);
+    console.error('Signup action error:', error instanceof Error ? error.stack : error);
     return { success: false, error: 'An unexpected error occurred. Please try again later.' };
   }
 }
