@@ -70,16 +70,22 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
           startedAt,
           completedAt: new Date(),
         };
-      } else {
-        return {
-          state: 'failed',
-          artifact: null,
-          reason: result.error ?? 'Failed to sync EPFO history',
-          provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
-          startedAt,
-          completedAt: new Date(),
-        };
       }
+      // R1.16: a declared source that is unavailable — no history found OR
+      // the provider call failing/rejecting (absorbed by syncEpfoHistory per
+      // BE-11 "provider failure causes dependent rules to be not assessed") —
+      // is final unavailability: mark not_assessed with a candidate-safe
+      // reason, never failed, never an undeclared fallback. Only faults
+      // outside the provider contract (e.g. persistence errors) throw and
+      // take the R1.10 catch path below.
+      return {
+        state: 'not_assessed',
+        artifact: null,
+        reason: 'Employment history could not be verified right now',
+        provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
+        startedAt,
+        completedAt: new Date(),
+      };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`Raw EPFO error for case ${caseId}: ${msg}`);

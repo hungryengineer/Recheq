@@ -59,11 +59,20 @@ class RollingRateLimiter {
     this.store.set(key, attempts);
     return { allowed: true };
   }
+
+  clear(): void {
+    this.store.clear();
+  }
 }
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const emailLimits = new RollingRateLimiter(WINDOW_MS, 10000);
 const ipLimits = new RollingRateLimiter(WINDOW_MS, 10000);
+
+export function _clearLoginRateLimitsForTest() {
+  emailLimits.clear();
+  ipLimits.clear();
+}
 
 const EMAIL_MAX_ATTEMPTS = 5;
 const IP_MAX_ATTEMPTS = 20;
@@ -75,9 +84,20 @@ function hashEmail(email: string): string {
 
 import { toErrorResponse } from '../../http/errors.js';
 
+export interface LoginRepository {
+  getUserByEmail(email: string): Promise<{
+    id: string;
+    name: string | null;
+    email: string;
+    password_hash: string | null;
+    org_id: string;
+    role: string;
+  } | null>;
+}
+
 export async function loginHandler(
   req: { body: unknown; ip?: string },
-  deps: { db: Database },
+  deps: { repo: LoginRepository } | { db: Database },
 ): Promise<{
   status: number;
   body: LoginResponse | { error: { code: string; message: string } };
@@ -132,8 +152,19 @@ export async function loginHandler(
       };
     }
 
+    const fetchUser =
+      'repo' in deps
+        ? (emailStr: string) => deps.repo.getUserByEmail(emailStr)
+        : async (emailStr: string) => {
+            const [u] = await deps.db
+              .select()
+              .from(schema.users)
+              .where(eq(schema.users.email, emailStr));
+            return u || null;
+          };
+
     // Find user by email
-    const [user] = await deps.db.select().from(schema.users).where(eq(schema.users.email, email));
+    const user = await fetchUser(email);
 
     // R6.1: Always perform bcrypt comparison to eliminate timing oracle.
     // If no user exists, compare against the dummy hash so the timing
@@ -161,7 +192,7 @@ export async function loginHandler(
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: user.name ?? undefined,
           role: user.role,
         },
       },

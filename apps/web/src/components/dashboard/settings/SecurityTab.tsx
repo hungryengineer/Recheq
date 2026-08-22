@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { UAParser } from 'ua-parser-js';
+import { updatePasswordAction } from '@/lib/api/settings';
 
 export function SecurityTab() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -14,6 +15,7 @@ export function SecurityTab() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [activeSessions, setActiveSessions] = useState([
     { id: 'current', device: 'Loading...', location: 'Loading...', isCurrent: true },
@@ -45,17 +47,27 @@ export function SecurityTab() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
+    setErrors({});
     setIsUpdatingPassword(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const result = await updatePasswordAction({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      if (result && 'error' in result) {
+        if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {
+          const newErrors: Record<string, string> = {};
+          result.error.details.fields.forEach((field) => {
+            newErrors[field.path] = field.message;
+          });
+          setErrors(newErrors);
+        } else {
+          toast.error(result.error.message || 'Failed to update password');
+        }
+        return;
+      }
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -128,9 +140,15 @@ export function SecurityTab() {
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  aria-invalid={!!errors.currentPassword}
+                  className={`w-full px-3 py-2 bg-[var(--color-surface)] border ${
+                    errors.currentPassword ? 'border-red-500' : 'border-[var(--color-border)]'
+                  } rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
                   placeholder="Enter current password"
                 />
+                {errors.currentPassword && (
+                  <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label
@@ -144,9 +162,15 @@ export function SecurityTab() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  aria-invalid={!!errors.newPassword}
+                  className={`w-full px-3 py-2 bg-[var(--color-surface)] border ${
+                    errors.newPassword ? 'border-red-500' : 'border-[var(--color-border)]'
+                  } rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
                   placeholder="Enter new password"
                 />
+                {errors.newPassword && (
+                  <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label
@@ -160,9 +184,15 @@ export function SecurityTab() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  aria-invalid={!!errors.confirmPassword}
+                  className={`w-full px-3 py-2 bg-[var(--color-surface)] border ${
+                    errors.confirmPassword ? 'border-red-500' : 'border-[var(--color-border)]'
+                  } rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
                   placeholder="Confirm new password"
                 />
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                )}
               </div>
               <div className="pt-2">
                 <button

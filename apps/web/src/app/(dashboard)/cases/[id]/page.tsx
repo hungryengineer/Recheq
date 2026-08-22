@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getCaseDetails } from '@/lib/api/cases';
 import { FindingCard } from '@/components/dashboard/FindingCard';
+import { EditCaseButton } from '@/components/dashboard/EditCaseButton';
 import type {} from '@/components/dashboard/FindingCard';
 import type { CaseRecord, FindingRecord } from '@tieout/schema';
 
@@ -106,7 +107,10 @@ export default async function CaseDetailsPage({ params }: PageProps) {
               {caseRecord.title} at {caseRecord.employer_name}
             </p>
           </div>
-          <div>{caseRecord.verdict && <Badge verdict={caseRecord.verdict} />}</div>
+          <div className="flex items-center gap-3">
+            {caseRecord.verdict && <Badge verdict={caseRecord.verdict} />}
+            <EditCaseButton caseRecord={caseRecord} />
+          </div>
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser } from '@/contexts/UserContext';
+import { updateProfileAction } from '@/lib/api/settings';
 
 export function ProfileTab() {
   const [isSaving, setIsSaving] = useState(false);
@@ -16,6 +17,7 @@ export function ProfileTab() {
     name: name,
     email: email,
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,9 +34,21 @@ export function ProfileTab() {
 
   const handleSave = async () => {
     setIsSaving(true);
+    setErrors({});
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const result = await updateProfileAction(formData);
+      if ('error' in result) {
+        if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {
+          const newErrors: Record<string, string> = {};
+          result.error.details.fields.forEach((field) => {
+            newErrors[field.path] = field.message;
+          });
+          setErrors(newErrors);
+        } else {
+          toast.error(result.error.message || 'Failed to update profile');
+        }
+        return;
+      }
       setName(formData.name);
       setEmail(formData.email);
       toast.success('Profile updated successfully');
@@ -100,8 +114,12 @@ export function ProfileTab() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              className="max-w-md w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow"
+              aria-invalid={!!errors.name}
+              className={`max-w-md w-full rounded-[var(--radius-control)] border ${
+                errors.name ? 'border-red-500' : 'border-[var(--color-border)]'
+              } px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow`}
             />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
         </div>
 
@@ -120,8 +138,12 @@ export function ProfileTab() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              className="max-w-md w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow"
+              aria-invalid={!!errors.email}
+              className={`max-w-md w-full rounded-[var(--radius-control)] border ${
+                errors.email ? 'border-red-500' : 'border-[var(--color-border)]'
+              } px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow`}
             />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
         </div>
       </div>

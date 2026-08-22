@@ -385,8 +385,10 @@ describe('Step Engine', () => {
     const result = await engine.run({ caseId: '123' });
 
     // The engine run completes quickly because everything timed out.
-    // Every fast step timed out with no successes -> needs_review (R1.12).
-    expect(result.verdict).toBe('needs_review');
+    // Every fast step timed out with no successes -> insufficient_evidence.
+    // R1.11 treats timed_out as not_assessed for verdict purposes, so no
+    // usable evidence was produced and R1.12 mandates insufficient_evidence.
+    expect(result.verdict).toBe('insufficient_evidence');
     expect(result.steps.every((s) => s.state === 'timed_out')).toBe(true);
 
     // Wait until all background steps are completely finished
@@ -396,7 +398,7 @@ describe('Step Engine', () => {
     expect(maxActive).toBeLessThanOrEqual(4);
   });
 
-  it('reports needs_review when every fast step failed or timed out (R1.12)', async () => {
+  it('reports insufficient_evidence when every fast step failed or timed out (R1.11/R1.12)', async () => {
     const mkFail = (id: string) =>
       new FakeStep(
         id,
@@ -412,7 +414,31 @@ describe('Step Engine', () => {
       );
 
     const result = await new Engine([mkFail('a'), mkFail('b')]).run({ caseId: '123' });
-    expect(result.verdict).toBe('needs_review');
+    // R1.12: every step failed or is not_assessed -> insufficient_evidence
+    // and the case must never be marked failed.
+    expect(result.verdict).toBe('insufficient_evidence');
+  });
+
+  it('treats a timed-out step as not_assessed for the verdict (R1.11)', async () => {
+    // One slow step that will time out quickly; it must not drag the verdict
+    // towards needs_review even though no other step produced evidence.
+    const slow = new FakeStep(
+      'slow',
+      'Slow',
+      'fast',
+      50,
+      [],
+      undefined,
+      () => true,
+      (_ctx) => new Promise<StepResult>(() => {}),
+    );
+    const ok = new FakeStep('ok', 'Ok', 'fast', 1000, []);
+
+    const result = await new Engine([slow, ok]).run({ caseId: '123' });
+    expect(result.steps.find((s) => s.id === 'slow')?.state).toBe('timed_out');
+    // The surviving success carries the verdict; the timeout does not count
+    // as a failure (R1.11), so this stays verified rather than downgrading.
+    expect(result.verdict).toBe('verified');
   });
 
   it('rejects a fast step that depends on a slow step at construction (R1.14)', () => {
