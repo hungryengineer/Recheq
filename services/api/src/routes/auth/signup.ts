@@ -30,35 +30,46 @@ export async function signupHandler(
 
   const password_hash = await bcrypt.hash(password, 10);
 
-  // We need a transaction to create org and user together
-  const result = await deps.db.transaction(async (tx) => {
-    // 1. Create Organization
-    const [org] = await tx
-      .insert(schema.organizations)
-      .values({
-        name: company,
-        slug: company.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      })
-      .returning();
+  let result;
+  try {
+    // We need a transaction to create org and user together
+    result = await deps.db.transaction(async (tx) => {
+      // 1. Create Organization
+      const [org] = await tx
+        .insert(schema.organizations)
+        .values({
+          name: company,
+          slug: company.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        })
+        .returning();
 
-    if (!org) throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create organization');
+      if (!org) throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create organization');
 
-    // 2. Create User
-    const [user] = await tx
-      .insert(schema.users)
-      .values({
-        email,
-        password_hash,
-        name: fullName,
-        org_id: org.id,
-        role: 'admin',
-      })
-      .returning();
+      // 2. Create User
+      const [user] = await tx
+        .insert(schema.users)
+        .values({
+          email,
+          password_hash,
+          name: fullName,
+          org_id: org.id,
+          role: 'admin',
+        })
+        .returning();
 
-    if (!user) throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create user');
+      if (!user) throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create user');
 
-    return { user, org };
-  });
+      return { user, org };
+    });
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err && err.code === '23505') {
+      const dbErr = err as { constraint_name?: string };
+      if (dbErr.constraint_name === 'organizations_slug_key') {
+        throw new AppError(409, 'CONFLICT', 'An organization with this name already exists.');
+      }
+    }
+    throw err;
+  }
 
   // Sign JWT
   const token = await signToken({
