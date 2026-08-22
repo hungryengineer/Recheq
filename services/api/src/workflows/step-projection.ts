@@ -56,6 +56,8 @@ export interface ExtractionLike {
 
 export interface StepProjectionInput {
   caseRecord: { status: string };
+  /** Real lifecycle anchor used as fallback started_at (never the epoch). */
+  caseCreatedAt?: Date | string | undefined;
   documents: DocumentLike[];
   extractions: ExtractionLike[];
   epfoRecords: { employment_history: unknown }[];
@@ -96,6 +98,7 @@ interface DocStepInput {
   documents: DocumentLike[];
   extractions: ExtractionLike[];
   caseStatus: string;
+  caseCreatedAt?: Date | string | undefined;
 }
 
 /**
@@ -106,7 +109,7 @@ interface DocStepInput {
  * - otherwise running while the case is processing
  */
 export function deriveDocStep(input: DocStepInput): ProjectedStep {
-  const { kind, documents, extractions, caseStatus } = input;
+  const { kind, documents, extractions, caseStatus, caseCreatedAt } = input;
   const docs = documents.filter((d) => d.kind === kind);
   const docIds = new Set(docs.map((d) => d.id));
   const rows = extractions.filter((e) => docIds.has(e.document_id));
@@ -134,7 +137,7 @@ export function deriveDocStep(input: DocStepInput): ProjectedStep {
     state = caseStatus === 'processing' ? 'running' : 'pending';
   }
 
-  const startedAt = iso(docs[0]?.uploaded_at) ?? new Date(0).toISOString();
+  const startedAt = iso(docs[0]?.uploaded_at) ?? iso(caseCreatedAt) ?? new Date().toISOString();
   const doneRows = rows.filter((r) => r.completed_at && r.status !== 'pending');
   const completedAt =
     state === 'succeeded' || state === 'failed'
@@ -161,6 +164,7 @@ function ts(value: Date | string | null | undefined): number {
 export interface EpfoStepInput {
   epfoRecords: { employment_history: unknown }[];
   caseStatus: string;
+  caseCreatedAt?: Date | string | undefined;
   startedAt?: string | null;
   completedAt?: string | null;
 }
@@ -182,7 +186,7 @@ export function deriveEpfoStep(input: EpfoStepInput): ProjectedStep {
     id: 'epfo',
     label: STEP_LABELS.epfo,
     state,
-    started_at: input.startedAt ?? new Date(0).toISOString(),
+    started_at: input.startedAt ?? iso(input.caseCreatedAt) ?? new Date().toISOString(),
     completed_at: state === 'succeeded' ? (input.completedAt ?? null) : null,
     human_summary: SUMMARIES[state],
     reason: null,
@@ -191,6 +195,7 @@ export function deriveEpfoStep(input: EpfoStepInput): ProjectedStep {
 
 export function deriveRulesStep(input: {
   caseStatus: string;
+  caseCreatedAt?: Date | string | undefined;
   startedAt?: string | null;
   completedAt?: string | null;
 }): ProjectedStep {
@@ -207,7 +212,7 @@ export function deriveRulesStep(input: {
     id: 'rules',
     label: STEP_LABELS.rules,
     state,
-    started_at: input.startedAt ?? new Date(0).toISOString(),
+    started_at: input.startedAt ?? iso(input.caseCreatedAt) ?? new Date().toISOString(),
     completed_at: state === 'succeeded' ? (input.completedAt ?? null) : null,
     human_summary: SUMMARIES[state],
     reason: null,
@@ -220,6 +225,7 @@ export function projectPublicSteps(input: StepProjectionInput): ProjectedStep[] 
     documents: input.documents,
     extractions: input.extractions,
     caseStatus: input.caseRecord.status,
+    caseCreatedAt: input.caseCreatedAt,
   };
   const steps = [
     deriveDocStep({ kind: 'payslip', ...docInput }),
@@ -227,8 +233,12 @@ export function projectPublicSteps(input: StepProjectionInput): ProjectedStep[] 
     deriveEpfoStep({
       epfoRecords: input.epfoRecords,
       caseStatus: input.caseRecord.status,
+      caseCreatedAt: input.caseCreatedAt,
     }),
-    deriveRulesStep({ caseStatus: input.caseRecord.status }),
+    deriveRulesStep({
+      caseStatus: input.caseRecord.status,
+      caseCreatedAt: input.caseCreatedAt,
+    }),
   ];
   // Defence in depth (P5): strip anything beyond the public contract fields.
   return steps.map((s) => ({
@@ -265,7 +275,8 @@ export function projectOpsSteps(input: StepProjectionInput): ProjectedOpsStep[] 
           model_version: e.model_id ?? null,
         }));
     }
-    if (id === 'epfo') return [{ provider: 'epfo', model_version: null }];
+    if (id === 'epfo')
+      return input.epfoRecords.length > 0 ? [{ provider: 'epfo', model_version: null }] : [];
     return [];
   };
   return base.map((s) => ({ ...s, evidence: evidenceFor(s.id) }));

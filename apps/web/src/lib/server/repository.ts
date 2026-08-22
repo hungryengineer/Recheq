@@ -146,6 +146,13 @@ export const repository = {
       })
       .where(eq(schema.extractions.id, id));
   },
+  getExtractionsForCase: async (docIds: string[]) => {
+    if (docIds.length === 0) return [];
+    return await db
+      .select()
+      .from(schema.extractions)
+      .where(inArray(schema.extractions.document_id, docIds));
+  },
   getSuccessfulExtractions: async (docIds: string[]) => {
     if (docIds.length === 0) return [];
     return await db

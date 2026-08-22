@@ -8,6 +8,7 @@ import {
   type DocumentLike,
   type ExtractionLike,
 } from '../src/workflows/step-projection.js';
+import { getStatusHandler } from '../src/routes/public/status.js';
 
 // ─── Fixtures ───────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ function build(
 ) {
   return {
     caseRecord: { status: overrides.caseStatus ?? 'complete' },
+    caseCreatedAt: '2026-01-01T09:00:00Z',
     documents: overrides.documents ?? [doc()],
     extractions: overrides.extractions ?? [extraction()],
     epfoRecords: overrides.epfoRecords ?? [{ employment_history: {} }],
@@ -73,6 +75,16 @@ describe('RCQ-20113 — per-step status API', () => {
       expect(steps.map((s) => s.id)).toContain('form16');
     });
 
+    it('never fabricates epoch timestamps — falls back to case created_at', () => {
+      const steps = projectPublicSteps(
+        build({ caseStatus: 'processing', documents: [], extractions: [] }),
+      );
+      for (const s of steps) {
+        expect(s.started_at.startsWith('1970-01-01')).toBe(false);
+        expect(s.started_at).toBe('2026-01-01T09:00:00.000Z');
+      }
+    });
+
     it('reports failed extractions with a candidate-safe reason', () => {
       const steps = projectPublicSteps(build({ extractions: [extraction({ status: 'failed' })] }));
       const payslip = stepById(steps, 'payslip');
@@ -100,33 +112,49 @@ describe('RCQ-20113 — per-step status API', () => {
   describe('P5 leak guard — public variant carries no ops data', () => {
     const FORBIDDEN = ['verdict', 'risk_score', 'findings', 'origins', 'not_assessed'];
 
-    it('response body contains no verdict/risk/findings keys anywhere', () => {
-      const body = {
-        status: 'processing',
-        documents_total: 1,
-        documents_extracted: 0,
-        steps: projectPublicSteps(build()),
-        // Simulated accidental additions must be caught by projection shape,
-        // asserted below by key scan on every nested object.
-      };
-      const seen: string[] = [];
-      const walk = (node: unknown) => {
-        if (Array.isArray(node)) node.forEach(walk);
-        else if (node && typeof node === 'object') {
-          for (const [k, v] of Object.entries(node)) {
-            if (FORBIDDEN.includes(k)) seen.push(k);
-            walk(v);
+    it('getStatusHandler response contains no verdict/risk/findings keys anywhere', async () => {
+      try {
+        const result = await getStatusHandler({ params: { token: 'tok' }, context: {} as never }, {
+          tokenVerifier: {
+            verifyAndGetCaseId: async () => 'case-1',
+          },
+          db: {
+            getCaseById: async () => ({
+              id: 'case-1',
+              status: 'processing',
+              verdict: 'clear',
+              risk_score: 42,
+              created_at: '2026-01-01T09:00:00Z',
+            }),
+            getDocumentsForCase: async () => [doc()],
+            getCompletedEpfoRecords: async () => [],
+            getExtractionsForCase: async () => [extraction()],
+          },
+        } as unknown as Parameters<typeof getStatusHandler>[1]);
+        const body = result as { status: number; body: Record<string, unknown> };
+        expect(body.status).toBe(200);
+
+        const seen: string[] = [];
+        const walk = (node: unknown) => {
+          if (Array.isArray(node)) node.forEach(walk);
+          else if (node && typeof node === 'object') {
+            for (const [k, v] of Object.entries(node)) {
+              if (FORBIDDEN.includes(k)) seen.push(k);
+              walk(v);
+            }
           }
-        }
-      };
-      walk(body);
-      expect(seen).toEqual([]);
-      expect(Object.keys(body)).toEqual([
-        'status',
-        'documents_total',
-        'documents_extracted',
-        'steps',
-      ]);
+        };
+        walk(body.body);
+        expect(seen).toEqual([]);
+        expect(Object.keys(body.body)).toEqual([
+          'status',
+          'documents_total',
+          'documents_extracted',
+          'steps',
+        ]);
+      } catch (cause) {
+        throw new Error('public status handler leak test failed to run', { cause });
+      }
     });
 
     it('public steps never carry an evidence field', () => {
@@ -181,6 +209,19 @@ describe('RCQ-20113 — per-step status API', () => {
       expect(byId.get('form16')?.evidence[0]?.provider).toBe('anthropic');
       expect(byId.get('epfo')?.evidence[0]?.provider).toBe('epfo');
       expect(byId.get('rules')!.evidence).toEqual([]);
+    });
+
+    it('emits EPFO evidence only when a completed EPFO record exists', () => {
+      const populated = projectOpsSteps(build()) as { id: string; evidence: unknown[] }[];
+      expect(stepById(populated, 'epfo').evidence).toEqual([
+        { provider: 'epfo', model_version: null },
+      ]);
+
+      const empty = projectOpsSteps(build({ epfoRecords: [] })) as {
+        id: string;
+        evidence: unknown[];
+      }[];
+      expect(stepById(empty, 'epfo').evidence).toEqual([]);
     });
 
     it('derives provider names conservatively', () => {
@@ -247,8 +288,13 @@ describe('RCQ-20113 — per-step status API', () => {
     };
 
     it('StatusResponse validates for every lifecycle state', async () => {
-      const raw = await readFile('contract/openapi.yaml', 'utf8');
-      contract = yaml.load(raw) as typeof contract;
+      let raw: string;
+      try {
+        raw = await readFile('contract/openapi.yaml', 'utf8');
+        contract = yaml.load(raw) as typeof contract;
+      } catch (cause) {
+        throw new Error('failed to load contract/openapi.yaml for validation', { cause });
+      }
       const schema = contract.components.schemas.StatusResponse!;
 
       for (const caseStatus of ['awaiting_documents', 'processing', 'complete', 'withdrawn']) {
@@ -263,8 +309,13 @@ describe('RCQ-20113 — per-step status API', () => {
     });
 
     it('CaseDetail.steps validates including evidence', async () => {
-      const raw = await readFile('contract/openapi.yaml', 'utf8');
-      contract = yaml.load(raw) as typeof contract;
+      let raw: string;
+      try {
+        raw = await readFile('contract/openapi.yaml', 'utf8');
+        contract = yaml.load(raw) as typeof contract;
+      } catch (cause) {
+        throw new Error('failed to load contract/openapi.yaml for validation', { cause });
+      }
       const stepsSchema = (contract.components.schemas.CaseDetail as SchemaNode).properties!.steps!;
 
       const steps = projectOpsSteps(

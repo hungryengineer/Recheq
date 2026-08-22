@@ -91,6 +91,7 @@ export async function projectCaseDetail(caseId: string, orgId: string) {
   // RCQ-20113 — per-step status with evidence, grouped by step.
   const steps = projectOpsSteps({
     caseRecord,
+    caseCreatedAt: caseRecord.created_at,
     documents,
     extractions,
     epfoRecords,

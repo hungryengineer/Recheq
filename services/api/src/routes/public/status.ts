@@ -19,8 +19,8 @@ export interface StatusRouteDeps {
     getCaseById: (caseId: string) => Promise<CaseRecord | null>;
     getDocumentsForCase: (caseId: string) => Promise<DocumentRecord[]>;
     getCompletedEpfoRecords: (caseId: string) => Promise<{ employment_history: EpfoHistory }[]>;
-    /** Extraction rows for documents of the case (timing + extracted count). */
-    getExtractionsForCase?: (documentIds: string[]) => Promise<ExtractionLike[]>;
+    /** Extraction rows for documents of the case (timing + derived states). */
+    getExtractionsForCase: (documentIds: string[]) => Promise<ExtractionLike[]>;
   };
 }
 
@@ -36,14 +36,13 @@ export async function getStatusHandler(req: StatusRouteRequest, deps: StatusRout
     const documents = await deps.db.getDocumentsForCase(caseId);
     const epfoRecords = await deps.db.getCompletedEpfoRecords(caseId);
 
-    let extractions: ExtractionLike[] = [];
-    if (deps.db.getExtractionsForCase && documents.length > 0) {
-      extractions = await deps.db.getExtractionsForCase(documents.map((d) => d.id));
-    }
+    const extractions: ExtractionLike[] =
+      documents.length > 0 ? await deps.db.getExtractionsForCase(documents.map((d) => d.id)) : [];
 
     // P5 — candidate view only ever receives the contract fields.
     const steps = projectPublicSteps({
       caseRecord,
+      caseCreatedAt: caseRecord.created_at,
       documents,
       extractions,
       epfoRecords,
