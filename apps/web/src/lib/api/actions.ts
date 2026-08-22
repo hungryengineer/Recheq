@@ -61,10 +61,7 @@ export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
   }
 }
 
-export async function updateCase(
-  caseId: string,
-  rawInput: unknown,
-): Promise<UpdateCaseResult> {
+export async function updateCase(caseId: string, rawInput: unknown): Promise<UpdateCaseResult> {
   const parsed = CaseUpdateInput.safeParse(rawInput);
 
   if (!parsed.success) {
