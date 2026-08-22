@@ -1,0 +1,55 @@
+{
+  "_fixture": "ps-font-02",
+  "_description": "TAMPERED[font-anomaly]: 12 anomalous characters detected in font run analysis.",
+  "employee_name": "Priya Sharma",
+  "employee_id": "EMP-1042",
+  "employer_name": "Tech Corp India Pvt Ltd",
+  "month": "January",
+  "year": 2024,
+  "basic": {
+    "raw_label": "Basic Salary",
+    "amount": 40000
+  },
+  "hra": {
+    "raw_label": "House Rent Allowance",
+    "amount": 16000
+  },
+  "da": {
+    "raw_label": "Dearness Allowance",
+    "amount": 4000
+  },
+  "special_allowance": {
+    "raw_label": "Special Allowance",
+    "amount": 10000
+  },
+  "other_allowances": [
+    {
+      "raw_label": "Transport Allowance",
+      "amount": 2400
+    }
+  ],
+  "gross_salary": 72400,
+  "pf_deduction": 4800,
+  "professional_tax": 200,
+  "income_tax": 6200,
+  "other_deductions": 0,
+  "total_deductions": 11200,
+  "net_salary": 61200,
+  "uan": "100000000042",
+  "pf_account_number": "MH/BAN/12345/000/0001042",
+  "extraction_notes": null,
+  "schema_version": "payslip-v1",
+  "_forensics": {
+    "producer": "Adobe Acrobat Pro",
+    "creator": "Acme HR Portal",
+    "creation_date": "2024-01-05T09:00:00Z",
+    "modification_date": "2024-01-10T22:14:00Z",
+    "font_runs": {
+      "total_characters": 1250,
+      "unique_fonts": 4,
+      "dominant_font": "Helvetica",
+      "anomalous_characters": 12
+    },
+    "monetary_anomalies": null
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_fixture": "f16-clean-05",
+  "_description": "Clean Form 16 consistent with its payslip pair.",
+  "employee_name": "Priya Sharma",
+  "employee_pan": "ABCPS1234F",
+  "employer_name": "Tech Corp India Pvt Ltd",
+  "employer_tan": "MUMC12345B",
+  "employer_pan": "AAACT1234C",
+  "financial_year": "2023-24",
+  "assessment_year": "2024-25",
+  "total_tax_deducted": 126000,
+  "total_tax_deposited": 126000,
+  "gross_total_income": 1380000,
+  "total_salary": 1380000,
+  "exempt_allowances": 38400,
+  "standard_deduction": 50000,
+  "professional_tax": 2400,
+  "net_taxable_salary": 1289200,
+  "total_income_tax_payable": 126000,
+  "extraction_notes": null,
+  "schema_version": "form16-v1"
+}

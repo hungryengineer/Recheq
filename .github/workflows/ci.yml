@@ -144,3 +144,36 @@ jobs:
 
       - name: 🧩 Fixture Validation (OPS-05 Gate)
         run: bash scripts/ci-fixtures.sh
+
+  reliability-measurement:
+    name: 📏 Stage 5 - Reliability Measurement
+    needs: static-analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: ⬇️ Check out repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # RCQ-20122 — reruns on every PR so the published numbers in
+      # docs/reliability.md can never go stale. Floors are regression gates;
+      # tighten them as the corpus and engine improve.
+      - name: 📏 Measure precision & recall over the labelled corpus
+        run: pnpm measure:reliability -- --min-precision 0.9 --min-recall 0.9
+
+      - name: 📄 Publish measurement report
+        if: always()
+        run: pnpm measure:reliability -- --json > reliability-report.json && cat reliability-report.json

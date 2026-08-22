@@ -1,0 +1,42 @@
+{
+  "_fixture": "ps-net-02",
+  "_description": "TAMPERED[arithmetic-break]: printed net inflated 96500->99500.",
+  "employee_name": "Priya Sharma",
+  "employee_id": "EMP-1042",
+  "employer_name": "Tech Corp India Pvt Ltd",
+  "month": "January",
+  "year": 2024,
+  "basic": {
+    "raw_label": "Basic Salary",
+    "amount": 65000
+  },
+  "hra": {
+    "raw_label": "House Rent Allowance",
+    "amount": 26000
+  },
+  "da": {
+    "raw_label": "Dearness Allowance",
+    "amount": 6500
+  },
+  "special_allowance": {
+    "raw_label": "Special Allowance",
+    "amount": 14000
+  },
+  "other_allowances": [
+    {
+      "raw_label": "Conveyance Allowance",
+      "amount": 3500
+    }
+  ],
+  "gross_salary": 115000,
+  "pf_deduction": 7800,
+  "professional_tax": 200,
+  "income_tax": 10500,
+  "other_deductions": 0,
+  "total_deductions": 18500,
+  "net_salary": 99500,
+  "uan": "100000000042",
+  "pf_account_number": "MH/BAN/12345/000/0001042",
+  "extraction_notes": null,
+  "schema_version": "payslip-v1"
+}
