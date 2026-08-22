@@ -106,7 +106,7 @@ export async function processCase(
   }
 
   // 4. Retrieve Triangulate Result
-  const triangulateResult = engineResult.steps.find((s) => s.id === 'rules.triangulate');
+  const triangulateResult = engineResult.steps.find((s: any) => s.id === 'rules.triangulate');
 
   if (triangulateResult && triangulateResult.state === 'succeeded' && triangulateResult.artifact) {
     const { findings, verdict, score } = triangulateResult.artifact as TriangulateArtifact;

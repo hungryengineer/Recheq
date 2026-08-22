@@ -13,7 +13,7 @@ export function _initSecretKey(): void {
 
 // Eager validation during startup should be called by the host application (e.g. Next.js instrumentation)
 
-function getSecretKey(): Uint8Array {
+export function getSecretKey(): Uint8Array {
   if (!_secretKey) {
     _initSecretKey();
   }
