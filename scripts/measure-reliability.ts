@@ -311,11 +311,21 @@ function validateForensics(raw: Record<string, unknown>, caseId: string): Forens
       );
     }
     const d = new Date(s);
+    if (Number.isNaN(d.getTime())) {
+      throw new ExtractionError(
+        caseId,
+        `_forensics side-data is malformed: ${what} is not a valid date`,
+      );
+    }
+    // Calendar sanity must be checked against a UTC date built from the raw
+    // components — comparing the parsed timestamp would reject valid values
+    // whose time-zone offset shifts them across midnight.
+    const calendar = new Date(0);
+    calendar.setUTCFullYear(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
     if (
-      Number.isNaN(d.getTime()) ||
-      d.getUTCFullYear() !== Number(iso[1]) ||
-      d.getUTCMonth() + 1 !== Number(iso[2]) ||
-      d.getUTCDate() !== Number(iso[3])
+      calendar.getUTCFullYear() !== Number(iso[1]) ||
+      calendar.getUTCMonth() + 1 !== Number(iso[2]) ||
+      calendar.getUTCDate() !== Number(iso[3])
     ) {
       throw new ExtractionError(
         caseId,
