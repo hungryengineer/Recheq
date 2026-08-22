@@ -103,4 +103,3 @@ paths:
     // A better approach would be to refactor getImplementedOperations to take a dependency injected fs or just rely on manual tests.
   });
 });
-
