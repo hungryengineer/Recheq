@@ -2,10 +2,11 @@
 
 import type { LoginResponse } from '@tieout/schema';
 import { LoginInputSchema, SignupInputSchema, LoginResponseSchema } from '@tieout/schema';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { loginHandler } from '@tieout/api/src/routes/auth/login.js';
 import { signupHandler } from '@tieout/api/src/routes/auth/signup.js';
 import { getDb } from '@/lib/server/db';
+import { toErrorResponse } from '@tieout/api/src/http/errors.js';
 
 // SSO, forgot-password, reset-password handlers take no arguments in this phase.
 // They are stub implementations that will be expanded later.
@@ -51,11 +52,13 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
 
     const { email, password, rememberMe } = parsed.data;
 
+    const headersList = await headers();
+    const ip =
+      (headersList.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0]?.trim() ?? '127.0.0.1';
+
     // Call handler directly instead of self-fetching via HTTP.
-    // Server actions run inside the same Next.js process, so a self-fetch
-    // via APP_BASE_URL is fragile on Vercel (URL mismatch, cold starts, etc.).
     const result = await loginHandler(
-      { body: { email, password, rememberMe }, ip: 'server-action' },
+      { body: { email, password, rememberMe }, ip },
       { db: getDb() },
     );
 
@@ -89,7 +92,12 @@ export async function loginAction(input: unknown): Promise<AuthActionResult> {
     return { success: true, data };
   } catch (error) {
     console.error('Login action error:', error);
-    return { success: false, error: 'An unexpected error occurred. Please try again later.' };
+    const errorResponse = toErrorResponse(error);
+    return {
+      success: false,
+      error:
+        errorResponse.body?.error?.message || 'An unexpected error occurred. Please try again.',
+    };
   }
 }
 
@@ -125,7 +133,11 @@ export async function ssoLoginAction(): Promise<AuthActionResult> {
     return { success: true, data };
   } catch (error) {
     console.error('SSO Login action error:', error);
-    return { success: false, error: 'SSO Login failed' };
+    const errorResponse = toErrorResponse(error);
+    return {
+      success: false,
+      error: errorResponse.body?.error?.message || 'SSO Login failed',
+    };
   }
 }
 
@@ -144,7 +156,11 @@ export async function forgotPasswordAction(_email: string): Promise<AuthActionRe
     return { success: true };
   } catch (error) {
     console.error('Forgot password action error:', error);
-    return { success: false, error: 'An unexpected error occurred. Please try again later.' };
+    const errorResponse = toErrorResponse(error);
+    return {
+      success: false,
+      error: errorResponse.body?.error?.message || 'An unexpected error occurred.',
+    };
   }
 }
 
@@ -167,7 +183,11 @@ export async function resetPasswordAction(
     return { success: true };
   } catch (error) {
     console.error('Reset password action error:', error);
-    return { success: false, error: 'An unexpected error occurred. Please try again later.' };
+    const errorResponse = toErrorResponse(error);
+    return {
+      success: false,
+      error: errorResponse.body?.error?.message || 'An unexpected error occurred.',
+    };
   }
 }
 
@@ -220,7 +240,13 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
     return { success: true, data };
   } catch (error) {
     console.error('Signup action error:', error);
-    return { success: false, error: 'An unexpected error occurred. Please try again later.' };
+    const errorResponse = toErrorResponse(error);
+    return {
+      success: false,
+      error:
+        errorResponse.body?.error?.message ||
+        'An unexpected error occurred. Please try again later.',
+    };
   }
 }
 
