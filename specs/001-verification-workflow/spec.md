@@ -43,6 +43,11 @@ Philosophy, §2 Monorepo Boundaries, §3 Security Mandates, §4 Testing).
 - **R1.13** - If a step is retried, then the engine shall not duplicate its findings or its audit events.
 - **R1.16** - If a step's declared data source is unavailable or its licence has lapsed, then the engine shall mark it not_assessed and shall not fall back to any undeclared source.
 
+> **Verdict equivalence (R1.11 ⇄ R1.12).** When applying R1.12, a `timed_out`
+> step counts as `not_assessed` — per R1.11 it contributes no evidence and must
+> not turn the verdict negative. A run in which every fast step is `failed`,
+> `timed_out` or `not_assessed` therefore yields `insufficient_evidence`.
+
 ### Optional feature
 
 - **R1.14** - Where a step is declared slow, the engine shall exclude it from the interim verdict and schedule it independently of the fast path.
@@ -78,16 +83,16 @@ States (`packages/workflow/src/types.ts`): `pending`, `running`, `succeeded`,
 
 Enumerated legal transitions:
 
-| From            | To                  | Trigger                                                            |
-| --------------- | ------------------- | ------------------------------------------------------------------ |
-| `pending`       | `running`           | dependencies satisfied, `requires(ctx)` true                       |
-| `pending`       | `not_assessed`      | `requires(ctx)` false, or upstream dependency failed               |
-| `running`       | `succeeded`         | `run()` resolved with non-null artifact                            |
-| `running`       | `not_assessed`      | `run()` resolved `succeeded` with null artifact                    |
-| `running`       | `failed`            | `run()` threw (non-recoverable), or undeclared provenance returned |
-| `running`       | `timed_out`         | declared `timeoutMs` exceeded                                      |
-| `running`       | `awaiting_external` | `run()` resolved with that state (external actor)                  |
-| terminal states | (none)              | re-entry only via a new engine run (retry/reprocess)               |
+| From            | To                  | Trigger                                                                                                                                                          |
+| --------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pending`       | `running`           | dependencies satisfied, `requires(ctx)` true                                                                                                                     |
+| `pending`       | `not_assessed`      | `requires(ctx)` false, or upstream dependency failed                                                                                                             |
+| `running`       | `succeeded`         | `run()` resolved with non-null artifact                                                                                                                          |
+| `running`       | `not_assessed`      | `run()` resolved `succeeded` with null artifact                                                                                                                  |
+| `running`       | `failed`            | `run()` threw (non-recoverable); or a `succeeded` result declared an unregistered provenance source (validated on artifact-producing results only, alert raised) |
+| `running`       | `timed_out`         | declared `timeoutMs` exceeded                                                                                                                                    |
+| `running`       | `awaiting_external` | `run()` resolved with that state (external actor)                                                                                                                |
+| terminal states | (none)              | re-entry only via a new engine run (retry/reprocess)                                                                                                             |
 
 Illegal at load time (engine refuses to construct): duplicate ids, unknown
 dependency references, cycles (mutual dependency), fast→slow edges.
@@ -130,15 +135,15 @@ unregistered source fails construction.
 
 ## 6. Edge cases (explicit answers)
 
-| Edge case                                          | Answer                                                                                                         |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Mutual dependency                                  | detected at construction; engine refuses to start                                                              |
-| Step succeeds with empty artifact                  | coerced to `not_assessed`                                                                                      |
-| Case reprocessed after a rule change               | open findings replaced wholesale in one transaction                                                            |
-| Slow step replies after `complete`                 | outcome surfaced once via `onSlowStepSettled`; audit event written by the observer; committed status unchanged |
-| Two steps declare the same output artifact         | duplicate step ids rejected at construction                                                                    |
-| Undeclared data source                             | construction-time rejection; result-level undeclared provenance marks the step `failed` with an alert          |
-| Transient provider outage (rate limit/unavailable) | step raises `RecoverableWorkflowError`; the job is retried instead of failing the step                         |
+| Edge case                                          | Answer                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mutual dependency                                  | detected at construction; engine refuses to start                                                                                                                                                                                                                                      |
+| Step succeeds with empty artifact                  | coerced to `not_assessed`                                                                                                                                                                                                                                                              |
+| Case reprocessed after a rule change               | open findings replaced wholesale in one transaction                                                                                                                                                                                                                                    |
+| Slow step replies after `complete`                 | outcome surfaced once via `onSlowStepSettled`; audit event written by the observer; committed status unchanged                                                                                                                                                                         |
+| Two steps declare the same output artifact         | output artifacts are addressed by step id (design D1): dependents reference producer ids, so the only expressible collision is a duplicate step id, rejected at construction; semantic duplication (two steps processing the same document) is prevented by the catalogue design in §4 |
+| Undeclared data source                             | construction-time rejection; result-level undeclared provenance marks the step `failed` with an alert                                                                                                                                                                                  |
+| Transient provider outage (rate limit/unavailable) | step raises `RecoverableWorkflowError`; the job is retried instead of failing the step                                                                                                                                                                                                 |
 
 ## 7. Design changes during build (legitimate, recorded)
 
