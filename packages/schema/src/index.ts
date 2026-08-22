@@ -29,3 +29,4 @@ export { EventRecord, EventInput } from './event.js';
 export { SalaryComponent, PayslipExtraction } from './payslip.js';
 
 export { Form16Extraction } from './form16.js';
+export * from './settings.js';

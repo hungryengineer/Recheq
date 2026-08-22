@@ -3,7 +3,7 @@
  * Keep this file free of 'use server' — it must be importable by client components.
  */
 
-export type CreateCaseError = {
+export type ActionError = {
   error: {
     code: string;
     message?: string;
@@ -12,6 +12,8 @@ export type CreateCaseError = {
     };
   };
 };
+
+export type CreateCaseError = ActionError;
 
 export type CreateCaseSuccess = {
   candidate_link?: string;
@@ -29,4 +31,8 @@ export type UpdateCaseResult = UpdateCaseSuccess | CreateCaseError;
 
 export function isUpdateCaseError(result: UpdateCaseResult): result is CreateCaseError {
   return 'error' in result;
+}
+
+export function isActionError(result: unknown): result is ActionError {
+  return result && typeof result === 'object' && 'error' in result;
 }

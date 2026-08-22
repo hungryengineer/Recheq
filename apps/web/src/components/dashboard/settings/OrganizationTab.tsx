@@ -2,13 +2,22 @@
 
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Plus, MoreHorizontal, Loader2, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
+import { updateOrganizationAction, inviteMemberAction } from '@/lib/api/settings';
 
 export function OrganizationTab() {
   const [isUpdating, setIsUpdating] = useState(false);
   const { companyName, setCompanyName, name, email } = useUser();
   const [localCompanyName, setLocalCompanyName] = useState(companyName);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Invite Modal State
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('Verifier');
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteErrors, setInviteErrors] = useState<Record<string, string>>({});
 
   // Calculate initials dynamically
   const getInitials = (fullName: string) => {
@@ -31,8 +40,21 @@ export function OrganizationTab() {
 
   const handleUpdateCompany = async () => {
     setIsUpdating(true);
+    setErrors({});
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const result = await updateOrganizationAction({ companyName: localCompanyName });
+      if (result && 'error' in result) {
+        if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {
+          const newErrors: Record<string, string> = {};
+          result.error.details.fields.forEach((field) => {
+            newErrors[field.path] = field.message;
+          });
+          setErrors(newErrors);
+        } else {
+          toast.error(result.error.message || 'Failed to update organization');
+        }
+        return;
+      }
       setCompanyName(localCompanyName);
       toast.success('Organization updated successfully');
     } catch {
@@ -42,8 +64,33 @@ export function OrganizationTab() {
     }
   };
 
-  const handleInvite = () => {
-    toast.success('Invitation link copied to clipboard!');
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsInviting(true);
+    setInviteErrors({});
+    try {
+      const result = await inviteMemberAction({ email: inviteEmail, role: inviteRole });
+      if (result && 'error' in result) {
+        if (result.error.code === 'VALIDATION_ERROR' && result.error.details?.fields) {
+          const newErrors: Record<string, string> = {};
+          result.error.details.fields.forEach((field) => {
+            newErrors[field.path] = field.message;
+          });
+          setInviteErrors(newErrors);
+        } else {
+          toast.error(result.error.message || 'Failed to send invitation');
+        }
+        return;
+      }
+      toast.success('Invitation sent!');
+      setIsInviteModalOpen(false);
+      setInviteEmail('');
+      setInviteRole('Verifier');
+    } catch {
+      toast.error('Failed to send invitation');
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const handleRemoveMember = async (id: number) => {
@@ -81,22 +128,28 @@ export function OrganizationTab() {
             Company name
           </label>
         </div>
-        <div className="w-full md:w-2/3 flex gap-2">
-          <input
-            id="companyNameInput"
-            type="text"
-            value={localCompanyName}
-            onChange={(e) => setLocalCompanyName(e.target.value)}
-            className="max-w-md w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow"
-          />
-          <button
-            onClick={handleUpdateCompany}
-            disabled={isUpdating}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all"
-          >
-            {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isUpdating ? 'Updating...' : 'Update'}
-          </button>
+        <div className="w-full md:w-2/3 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              id="companyNameInput"
+              type="text"
+              value={localCompanyName}
+              onChange={(e) => setLocalCompanyName(e.target.value)}
+              aria-invalid={!!errors.companyName}
+              className={`max-w-md w-full rounded-[var(--radius-control)] border ${
+                errors.companyName ? 'border-red-500' : 'border-[var(--color-border)]'
+              } px-3 py-2 text-[var(--color-fg)] bg-[var(--color-page)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-shadow`}
+            />
+            <button
+              onClick={handleUpdateCompany}
+              disabled={isUpdating}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 active:scale-95 transition-all"
+            >
+              {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {isUpdating ? 'Updating...' : 'Update'}
+            </button>
+          </div>
+          {errors.companyName && <p className="text-red-500 text-sm">{errors.companyName}</p>}
         </div>
       </div>
 
@@ -109,7 +162,7 @@ export function OrganizationTab() {
             </p>
           </div>
           <button
-            onClick={handleInvite}
+            onClick={() => setIsInviteModalOpen(true)}
             className="inline-flex items-center px-3 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -184,6 +237,83 @@ export function OrganizationTab() {
           </table>
         </div>
       </div>
+
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-lg w-full max-w-md overflow-hidden animate-slide-up">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
+              <h3 className="text-lg font-semibold text-[var(--color-fg)]">Invite Member</h3>
+              <button
+                onClick={() => setIsInviteModalOpen(false)}
+                className="text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] p-1 rounded-md transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleInvite} className="p-6 space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[var(--color-fg)]" htmlFor="inviteEmail">
+                  Email Address
+                </label>
+                <input
+                  id="inviteEmail"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  aria-invalid={!!inviteErrors.email}
+                  className={`w-full px-3 py-2 bg-[var(--color-page)] border ${
+                    inviteErrors.email ? 'border-red-500' : 'border-[var(--color-border)]'
+                  } rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
+                  placeholder="colleague@company.com"
+                />
+                {inviteErrors.email && (
+                  <p className="text-red-500 text-sm mt-1">{inviteErrors.email}</p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[var(--color-fg)]" htmlFor="inviteRole">
+                  Role
+                </label>
+                <select
+                  id="inviteRole"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  aria-invalid={!!inviteErrors.role}
+                  className={`w-full px-3 py-2 bg-[var(--color-page)] border ${
+                    inviteErrors.role ? 'border-red-500' : 'border-[var(--color-border)]'
+                  } rounded-[var(--radius-control)] text-sm text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
+                >
+                  <option value="Owner">Owner</option>
+                  <option value="Verifier">Verifier</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+                {inviteErrors.role && (
+                  <p className="text-red-500 text-sm mt-1">{inviteErrors.role}</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsInviteModalOpen(false)}
+                  disabled={isInviting}
+                  className="px-4 py-2 text-sm font-medium text-[var(--color-fg)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-control)] hover:bg-[var(--color-page)] disabled:opacity-70 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isInviting}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-[var(--radius-control)] hover:bg-blue-700 disabled:opacity-70 shadow-sm transition-colors"
+                >
+                  {isInviting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isInviting ? 'Sending...' : 'Send Invite'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
