@@ -39,9 +39,16 @@ function LoginContent() {
     toast.loading('Redirecting to Identity Provider...', { id: 'sso' });
 
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    toast.success('Authenticated successfully via SSO!', { id: 'sso' });
 
-    await ssoLoginAction();
+    const result = await ssoLoginAction();
+    if (!result.success) {
+      toast.error(result.error || 'SSO Login failed', { id: 'sso' });
+      setErrors({ form: result.error || 'SSO Login failed' });
+      setIsSsoLoading(false);
+      return;
+    }
+
+    toast.success('Authenticated successfully via SSO!', { id: 'sso' });
     router.push(getRedirectUrl());
   };
 
