@@ -22,11 +22,16 @@ export function getImplementedOperations(dir: string, baseRoute = '/api'): Opera
   for (const item of items) {
     const fullPath = path.join(dir, item.name);
     if (item.isDirectory()) {
-      // Convert Next.js dynamic segment [param] to OpenAPI parameter {param}
       const routeSegment = item.name.replace(/\[(.*?)\]/g, '{$1}');
-      operations = operations.concat(
-        getImplementedOperations(fullPath, `${baseRoute}/${routeSegment}`),
-      );
+
+      // Ignore Next.js route groups (e.g., "(auth)")
+      if (routeSegment.startsWith('(') && routeSegment.endsWith(')')) {
+        operations = operations.concat(getImplementedOperations(fullPath, baseRoute));
+      } else {
+        operations = operations.concat(
+          getImplementedOperations(fullPath, `${baseRoute}/${routeSegment}`),
+        );
+      }
     } else if (item.isFile() && item.name === 'route.ts') {
       const fileContent = fs.readFileSync(fullPath, 'utf8');
 
