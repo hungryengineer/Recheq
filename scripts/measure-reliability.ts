@@ -301,8 +301,30 @@ function validateForensics(raw: Record<string, unknown>, caseId: string): Forens
   const toDate = (v: unknown, what: string): Date | null => {
     const s = assertNullableString(v, what);
     if (s === null) return null;
+    // Reject non-ISO strings and impossible calendar dates ("2024-02-31"
+    // would silently normalize to March 2nd without the round-trip check).
+    const iso =
+      /^(\d{4})-(\d{2})-(\d{2})(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/.exec(
+        s,
+      );
+    if (!iso) {
+      throw new ExtractionError(
+        caseId,
+        `_forensics side-data is malformed: ${what} must be an ISO 8601 date string`,
+      );
+    }
     const d = new Date(s);
-    if (Number.isNaN(d.getTime())) fail(`${what} is not a valid date`);
+    if (
+      Number.isNaN(d.getTime()) ||
+      d.getUTCFullYear() !== Number(iso[1]) ||
+      d.getUTCMonth() + 1 !== Number(iso[2]) ||
+      d.getUTCDate() !== Number(iso[3])
+    ) {
+      throw new ExtractionError(
+        caseId,
+        `_forensics side-data is malformed: ${what} (${s}) is not a real calendar date`,
+      );
+    }
     return d;
   };
   return {
