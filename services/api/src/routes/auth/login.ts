@@ -85,9 +85,7 @@ function hashEmail(email: string): string {
 import { toErrorResponse } from '../../http/errors.js';
 
 export interface LoginRepository {
-  getUserByEmail(
-    email: string,
-  ): Promise<{
+  getUserByEmail(email: string): Promise<{
     id: string;
     name: string | null;
     email: string;
