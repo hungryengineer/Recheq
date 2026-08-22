@@ -1,5 +1,6 @@
 import {
   CaseCreateInput,
+  type CaseUpdateInput,
   type CaseRecord,
   type CaseSummary,
   type EventInput,
