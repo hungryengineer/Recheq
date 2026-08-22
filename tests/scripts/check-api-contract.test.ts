@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   compareOperations,
   parseDocumentedOperations,
   getImplementedOperations,
   type Operation,
 } from '../../scripts/check-api-contract.js';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 describe('API Contract Checker', () => {
   describe('parseDocumentedOperations', () => {
@@ -101,25 +101,40 @@ paths:
     });
   });
   describe('getImplementedOperations', () => {
-    it('strips Next.js route groups from API paths', () => {
-      const root = mkdtempSync(join(tmpdir(), 'api-contract-'));
-      try {
-        mkdirSync(join(root, '(auth)', 'users'), { recursive: true });
-        mkdirSync(join(root, 'admin'), { recursive: true });
-        writeFileSync(join(root, '(auth)', 'users', 'route.ts'), 'export const GET = () => {};');
-        writeFileSync(join(root, 'admin', 'route.ts'), 'export const POST = () => {};');
+    let tmpDir: string;
 
-        const operations = getImplementedOperations(root);
-        expect(operations).toHaveLength(2);
-        expect(operations).toEqual(
-          expect.arrayContaining([
-            { path: '/api/users', method: 'get' },
-            { path: '/api/admin', method: 'post' },
-          ]),
-        );
-      } finally {
-        rmSync(root, { recursive: true, force: true });
-      }
+    beforeEach(() => {
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recheq-test-'));
+    });
+
+    afterEach(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it('strips route groups and maps dynamic segments', () => {
+      // (auth)/users/route.ts
+      const authGroupDir = path.join(tmpDir, '(auth)', 'users');
+      fs.mkdirSync(authGroupDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(authGroupDir, 'route.ts'),
+        'export const GET = () => {}; export const POST = () => {};',
+      );
+
+      // cases/[id]/documents/[docId]/route.ts
+      const casesDir = path.join(tmpDir, 'cases', '[id]', 'documents', '[docId]');
+      fs.mkdirSync(casesDir, { recursive: true });
+      fs.writeFileSync(path.join(casesDir, 'route.ts'), 'export async function DELETE() {}');
+
+      const operations = getImplementedOperations(tmpDir);
+
+      expect(operations).toHaveLength(3);
+      expect(operations).toEqual(
+        expect.arrayContaining([
+          { path: '/api/users', method: 'get' },
+          { path: '/api/users', method: 'post' },
+          { path: '/api/cases/{id}/documents/{docId}', method: 'delete' },
+        ]),
+      );
     });
   });
 });
