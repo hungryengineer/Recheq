@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "evaluate": "tsx scripts/evaluate-extraction.ts",
+    "measure:reliability": "tsx scripts/measure-reliability.ts",
     "fixtures": "tsx scripts/run-fixtures.ts",
     "check:contract": "tsx scripts/check-api-contract.ts",
     "check:local-dependencies": "tsx scripts/check-local-dependencies.ts",

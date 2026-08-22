@@ -54,9 +54,9 @@ export async function initPgBoss(): Promise<PgBoss> {
     throw error;
   }
 
-  // Create queues
+  // Create queues. Note: case processing is fired in-process from the submit
+  // route (platform decision) and deliberately has no queue here.
   await Promise.all([
-    boss.createQueue('case_processing'),
     boss.createQueue('employer_workflow'),
     boss.createQueue('retention_cleanup'),
     boss.createQueue('webhook_delivery'),

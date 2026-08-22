@@ -218,20 +218,22 @@ export class Engine<TCtx extends StepContext = StepContext> {
 
     const fastResults = stepsArray.filter((s) => fastIds.has(s.id));
 
-    // Interim verdict aggregates every terminal state of the fast steps
-    // (R1.12): a failure must never silently upgrade the verdict.
+    // Interim verdict aggregates every terminal state of the fast steps.
+    // - R1.11: a step that exceeded its timeout is treated exactly like
+    //   not_assessed for verdict purposes (it contributes no evidence, but it
+    //   must not turn the verdict negative).
+    // - R1.12: if no fast step produced usable evidence, the verdict is
+    //   insufficient_evidence regardless of how many steps failed.
     const good = fastResults.filter(
       (s) => s.state === 'succeeded' || s.state === 'awaiting_external',
     ).length;
-    const bad = fastResults.filter((s) => s.state === 'failed' || s.state === 'timed_out').length;
+    const failedCount = fastResults.filter((s) => s.state === 'failed').length;
 
     let verdict: EngineResult['verdict'];
-    if (good > 0 && bad === 0) {
+    if (good > 0 && failedCount === 0) {
       verdict = 'verified';
-    } else if (good > 0 && bad > 0) {
+    } else if (good > 0 && failedCount > 0) {
       verdict = 'verified_with_notes';
-    } else if (bad > 0) {
-      verdict = 'needs_review';
     } else {
       verdict = 'insufficient_evidence';
     }
