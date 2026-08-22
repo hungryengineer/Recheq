@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import PgBoss from 'pg-boss';
 
-describe.skipIf(!process.env.DATABASE_URL)('Worker Safety', () => {
+describe('Worker Safety', () => {
   let boss: PgBoss;
 
   beforeEach(async () => {
@@ -25,9 +25,14 @@ describe.skipIf(!process.env.DATABASE_URL)('Worker Safety', () => {
       if (attempts < 2) throw new Error('First attempt fails');
     });
 
-    await new Promise((r) => setTimeout(r, 1000));
+    // Wait until the failed job has actually been retried, instead of
+    // guessing a fixed delay.
+    const deadline = Date.now() + 5000;
+    while (attempts < 2 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
 
-    expect(attempts).toBeGreaterThanOrEqual(1);
+    expect(attempts).toBe(2);
   });
 
   it('should maintain job queue across restarts', async () => {
