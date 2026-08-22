@@ -14,8 +14,7 @@ import type {
   ExtractionResult,
   LlmDocumentExtractor,
 } from '../src/extraction/llm-document-extractor.js';
-import type { PayslipExtraction } from '../src/extraction/prompts/payslip-v1.js';
-import type { Form16Extraction } from '../src/extraction/prompts/form16-v1.js';
+import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 
 /**
  * RCQ-20116 — Model-independence proof.
