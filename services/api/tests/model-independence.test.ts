@@ -15,6 +15,7 @@ import type {
   LlmDocumentExtractor,
 } from '../src/extraction/llm-document-extractor.js';
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { CaseProcessingDeps } from '../src/workflows/case-processing.js';
 
 /**
  * RCQ-20116 — Model-independence proof.
@@ -25,12 +26,15 @@ import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
  * read the document. These tests turn that claim into a green CI check:
  *
  * 1. The whole extraction corpus is pushed through the rules twice, under
- *    two different extractor identities (fixture vs "the next model").
- *    Findings, risk score and verdict must be byte-identical.
+ *    two different extractor identities (fixture vs "the next model"),
+ *    both producing identical structured evidence. Findings, risk score
+ *    and verdict must be byte-identical — proving model identity/metadata
+ *    cannot leak into outcomes.
  * 2. The same corpus grounded against committed expected outcomes, so the
  *    equality above cannot be vacuously true.
- * 3. `rules.triangulate` declares provenance.model = null — the workflow
- *    contract itself states that triangulation is model-independent.
+ * 3. `rules.triangulate` declares provenance.model = null on success AND
+ *    failure paths — the workflow contract itself states that
+ *    triangulation is model-independent.
  */
 
 // ─── Corpus loading ─────────────────────────────────────────────
@@ -38,20 +42,23 @@ import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 const REPO_ROOT = join(import.meta.dirname ?? '.', '../../..');
 const EXTRACTION_DIR = join(REPO_ROOT, 'fixtures', 'extraction');
 
-interface CorpusDoc {
-  name: string;
-  kind: 'payslip' | 'form16';
-  data: Record<string, unknown>;
-}
+/** Declared corpus size — bumping this requires a conscious update here. */
+const EXPECTED_CORPUS_SIZE = 11;
+
+type CorpusDoc =
+  | { name: string; kind: 'payslip'; data: PayslipExtraction }
+  | { name: string; kind: 'form16'; data: Form16Extraction };
 
 function loadCorpus(): CorpusDoc[] {
   return readdirSync(EXTRACTION_DIR)
     .filter((f) => f.endsWith('.json'))
-    .map((f) => {
+    .map((f): CorpusDoc => {
       const name = f.replace('.json', '');
-      const data = JSON.parse(readFileSync(join(EXTRACTION_DIR, f), 'utf8'));
-      const kind: CorpusDoc['kind'] = name.startsWith('payslip') ? 'payslip' : 'form16';
-      return { name, kind, data };
+      const parsed: unknown = JSON.parse(readFileSync(join(EXTRACTION_DIR, f), 'utf8'));
+      if (name.startsWith('payslip')) {
+        return { name, kind: 'payslip', data: parsed as PayslipExtraction };
+      }
+      return { name, kind: 'form16', data: parsed as Form16Extraction };
     });
 }
 
@@ -92,6 +99,11 @@ const req = (documentId: string): ExtractionRequest => ({
   schemaVersion: 'v1',
 });
 
+function unwrap<T>(result: ExtractionResult<T>, label: string): T {
+  if (result.status !== 'success') throw new Error(`${label} failed: ${result.error}`);
+  return result.data;
+}
+
 // ─── Rules pipeline helper ──────────────────────────────────────
 
 function evaluate(ctx: CheckContext) {
@@ -105,60 +117,92 @@ describe('RCQ-20116 — model independence', () => {
   let corpus: CorpusDoc[];
   beforeAll(() => {
     corpus = loadCorpus();
-    expect(corpus.length).toBeGreaterThanOrEqual(10);
+    expect(
+      corpus.length,
+      'extraction corpus size changed — review whether the proof still covers every document kind',
+    ).toBe(EXPECTED_CORPUS_SIZE);
   });
 
   it('AC1 — swapping the extractor for another model yields IDENTICAL findings, score and verdict across the whole corpus', async () => {
+    const payslips = corpus.filter(
+      (d): d is Extract<CorpusDoc, { kind: 'payslip' }> => d.kind === 'payslip',
+    );
+    const form16s = corpus.filter(
+      (d): d is Extract<CorpusDoc, { kind: 'form16' }> => d.kind === 'form16',
+    );
     const fixtureExtractor = new FixtureExtractor({
-      payslips: Object.fromEntries(
-        corpus.filter((d) => d.kind === 'payslip').map((d) => [d.name, d.data]),
-      ),
-      form16s: Object.fromEntries(
-        corpus.filter((d) => d.kind === 'form16').map((d) => [d.name, d.data]),
-      ),
-    } as never);
+      payslips: Object.fromEntries(payslips.map((d) => [d.name, d.data])),
+      form16s: Object.fromEntries(form16s.map((d) => [d.name, d.data])),
+    });
     const nextModel = new NextModelExtractor(fixtureExtractor);
 
+    const assemblyFor = (kind: 'payslip' | 'form16'): CheckContext['assembly'] => ({
+      case_id: '00000000-0000-0000-0000-00000000000a',
+      origins: kind === 'payslip' ? ['payslip'] : ['form_16'],
+      has_payslip: kind === 'payslip',
+      has_form16: kind === 'form16',
+      has_epfo: false,
+      has_employer: false,
+      has_forensics: false,
+    });
+
     for (const doc of corpus) {
-      const viaFixture =
-        doc.kind === 'payslip'
-          ? await fixtureExtractor.extractPayslip(req(doc.name))
-          : await fixtureExtractor.extractForm16(req(doc.name));
-      const viaNextModel =
-        doc.kind === 'payslip'
-          ? await nextModel.extractPayslip(req(doc.name))
-          : await nextModel.extractForm16(req(doc.name));
-
       // Both models produced a successful structured read of the document.
-      expect(viaFixture.status, `${doc.name} fixture extraction`).toBe('success');
-      expect(viaNextModel.status, `${doc.name} next-model extraction`).toBe('success');
-
-      // Structured evidence is the contract between extraction and rules.
-      const structuredFixture =
+      const structuredA =
         doc.kind === 'payslip'
-          ? (viaFixture as { data: unknown }).data
-          : (viaFixture as { data: unknown }).data;
+          ? unwrap(
+              await fixtureExtractor.extractPayslip(req(doc.name)),
+              `${doc.name} fixture extraction`,
+            )
+          : unwrap(
+              await fixtureExtractor.extractForm16(req(doc.name)),
+              `${doc.name} fixture extraction`,
+            );
+      const structuredB =
+        doc.kind === 'payslip'
+          ? unwrap(
+              await nextModel.extractPayslip(req(doc.name)),
+              `${doc.name} next-model extraction`,
+            )
+          : unwrap(
+              await nextModel.extractForm16(req(doc.name)),
+              `${doc.name} next-model extraction`,
+            );
 
       // The rules engine has NO input slot for provider/model identity —
       // build the context exactly as assembleEvidence would.
-      const contextFor = (data: unknown): CheckContext => ({
-        assembly: {
-          case_id: '00000000-0000-0000-0000-00000000000a',
-          origins: doc.kind === 'payslip' ? ['payslip'] : ['form_16'],
-          has_payslip: doc.kind === 'payslip',
-          has_form16: doc.kind === 'form16',
-          has_epfo: false,
-          has_employer: false,
-          has_forensics: false,
-        },
-        payslip: (doc.kind === 'payslip' ? data : null) as never,
-        form16: (doc.kind === 'form16' ? data : null) as never,
-        epfoHistory: null,
-        forensics: null,
-      });
-
-      const outcomeA = evaluate(contextFor(structuredFixture));
-      const outcomeB = evaluate(contextFor((viaNextModel as { data: unknown }).data));
+      const outcomeA =
+        doc.kind === 'payslip'
+          ? evaluate({
+              assembly: assemblyFor('payslip'),
+              payslip: structuredA,
+              form16: null,
+              epfoHistory: null,
+              forensics: null,
+            })
+          : evaluate({
+              assembly: assemblyFor('form16'),
+              payslip: null,
+              form16: structuredA,
+              epfoHistory: null,
+              forensics: null,
+            });
+      const outcomeB =
+        doc.kind === 'payslip'
+          ? evaluate({
+              assembly: assemblyFor('payslip'),
+              payslip: structuredB,
+              form16: null,
+              epfoHistory: null,
+              forensics: null,
+            })
+          : evaluate({
+              assembly: assemblyFor('form16'),
+              payslip: null,
+              form16: structuredB,
+              epfoHistory: null,
+              forensics: null,
+            });
 
       expect(outcomeB.findings, `${doc.name} findings under next model`).toEqual(outcomeA.findings);
       expect(outcomeB.score, `${doc.name} score under next model`).toBe(outcomeA.score);
@@ -185,8 +229,11 @@ describe('RCQ-20116 — model independence', () => {
   });
 
   describe('AC2 — triangulate provenance', () => {
-    it('rules.triangulate declares provenance.model = null and source = derived', async () => {
-      const sampleContext = {
+    // assembleEvidence is mocked out; the step never touches deps in these tests.
+    const deps = {} as CaseProcessingDeps;
+
+    it('rules.triangulate declares provenance.model = null and source = derived on success', async () => {
+      const sampleContext: CheckContext = {
         assembly: {
           case_id: '00000000-0000-0000-0000-00000000000b',
           origins: ['payslip'],
@@ -210,13 +257,28 @@ describe('RCQ-20116 — model independence', () => {
 
       expect(step.id).toBe('rules.triangulate');
 
-      const result = await step.run({ caseId: 'c-1', deps: {} as never } as never);
+      const result = await step.run({ caseId: 'c-1', deps });
 
       expect(result.state).toBe('succeeded');
       expect(result.provenance.model).toBeNull();
       expect(result.provenance.source).toBe('derived');
-      // Even on failure the provenance stays model-free.
       expect(result.artifact).not.toBeNull();
+    });
+
+    it('provenance stays model-free even when evidence assembly fails', async () => {
+      vi.resetModules();
+      vi.doMock('../src/evidence/evidence-service.js', () => ({
+        assembleEvidence: vi.fn().mockRejectedValue(new Error('epfo unavailable')),
+      }));
+      const { TriangulateStep } = await import('../src/workflows/steps/triangulate-step.js');
+      const step = new TriangulateStep();
+
+      const result = await step.run({ caseId: 'c-err', deps });
+
+      expect(result.state).toBe('failed');
+      expect(result.provenance.model).toBeNull();
+      expect(result.provenance.source).toBe('derived');
+      expect(result.reason).toContain('Triangulation failed');
     });
   });
 });
