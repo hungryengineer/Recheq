@@ -9,6 +9,9 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    env: {
+      JWT_SECRET: 'dummy-test-secret-' + 'for-vitest-environment'.repeat(2),
+    },
     include: [
       'tests/**/*.test.ts',
       'packages/**/tests/**/*.test.ts',

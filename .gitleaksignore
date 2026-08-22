@@ -1,0 +1,2 @@
+# Ignore false positive in vitest.config.ts dummy secret during tests
+fde7a4e1cc23121b29515ed2df74e6c3ac6b0ef3:vitest.config.ts:generic-api-key:13
