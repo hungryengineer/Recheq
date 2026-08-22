@@ -123,7 +123,7 @@ export async function updateCase(
 
     const cleanData = Object.fromEntries(
       Object.entries(data).filter(([_, v]) => v !== undefined),
-    ) as Parameters<typeof deps.db.updateCaseDetails>[2];
+    ) as Partial<CaseUpdateInput>;
 
     await deps.db.updateCaseDetails(tx, caseId, cleanData);
 
