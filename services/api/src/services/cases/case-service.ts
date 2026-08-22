@@ -9,6 +9,14 @@ import {
 import { validationError, notFoundError } from '../../http/errors.js';
 import type { Database } from '../../db/client.js';
 
+function stripUndefined<T extends Record<string, unknown>>(
+  obj: T
+): { [K in keyof T]?: Exclude<T[K], undefined> } {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  ) as any;
+}
+
 export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 // Minimal interface for database operations we need in this service,
@@ -122,9 +130,7 @@ export async function updateCase(
       throw validationError('Employment end date cannot be before start date');
     }
 
-    const cleanData = Object.fromEntries(
-      Object.entries(data).filter(([_, v]) => v !== undefined),
-    ) as Partial<CaseUpdateInput>;
+    const cleanData = stripUndefined(data);
 
     await deps.db.updateCaseDetails(tx, caseId, cleanData);
 
