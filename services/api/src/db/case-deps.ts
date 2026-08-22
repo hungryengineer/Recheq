@@ -5,6 +5,8 @@ import { toCaseRecord } from './case-queries.js';
 import type { Database } from './client.js';
 import type { CaseServiceDeps } from '../services/cases/case-service.js';
 
+export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0]>[0];
+
 type CaseRow = typeof cases.$inferSelect;
 
 /** Maps a DB case row to the @tieout/schema CaseSummary contract. */
@@ -65,16 +67,24 @@ export function createCaseDeps(db: Database): CaseServiceDeps {
           .orderBy(desc(cases.created_at));
         return rows.map(toCaseSummary);
       },
-      async getCaseByIdAndOrg(caseId, orgId) {
-        const rows = await db
+      async getCaseByIdAndOrg(caseId, orgId, tx) {
+        const queryBuilder = tx ?? db;
+        const query = queryBuilder
           .select()
           .from(cases)
           .where(and(eq(cases.id, caseId), eq(cases.org_id, orgId)))
           .limit(1);
+
+        if (tx) {
+          // Lock row during transaction to prevent concurrent updates
+          query.for('update');
+        }
+
+        const rows = await query;
         return rows[0] ? toCaseRecord(rows[0]) : null;
       },
       async updateCaseDetails(tx, caseId, input) {
-        const queryBuilder = (tx as Database) ?? db;
+        const queryBuilder = tx ?? db;
         await queryBuilder
           .update(cases)
           .set({

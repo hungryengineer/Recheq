@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   createCase,
   updateCase,
@@ -10,6 +10,10 @@ import { AppError } from '../src/http/errors.js';
 import type { CaseRecord, CaseSummary } from '@tieout/schema';
 
 describe('Case Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const mockDeps: CaseServiceDeps = {
     db: {
       createCase: vi.fn(),
@@ -36,26 +40,29 @@ describe('Case Service', () => {
   const orgId = 'org-123';
   const userId = 'user-123';
 
+  const makeCaseRecord = (overrides?: Partial<CaseRecord>): CaseRecord => ({
+    id: 'case-1',
+    org_id: orgId,
+    created_by: userId,
+    employer_name: validCreateInput.employer_name,
+    candidate_name: validCreateInput.candidate_name,
+    candidate_email: validCreateInput.candidate_email,
+    title: validCreateInput.title,
+    claimed_ctc: validCreateInput.claimed_ctc,
+    employment_start: validCreateInput.employment_start,
+    employment_end: validCreateInput.employment_end,
+    uan: null,
+    status: 'awaiting_consent',
+    verdict: null,
+    risk_score: null,
+    created_at: '2023-10-01T00:00:00Z',
+    updated_at: '2023-10-01T00:00:00Z',
+    ...overrides,
+  });
+
   describe('createCase', () => {
     it('creates a draft case successfully', async () => {
-      const mockResult: CaseRecord = {
-        id: 'case-123',
-        org_id: orgId,
-        created_by: userId,
-        employer_name: validCreateInput.employer_name,
-        candidate_name: validCreateInput.candidate_name,
-        candidate_email: validCreateInput.candidate_email,
-        title: validCreateInput.title,
-        claimed_ctc: validCreateInput.claimed_ctc,
-        employment_start: validCreateInput.employment_start,
-        employment_end: validCreateInput.employment_end,
-        uan: null,
-        status: 'awaiting_consent',
-        verdict: null,
-        risk_score: null,
-        created_at: '2023-10-01T00:00:00Z',
-        updated_at: '2023-10-01T00:00:00Z',
-      };
+      const mockResult: CaseRecord = makeCaseRecord({ id: 'case-123' });
 
       vi.mocked(mockDeps.db.createCase).mockResolvedValueOnce(mockResult);
 
@@ -141,12 +148,7 @@ describe('Case Service', () => {
 
   describe('updateCase', () => {
     it('updates case fields and writes an audit event', async () => {
-      const mockCase = {
-        id: 'case-1',
-        org_id: orgId,
-        employment_start: '2020-01-01',
-        employment_end: '2023-01-01',
-      } as CaseRecord;
+      const mockCase = makeCaseRecord();
       vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
 
       const updateInput = {
@@ -155,6 +157,8 @@ describe('Case Service', () => {
 
       await updateCase('case-1', updateInput, userId, orgId, mockDeps);
 
+      expect(mockDeps.db.transaction).toHaveBeenCalledTimes(1);
+      expect(mockDeps.db.getCaseByIdAndOrg).toHaveBeenCalledWith('case-1', orgId, 'mock-tx');
       expect(mockDeps.db.updateCaseDetails).toHaveBeenCalledWith('mock-tx', 'case-1', updateInput);
       expect(mockDeps.audit.appendEvent).toHaveBeenCalledWith('mock-tx', {
         case_id: 'case-1',
@@ -165,17 +169,18 @@ describe('Case Service', () => {
     });
 
     it('rejects end date before start date', async () => {
-      const mockCase = {
-        id: 'case-1',
-        org_id: orgId,
+      const mockCase = makeCaseRecord({
         employment_start: '2020-01-01',
         employment_end: '2023-01-01',
-      } as CaseRecord;
+      });
       vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
 
       await expect(
         updateCase('case-1', { employment_end: '2019-01-01' }, userId, orgId, mockDeps),
-      ).rejects.toThrowError(AppError);
+      ).rejects.toMatchObject({ statusCode: 422 });
+
+      expect(mockDeps.db.updateCaseDetails).not.toHaveBeenCalled();
+      expect(mockDeps.audit.appendEvent).not.toHaveBeenCalled();
     });
 
     it('throws 404 when case not found', async () => {
@@ -183,16 +188,19 @@ describe('Case Service', () => {
 
       await expect(
         updateCase('case-1', { title: 'New' }, userId, orgId, mockDeps),
-      ).rejects.toThrowError(AppError);
+      ).rejects.toMatchObject({ statusCode: 404 });
+
+      expect(mockDeps.db.updateCaseDetails).not.toHaveBeenCalled();
+      expect(mockDeps.audit.appendEvent).not.toHaveBeenCalled();
     });
 
     it('rejects invalid schema inputs', async () => {
-      const mockCase = { id: 'case-1', org_id: orgId } as CaseRecord;
-      vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
-
       await expect(
         updateCase('case-1', { claimed_ctc: -100 }, userId, orgId, mockDeps),
-      ).rejects.toThrowError(AppError);
+      ).rejects.toMatchObject({ statusCode: 422 });
+
+      expect(mockDeps.db.updateCaseDetails).not.toHaveBeenCalled();
+      expect(mockDeps.audit.appendEvent).not.toHaveBeenCalled();
     });
   });
 
@@ -222,7 +230,7 @@ describe('Case Service', () => {
 
   describe('getCase', () => {
     it('returns case when found in org', async () => {
-      const mockCase = { id: 'case-1' } as CaseRecord;
+      const mockCase = makeCaseRecord();
       vi.mocked(mockDeps.db.getCaseByIdAndOrg).mockResolvedValueOnce(mockCase);
 
       const result = await getCase('case-1', orgId, mockDeps);

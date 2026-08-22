@@ -6,6 +6,9 @@ import {
   type EventRecord,
 } from '@tieout/schema';
 import { validationError, notFoundError } from '../../http/errors.js';
+import type { Database } from '../../db/client.js';
+
+export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 // Minimal interface for database operations we need in this service,
 // to allow easy mocking in unit tests.
@@ -15,7 +18,7 @@ export interface CaseServiceDeps {
       input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>,
     ) => Promise<CaseRecord>;
     updateCaseDetails: (
-      tx: unknown,
+      tx: TransactionHandle,
       caseId: string,
       input: Partial<
         Omit<
@@ -32,11 +35,15 @@ export interface CaseServiceDeps {
       >,
     ) => Promise<void>;
     listCasesByOrg: (orgId: string) => Promise<CaseSummary[]>;
-    getCaseByIdAndOrg: (caseId: string, orgId: string) => Promise<CaseRecord | null>;
-    transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
+    getCaseByIdAndOrg: (
+      caseId: string,
+      orgId: string,
+      tx?: TransactionHandle,
+    ) => Promise<CaseRecord | null>;
+    transaction: <T>(cb: (tx: TransactionHandle) => Promise<T>) => Promise<T>;
   };
   audit: {
-    appendEvent: (tx: unknown, input: EventInput) => Promise<EventRecord>;
+    appendEvent: (tx: TransactionHandle, input: EventInput) => Promise<EventRecord>;
   };
 }
 
@@ -87,11 +94,6 @@ export async function updateCase(
   orgId: string,
   deps: CaseServiceDeps,
 ): Promise<void> {
-  const caseRecord = await deps.db.getCaseByIdAndOrg(caseId, orgId);
-  if (!caseRecord) {
-    throw notFoundError(`Case ${caseId} not found`);
-  }
-
   // We lazily import CaseUpdateInput to avoid circular issues, or use it directly if imported.
   // We'll import it at the top of the file via the schema package.
   const parsed = (await import('@tieout/schema')).CaseUpdateInput.safeParse(input);
@@ -104,16 +106,21 @@ export async function updateCase(
     return; // nothing to update
   }
 
-  // If employment dates are being updated, ensure end >= start
-  const startRaw = data.employment_start ?? caseRecord.employment_start;
-  const endRaw = data.employment_end ?? caseRecord.employment_end;
-  const start = new Date(startRaw);
-  const end = new Date(endRaw);
-  if (end < start) {
-    throw validationError('Employment end date cannot be before start date');
-  }
-
   await deps.db.transaction(async (tx) => {
+    const caseRecord = await deps.db.getCaseByIdAndOrg(caseId, orgId, tx);
+    if (!caseRecord) {
+      throw notFoundError(`Case ${caseId} not found`);
+    }
+
+    // If employment dates are being updated, ensure end >= start
+    const startRaw = data.employment_start ?? caseRecord.employment_start;
+    const endRaw = data.employment_end ?? caseRecord.employment_end;
+    const start = new Date(startRaw);
+    const end = new Date(endRaw);
+    if (end < start) {
+      throw validationError('Employment end date cannot be before start date');
+    }
+
     await deps.db.updateCaseDetails(tx, caseId, data);
 
     // Write audit trail entry
