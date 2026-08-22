@@ -69,22 +69,23 @@ export class ExtractionStep implements VerificationStep<
 
       await Promise.all(
         chunk.map(async (doc) => {
-          const isValidKind = (k: string): k is 'payslip' | 'form_16' =>
-            k === 'payslip' || k === 'form_16';
-
-          if (!isValidKind(doc.kind)) {
-            throw new Error(`Unsupported document kind: ${doc.kind}`);
-          }
-
-          const kind = doc.kind;
-
-          // Create pending extraction
-          const extId = await createExtraction(deps.db, doc.id, {
-            modelId: 'default',
-            schemaVersion: kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
-          });
-
+          let extId: string | undefined;
           try {
+            const isValidKind = (k: string): k is 'payslip' | 'form_16' =>
+              k === 'payslip' || k === 'form_16';
+
+            if (!isValidKind(doc.kind)) {
+              throw new Error(`Unsupported document kind: ${doc.kind}`);
+            }
+
+            const kind = doc.kind;
+
+            // Create pending extraction
+            extId = await createExtraction(deps.db, doc.id, {
+              modelId: 'default',
+              schemaVersion: kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
+            });
+
             const docContent = await deps.db.getDocumentContent(doc.id);
 
             const req = {
@@ -108,23 +109,35 @@ export class ExtractionStep implements VerificationStep<
               failedCount++;
             }
           } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
             if (
               err instanceof ProviderUnavailableError ||
               (err instanceof ExtractionError &&
                 err.failureType === ExtractionFailureType.RATE_LIMITED)
             ) {
+              if (extId) {
+                try {
+                  await updateExtractionFailure(deps.db, extId, msg);
+                } catch (dbErr) {
+                  console.error(`Failed to record transient extraction failure for doc ${doc.id}:`, dbErr);
+                }
+              }
               // Do not swallow transient infrastructure errors - fail job for retry
               throw new RecoverableWorkflowError(
                 'Extraction provider unavailable or rate limited',
                 err,
               );
             }
-            const msg = err instanceof Error ? err.message : String(err);
+            
             failedCount++;
-            try {
-              await updateExtractionFailure(deps.db, extId, msg);
-            } catch (dbErr) {
-              console.error(`Failed to record extraction failure for doc ${doc.id}:`, dbErr);
+            if (extId) {
+              try {
+                await updateExtractionFailure(deps.db, extId, msg);
+              } catch (dbErr) {
+                console.error(`Failed to record extraction failure for doc ${doc.id}:`, dbErr);
+              }
+            } else {
+              console.error(`Failed to extract doc ${doc.id} before initialization:`, msg);
             }
           }
         }),
