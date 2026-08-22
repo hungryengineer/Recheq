@@ -2,8 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   compareOperations,
   parseDocumentedOperations,
+  getImplementedOperations,
   type Operation,
 } from '../../scripts/check-api-contract.js';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 describe('API Contract Checker', () => {
   describe('parseDocumentedOperations', () => {
@@ -94,6 +98,28 @@ paths:
       const result = compareOperations(documented, implemented);
       expect(result.hasError).toBe(false);
       expect(result.errors).toHaveLength(0);
+    });
+  });
+  describe('getImplementedOperations', () => {
+    it('strips Next.js route groups from API paths', () => {
+      const root = mkdtempSync(join(tmpdir(), 'api-contract-'));
+      try {
+        mkdirSync(join(root, '(auth)', 'users'), { recursive: true });
+        mkdirSync(join(root, 'admin'), { recursive: true });
+        writeFileSync(join(root, '(auth)', 'users', 'route.ts'), 'export const GET = () => {};');
+        writeFileSync(join(root, 'admin', 'route.ts'), 'export const POST = () => {};');
+
+        const operations = getImplementedOperations(root);
+        expect(operations).toHaveLength(2);
+        expect(operations).toEqual(
+          expect.arrayContaining([
+            { path: '/api/users', method: 'get' },
+            { path: '/api/admin', method: 'post' },
+          ]),
+        );
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
     });
   });
 });
