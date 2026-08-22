@@ -4,17 +4,21 @@
  * Runs the deterministic rules engine over the labelled reliability corpus
  * (fixtures/reliability/) and reports, with honest sample sizes:
  *
- *   - PRECISION — of the findings actually raised (status 'open'), how many
- *     were true tampering. Reported FIRST: a false positive damages a real
- *     person's job prospects.
- *   - RECALL — of doctored cases, how many were caught by an expected rule.
+ *   - PRECISION — of the findings actually raised against a document
+ *     (status 'open'), how many match the labelled ground truth. Reported
+ *     FIRST: a false positive damages a real person's job prospects.
+ *     Findings that fire on doctored documents but are not covered by a
+ *     label are reported separately and excluded from the ratio until the
+ *     corpus labels them.
+ *   - RECALL — of ALL manifest-doctored cases (including ones whose
+ *     fixtures fail to load), how many were caught by an expected rule.
  *   - Every failure categorised into one of five modes:
  *       extraction-error | rule-tolerance-too-tight | rule-tolerance-too-loose |
  *       missing-evidence | genuine-ambiguity
  *
- * Ground truth lives in fixtures/reliability/manifest.json. Payload files may
- * carry underscore-prefixed side-data ("_epfo", "_forensics") which is stripped
- * before schema validation.
+ * Ground truth lives in fixtures/reliability/manifest.json. The manifest and
+ * all side-data ("_epfo", "_forensics") are runtime-validated — malformed
+ * input produces a categorised failure, never a crash mid-measurement.
  *
  * Usage:
  *   pnpm measure:reliability
@@ -94,6 +98,77 @@ class ExtractionError extends Error {
   }
 }
 
+// ─── Runtime validation helpers (no casts — malformed input fails loudly) ──
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertRecord(value: unknown, what: string): Record<string, unknown> {
+  if (!isRecord(value)) {
+    throw new Error(`${what} must be an object`);
+  }
+  return value;
+}
+
+function assertString(value: unknown, what: string): string {
+  if (typeof value !== 'string') throw new Error(`${what} must be a string`);
+  return value;
+}
+
+function assertNullableString(value: unknown, what: string): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') throw new Error(`${what} must be a string or null`);
+  return value;
+}
+
+function assertNumber(value: unknown, what: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`${what} must be a finite number`);
+  }
+  return value;
+}
+
+function validateCorpusCase(raw: unknown, index: number): CorpusCase {
+  const c = assertRecord(raw, `manifest.cases[${index}]`);
+  const at = (field: string): string => `manifest.cases[${index}].${field}`;
+
+  const id = assertString(c['id'], at('id'));
+  const label = assertString(c['label'], at('label'));
+  if (label !== 'clean' && label !== 'doctored') {
+    throw new Error(`${at('label')} must be "clean" or "doctored"`);
+  }
+  const payslip = assertNullableString(c['payslip'], at('payslip'));
+  const form16 = assertNullableString(c['form16'], at('form16'));
+  if (!payslip && !form16) {
+    throw new Error(`${at('payslip')}/${at('form16')}: at least one document required`);
+  }
+  const includeEpfo = c['include_epfo'];
+  const includeForensics = c['include_forensics'];
+  if (typeof includeEpfo !== 'boolean') throw new Error(`${at('include_epfo')} must be a boolean`);
+  if (typeof includeForensics !== 'boolean') {
+    throw new Error(`${at('include_forensics')} must be a boolean`);
+  }
+  const rawRules = c['expected_rules'];
+  if (!Array.isArray(rawRules)) throw new Error(`${at('expected_rules')} must be an array`);
+  const expectedRules = rawRules.map((r, i) => assertString(r, `${at('expected_rules')}[${i}]`));
+  const tamperMethod =
+    label === 'doctored'
+      ? assertString(c['tamper_method'], at('tamper_method'))
+      : assertNullableString(c['tamper_method'], at('tamper_method'));
+
+  return {
+    id,
+    label,
+    payslip,
+    form16,
+    include_epfo: includeEpfo,
+    include_forensics: includeForensics,
+    expected_rules: expectedRules,
+    tamper_method: tamperMethod,
+  };
+}
+
 // ─── Loading ─────────────────────────────────────────────────────
 
 function stripPrivateKeys(payload: Record<string, unknown>): Record<string, unknown> {
@@ -110,17 +185,28 @@ function privateData(
 
 function readJson(fileName: string): Record<string, unknown> {
   const raw: unknown = JSON.parse(fs.readFileSync(path.join(RELIABILITY_DIR, fileName), 'utf8'));
-  if (typeof raw !== 'object' || raw === null) {
-    throw new Error(`${fileName}: not a JSON object`);
-  }
-  return raw as Record<string, unknown>;
+  return assertRecord(raw, fileName);
 }
 
 function loadManifest(): Manifest {
   const manifest = readJson('manifest.json');
-  const cases = manifest['cases'];
-  if (!Array.isArray(cases)) throw new Error('manifest.json: missing "cases" array');
-  return { cases: cases as CorpusCase[] };
+  const rawCases = manifest['cases'];
+  if (!Array.isArray(rawCases)) throw new Error('manifest.json: missing "cases" array');
+  const problems: string[] = [];
+  const cases: CorpusCase[] = [];
+  for (let i = 0; i < rawCases.length; i++) {
+    try {
+      cases.push(validateCorpusCase(rawCases[i], i));
+    } catch (err) {
+      problems.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  if (problems.length > 0) {
+    throw new Error(
+      `manifest.json contains ${problems.length} invalid case(s):\n  ${problems.join('\n  ')}`,
+    );
+  }
+  return { cases };
 }
 
 function loadPayslip(name: string, caseId: string): PayslipPayload {
@@ -145,12 +231,96 @@ function loadForm16(name: string, caseId: string): Form16Payload {
   return parsed.data;
 }
 
+function validateEpfo(raw: Record<string, unknown>, caseId: string): EpfoHistory {
+  const fail = (msg: string): never => {
+    throw new ExtractionError(caseId, `_epfo side-data is malformed: ${msg}`);
+  };
+  const uan = typeof raw['uan'] === 'string' ? raw['uan'] : fail('uan must be a string');
+  const rawPeriods = Array.isArray(raw['periods'])
+    ? raw['periods']
+    : fail('periods must be an array');
+  const periods = rawPeriods.map((p, i) => {
+    const period = assertRecord(p, `periods[${i}]`);
+    const rawContributions = Array.isArray(period['contributions'])
+      ? period['contributions']
+      : fail(`periods[${i}].contributions must be an array`);
+    return {
+      employerName: assertString(period['employerName'], `periods[${i}].employerName`),
+      establishmentId: assertString(period['establishmentId'], `periods[${i}].establishmentId`),
+      startDate: assertString(period['startDate'], `periods[${i}].startDate`),
+      endDate: assertNullableString(period['endDate'], `periods[${i}].endDate`),
+      contributions: rawContributions.map((cRaw, j) => {
+        const contribution = assertRecord(cRaw, `periods[${i}].contributions[${j}]`);
+        return {
+          month: assertString(contribution['month'], `contributions[${j}].month`),
+          employee_share: assertNumber(
+            contribution['employee_share'],
+            `contributions[${j}].employee_share`,
+          ),
+          employer_share: assertNumber(
+            contribution['employer_share'],
+            `contributions[${j}].employer_share`,
+          ),
+        };
+      }),
+    };
+  });
+  return { uan, periods };
+}
+
+function validateForensics(raw: Record<string, unknown>, caseId: string): ForensicsData {
+  const fail = (msg: string): never => {
+    throw new ExtractionError(caseId, `_forensics side-data is malformed: ${msg}`);
+  };
+  const fontRunsRaw = raw['font_runs'];
+  let fontRuns: ForensicsData['font_runs'] = null;
+  if (fontRunsRaw !== null) {
+    const fr = fontRunsRaw === undefined ? null : assertRecord(fontRunsRaw, 'font_runs');
+    fontRuns = fr && {
+      total_characters: assertNumber(fr['total_characters'], 'font_runs.total_characters'),
+      unique_fonts: assertNumber(fr['unique_fonts'], 'font_runs.unique_fonts'),
+      dominant_font: assertString(fr['dominant_font'], 'font_runs.dominant_font'),
+      anomalous_characters: assertNumber(
+        fr['anomalous_characters'],
+        'font_runs.anomalous_characters',
+      ),
+    };
+  }
+  const monetaryRaw = raw['monetary_anomalies'];
+  let monetaryAnomalies: ForensicsData['monetary_anomalies'] = null;
+  if (monetaryRaw !== null) {
+    const ma = monetaryRaw === undefined ? null : assertRecord(monetaryRaw, 'monetary_anomalies');
+    monetaryAnomalies = ma && {
+      flagged_regions: assertNumber(ma['flagged_regions'], 'monetary_anomalies.flagged_regions'),
+      highest_confidence_anomaly: assertNumber(
+        ma['highest_confidence_anomaly'],
+        'monetary_anomalies.highest_confidence_anomaly',
+      ),
+    };
+  }
+  const toDate = (v: unknown, what: string): Date | null => {
+    const s = assertNullableString(v, what);
+    if (s === null) return null;
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) fail(`${what} is not a valid date`);
+    return d;
+  };
+  return {
+    producer: assertNullableString(raw['producer'], 'producer'),
+    creator: assertNullableString(raw['creator'], 'creator'),
+    creation_date: toDate(raw['creation_date'], 'creation_date'),
+    modification_date: toDate(raw['modification_date'], 'modification_date'),
+    font_runs: fontRuns,
+    monetary_anomalies: monetaryAnomalies,
+  };
+}
+
 function loadEpfo(payslipName: string, caseId: string): EpfoHistory {
   const data = privateData(readJson(`${payslipName}.json`), '_epfo');
   if (!data) {
     throw new ExtractionError(caseId, `payslip "${payslipName}" has no _epfo side-data`);
   }
-  return data as unknown as EpfoHistory;
+  return validateEpfo(data, caseId);
 }
 
 function loadForensics(payslipName: string, caseId: string): ForensicsData[] {
@@ -158,17 +328,7 @@ function loadForensics(payslipName: string, caseId: string): ForensicsData[] {
   if (!data) {
     throw new ExtractionError(caseId, `payslip "${payslipName}" has no _forensics side-data`);
   }
-  const record = data as unknown as Omit<ForensicsData, 'creation_date' | 'modification_date'> & {
-    creation_date: string | null;
-    modification_date: string | null;
-  };
-  return [
-    {
-      ...record,
-      creation_date: record.creation_date ? new Date(record.creation_date) : null,
-      modification_date: record.modification_date ? new Date(record.modification_date) : null,
-    },
-  ];
+  return [validateForensics(data, caseId)];
 }
 
 // ─── Evaluation ──────────────────────────────────────────────────
@@ -204,12 +364,25 @@ function buildContext(
   };
 }
 
+function readThreshold(flag: string): number | null {
+  const idx = process.argv.indexOf(flag);
+  if (idx === -1) return null;
+  const raw = process.argv[idx + 1];
+  const value = raw === undefined ? NaN : Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error(`${flag} requires a number between 0 and 1`);
+  }
+  return value;
+}
+
 function measure(): void {
   const jsonOut = process.argv.includes('--json');
   const minPrecision = readThreshold('--min-precision');
   const minRecall = readThreshold('--min-recall');
 
   const manifest = loadManifest();
+  const manifestDoctoredTotal = manifest.cases.filter((c) => c.label === 'doctored').length;
+
   const results: CaseResult[] = [];
   const failures: CategorisedFailure[] = [];
 
@@ -249,21 +422,33 @@ function measure(): void {
   }
 
   // ── Metrics ──
-  // Finding-level precision over status='open' findings only; 'not_assessed'
-  // entries are coverage gaps, not accusations, so they never inflate or
-  // deflate precision.
+  // Only status='open' findings count as accusations ('not_assessed' entries
+  // are coverage gaps). A finding is a TRUE positive only when it matches the
+  // labelled ground-truth rule for that doctored case; unlabelled fires on
+  // doctored documents are reported separately and stay out of both sides of
+  // the ratio until the corpus labels them.
   const doctored = results.filter((r) => r.label === 'doctored');
   const clean = results.filter((r) => r.label === 'clean');
 
-  const truePositives = doctored.flatMap((r) => r.openFindings).length;
+  const isExpected = (r: CaseResult, f: FindingInput): boolean =>
+    r.expectedRules.includes(f.rule_id);
+
+  const truePositives = doctored.flatMap((r) =>
+    r.openFindings.filter((f) => isExpected(r, f)),
+  ).length;
   const falsePositives = clean.flatMap((r) => r.openFindings).length;
+  const unlabelledFindings = doctored.flatMap((r) =>
+    r.openFindings.filter((f) => !isExpected(r, f)),
+  ).length;
   const precisionDenominator = truePositives + falsePositives;
   const precision = precisionDenominator === 0 ? 1 : truePositives / precisionDenominator;
 
   const caught = doctored.filter((r) =>
     r.expectedRules.some((expected) => r.openFindings.some((f) => f.rule_id === expected)),
   );
-  const recall = doctored.length === 0 ? 1 : caught.length / doctored.length;
+  // Recall's denominator covers EVERY manifest-doctored case: a case whose
+  // fixture fails to load was not caught either.
+  const recall = manifestDoctoredTotal === 0 ? 1 : caught.length / manifestDoctoredTotal;
 
   // ── Categorisation of every failure ──
   for (const r of clean) {
@@ -277,7 +462,7 @@ function measure(): void {
   }
   for (const r of doctored) {
     const firedExpected = r.expectedRules.some((e) => r.openFindings.some((f) => f.rule_id === e));
-    const unexpectedOpen = r.openFindings.filter((f) => !r.expectedRules.includes(f.rule_id));
+    const unexpectedOpen = r.openFindings.filter((f) => !isExpected(r, f));
     if (!firedExpected) {
       const blockedByMissingEvidence = r.expectedRules.some((e) =>
         r.findings.some((f) => f.rule_id === e && f.status === 'not_assessed'),
@@ -300,13 +485,13 @@ function measure(): void {
   }
 
   const perMethod = new Map<string, { total: number; caught: number }>();
-  for (const r of doctored) {
-    const key = r.tamperMethod ?? 'unlabelled';
+  for (const c of manifest.cases) {
+    if (c.label !== 'doctored') continue;
+    const key = c.tamper_method ?? 'unlabelled';
     const entry = perMethod.get(key) ?? { total: 0, caught: 0 };
     entry.total += 1;
-    if (r.expectedRules.some((e) => r.openFindings.some((f) => f.rule_id === e))) {
-      entry.caught += 1;
-    }
+    const result = caught.find((r) => r.id === c.id);
+    if (result) entry.caught += 1;
     perMethod.set(key, entry);
   }
 
@@ -319,17 +504,35 @@ function measure(): void {
     }
   }
 
-  const report = { precision, recall, truePositives, falsePositives, results, failures };
+  const report = {
+    corpus: {
+      total_manifest_cases: manifest.cases.length,
+      clean: clean.length,
+      doctored: manifestDoctoredTotal,
+      loaded: results.length,
+      failed_to_load: manifest.cases.length - results.length,
+    },
+    precision,
+    recall,
+    truePositives,
+    falsePositives,
+    unlabelledFindings,
+    caught: caught.length,
+    perMethod: Object.fromEntries(perMethod),
+    coverageGaps: Object.fromEntries(coverageGaps),
+    failures,
+  };
 
   if (jsonOut) {
     console.log(JSON.stringify(report, null, 2));
   } else {
     printReport({
       cleanCount: clean.length,
-      doctoredCount: doctored.length,
-      totalCases: results.length + failures.filter((f) => f.mode === 'extraction-error').length,
+      doctoredTotal: manifestDoctoredTotal,
+      totalCases: manifest.cases.length,
       truePositives,
       falsePositives,
+      unlabelledFindings,
       precision,
       recall,
       caughtCount: caught.length,
@@ -353,23 +556,15 @@ function measure(): void {
   }
 }
 
-function readThreshold(flag: string): number | null {
-  const idx = process.argv.indexOf(flag);
-  if (idx === -1) return null;
-  const raw = process.argv[idx + 1];
-  const value = raw === undefined ? NaN : Number(raw);
-  if (Number.isNaN(value)) throw new Error(`${flag} requires a number between 0 and 1`);
-  return value;
-}
-
 // ─── Reporting ───────────────────────────────────────────────────
 
 function printReport(m: {
   cleanCount: number;
-  doctoredCount: number;
+  doctoredTotal: number;
   totalCases: number;
   truePositives: number;
   falsePositives: number;
+  unlabelledFindings: number;
   precision: number;
   recall: number;
   caughtCount: number;
@@ -380,18 +575,28 @@ function printReport(m: {
   console.log('════════════════════════════════════════════════════════════');
   console.log(' RCQ-20122 — Reliability of the rules engine (labelled corpus)');
   console.log('════════════════════════════════════════════════════════════');
-  console.log(`Corpus: n=${m.totalCases} (${m.cleanCount} clean / ${m.doctoredCount} doctored)\n`);
+  console.log(`Corpus: n=${m.totalCases} (${m.cleanCount} clean / ${m.doctoredTotal} doctored)\n`);
 
   console.log('PRECISION (reported first — a false positive damages a real');
   console.log(
-    `person's job prospects): ${m.truePositives}/${m.truePositives + m.falsePositives} findings were true tampering`,
+    `person's job prospects): ${m.truePositives}/${m.truePositives + m.falsePositives} raised findings matched the labelled ground truth`,
   );
   console.log(
-    `  = ${(m.precision * 100).toFixed(1)}%, i.e. ${m.falsePositives} false positive(s) across ${m.cleanCount} clean documents\n`,
+    `  = ${(m.precision * 100).toFixed(1)}%, i.e. ${m.falsePositives} false positive(s) across ${m.cleanCount} clean documents`,
   );
+  if (m.unlabelledFindings > 0) {
+    console.log(
+      `  ${m.unlabelledFindings} finding(s) on doctored documents fired rules outside their labels;`,
+    );
+    console.log(
+      '  they are listed under genuine-ambiguity and excluded from the ratio until labelled.',
+    );
+  }
+  console.log('');
 
-  console.log(`RECALL: ${m.caughtCount}/${m.doctoredCount} doctored documents caught`);
-  console.log(`  = ${(m.recall * 100).toFixed(1)}%\n`);
+  console.log(`RECALL: ${m.caughtCount}/${m.doctoredTotal} doctored documents caught`);
+  console.log(`  (every manifest doctored case counts in the denominator —`);
+  console.log(`   one whose fixture fails to load counts as NOT caught)\n`);
 
   console.log('Per tamper method:');
   for (const [method, s] of m.perMethod) {
