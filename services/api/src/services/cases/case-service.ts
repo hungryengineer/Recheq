@@ -121,13 +121,17 @@ export async function updateCase(
       throw validationError('Employment end date cannot be before start date');
     }
 
-    await deps.db.updateCaseDetails(tx, caseId, data);
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined)
+    ) as Parameters<typeof deps.db.updateCaseDetails>[2];
+
+    await deps.db.updateCaseDetails(tx, caseId, cleanData);
 
     // Write audit trail entry
     await deps.audit.appendEvent(tx, {
       case_id: caseId,
       kind: 'case_updated',
-      payload: { changes: data },
+      payload: { changes: cleanData },
       actor: userId, // The user performing the edit
     });
   });
