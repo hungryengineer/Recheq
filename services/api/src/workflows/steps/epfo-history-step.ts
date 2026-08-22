@@ -71,9 +71,13 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
           completedAt: new Date(),
         };
       }
-      // R1.16: the declared source reported final unavailability — mark the
-      // step not_assessed (no undeclared fallback), never failed. Thrown
-      // infra faults take the R1.10 catch path below instead.
+      // R1.16: a declared source that is unavailable — no history found OR
+      // the provider call failing/rejecting (absorbed by syncEpfoHistory per
+      // BE-11 "provider failure causes dependent rules to be not assessed") —
+      // is final unavailability: mark not_assessed with a candidate-safe
+      // reason, never failed, never an undeclared fallback. Only faults
+      // outside the provider contract (e.g. persistence errors) throw and
+      // take the R1.10 catch path below.
       return {
         state: 'not_assessed',
         artifact: null,
