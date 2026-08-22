@@ -115,6 +115,7 @@ export function CreateCaseForm() {
               id="candidate_name"
               name="candidate_name"
               aria-describedby={fieldErrors.candidate_name ? 'candidate_name-error' : undefined}
+              aria-invalid={!!fieldErrors.candidate_name}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.candidate_name ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.candidate_name && (
@@ -136,6 +137,7 @@ export function CreateCaseForm() {
               id="candidate_email"
               name="candidate_email"
               aria-describedby={fieldErrors.candidate_email ? 'candidate_email-error' : undefined}
+              aria-invalid={!!fieldErrors.candidate_email}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.candidate_email ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.candidate_email && (
@@ -157,6 +159,7 @@ export function CreateCaseForm() {
               id="employer_name"
               name="employer_name"
               aria-describedby={fieldErrors.employer_name ? 'employer_name-error' : undefined}
+              aria-invalid={!!fieldErrors.employer_name}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employer_name ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.employer_name && (
@@ -178,6 +181,7 @@ export function CreateCaseForm() {
               id="title"
               name="title"
               aria-describedby={fieldErrors.title ? 'title-error' : undefined}
+              aria-invalid={!!fieldErrors.title}
               className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.title ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
             />
             {fieldErrors.title && (
@@ -202,6 +206,7 @@ export function CreateCaseForm() {
                 aria-describedby={
                   fieldErrors.employment_start ? 'employment_start-error' : undefined
                 }
+                aria-invalid={!!fieldErrors.employment_start}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employment_start ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.employment_start && (
@@ -222,6 +227,7 @@ export function CreateCaseForm() {
                 id="employment_end"
                 name="employment_end"
                 aria-describedby={fieldErrors.employment_end ? 'employment_end-error' : undefined}
+                aria-invalid={!!fieldErrors.employment_end}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.employment_end ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.employment_end && (
@@ -245,6 +251,7 @@ export function CreateCaseForm() {
                 id="claimed_ctc"
                 name="claimed_ctc"
                 aria-describedby={fieldErrors.claimed_ctc ? 'claimed_ctc-error' : undefined}
+                aria-invalid={!!fieldErrors.claimed_ctc}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.claimed_ctc ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.claimed_ctc && (
@@ -265,6 +272,7 @@ export function CreateCaseForm() {
                 id="uan"
                 name="uan"
                 aria-describedby={fieldErrors.uan ? 'uan-error' : undefined}
+                aria-invalid={!!fieldErrors.uan}
                 className={`w-full rounded-[var(--radius-control)] border ${fieldErrors.uan ? 'border-[var(--color-high)]' : 'border-[var(--color-border)]'} px-3 py-2 text-[var(--color-fg)] bg-[var(--color-surface)]`}
               />
               {fieldErrors.uan && (

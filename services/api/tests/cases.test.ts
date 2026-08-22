@@ -202,6 +202,14 @@ describe('Case Service', () => {
       expect(mockDeps.db.updateCaseDetails).not.toHaveBeenCalled();
       expect(mockDeps.audit.appendEvent).not.toHaveBeenCalled();
     });
+
+    it('returns early on empty update', async () => {
+      await updateCase('case-1', {}, userId, orgId, mockDeps);
+
+      expect(mockDeps.db.transaction).not.toHaveBeenCalled();
+      expect(mockDeps.db.updateCaseDetails).not.toHaveBeenCalled();
+      expect(mockDeps.audit.appendEvent).not.toHaveBeenCalled();
+    });
   });
 
   describe('listCases', () => {
