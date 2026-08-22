@@ -119,7 +119,10 @@ export class ExtractionStep implements VerificationStep<
                 try {
                   await updateExtractionFailure(deps.db, extId, msg);
                 } catch (dbErr) {
-                  console.error(`Failed to record transient extraction failure for doc ${doc.id}:`, dbErr);
+                  console.error(
+                    `Failed to record transient extraction failure for doc ${doc.id}:`,
+                    dbErr,
+                  );
                 }
               }
               // Do not swallow transient infrastructure errors - fail job for retry
@@ -128,7 +131,7 @@ export class ExtractionStep implements VerificationStep<
                 err,
               );
             }
-            
+
             failedCount++;
             if (extId) {
               try {
