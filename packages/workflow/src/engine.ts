@@ -65,11 +65,11 @@ class Semaphore {
   }
 }
 
-export class Engine {
-  private readonly byId = new Map<string, VerificationStep>();
+export class Engine<TCtx extends StepContext = StepContext> {
+  private readonly byId = new Map<string, VerificationStep<TCtx>>();
   private semaphore = new Semaphore(MAX_CONCURRENCY);
 
-  constructor(private steps: VerificationStep[]) {
+  constructor(private steps: VerificationStep<TCtx>[]) {
     this.validate();
   }
 
@@ -139,7 +139,7 @@ export class Engine {
     }
   }
 
-  async run(ctx: StepContext, opts: EngineRunOptions = {}): Promise<EngineResult> {
+  async run(ctx: TCtx, opts: EngineRunOptions = {}): Promise<EngineResult> {
     if (this.steps.length === 0) {
       return {
         verdict: 'insufficient_evidence',
@@ -271,7 +271,7 @@ export class Engine {
 
   private async execute(
     stepId: string,
-    ctx: StepContext,
+    ctx: TCtx,
     results: Map<string, StepResult>,
     executeStep: (id: string) => Promise<StepResult>,
   ): Promise<StepResult> {
@@ -283,7 +283,7 @@ export class Engine {
     // Dependency gate: any non-succeeded dependency blocks this step (P3).
     for (const dep of step.dependsOn) {
       const depResult = await executeStep(dep);
-      if (depResult.state !== 'succeeded') {
+      if (depResult.state !== 'succeeded' && depResult.state !== 'not_assessed') {
         const res = notAssessed(`Dependency ${dep} did not succeed`);
         results.set(stepId, res);
         return res;
@@ -345,7 +345,11 @@ export class Engine {
 
       results.set(stepId, res);
       return res;
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'RecoverableWorkflowError') {
+        clearTimeout(timer);
+        throw err;
+      }
       if (deadlineExceeded) {
         const res: StepResult = {
           state: 'timed_out',

@@ -5,6 +5,7 @@ import type {
   Provenance,
   DataSourceDeclaration,
   VerificationStep,
+  StepContext,
 } from '../src/types.js';
 import { PROVENANCE_REGISTER } from '../src/types.js';
 
@@ -89,7 +90,7 @@ describe('RCQ-20108 — step contract types', () => {
     interface Payslip {
       netSalary: number;
     }
-    const step: VerificationStep<'raw-pdf', Payslip> = {
+    const step: VerificationStep<StepContext, 'raw-pdf', Payslip> = {
       id: 'payslip-extract',
       label: 'Payslip extraction',
       speed: 'slow',
@@ -127,5 +128,31 @@ describe('RCQ-20108 — step contract types', () => {
     const decl: DataSourceDeclaration = { source: 'epfo:signzy', licence: 'licensed' };
     expect(PROVENANCE_REGISTER.has(decl.source)).toBe(true);
     expect(['consented', 'licensed', 'public-api']).toContain(decl.licence);
+  });
+
+  it('rejects assigning a narrow step context to a broad step boundary', () => {
+    interface NarrowContext extends StepContext {
+      extraArg: string;
+    }
+    const narrowStep: VerificationStep<NarrowContext> = {
+      id: 'narrow',
+      label: 'Narrow Step',
+      speed: 'fast',
+      timeoutMs: 1000,
+      dependsOn: [],
+      dataSource: { source: 'derived', licence: 'none' },
+      requires: (ctx: NarrowContext) => ctx.extraArg === 'yes',
+      run: async (_ctx: NarrowContext) => ({
+        state: 'succeeded',
+        artifact: null,
+        reason: null,
+        provenance: { source: 'derived', model: null, licence: 'none' },
+        startedAt: new Date(),
+        completedAt: new Date(),
+      }),
+    };
+
+    // @ts-expect-error Property 'extraArg' is missing in type 'StepContext & { input?: unknown; }' but required in type 'NarrowContext'.
+    const _broadStep: VerificationStep<StepContext> = narrowStep;
   });
 });

@@ -19,6 +19,7 @@
     "@tieout/config": "workspace:*",
     "@tieout/rules": "workspace:*",
     "@tieout/schema": "workspace:*",
+    "@tieout/workflow": "workspace:*",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "fast-json-stable-stringify": "^2.1.0",

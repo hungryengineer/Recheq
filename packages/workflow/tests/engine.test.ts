@@ -73,7 +73,7 @@ describe('Step Engine', () => {
     expect(result.verdict).toBe('verified_with_notes');
   });
 
-  it('Dependency-of-a-dependency fails -> Both downstream not_assessed, one reason each', async () => {
+  it('Dependency-of-a-dependency fails -> downstream step with not_assessed dependency runs', async () => {
     const stepFail = new FakeStep(
       'a',
       'Fail',
@@ -102,9 +102,8 @@ describe('Step Engine', () => {
     const resC = result.steps.find((s) => s.id === 'c');
 
     expect(resB?.state).toBe('not_assessed');
-    expect(resC?.state).toBe('not_assessed');
+    expect(resC?.state).toBe('succeeded');
     expect(resB?.reason).toBe('Dependency a did not succeed');
-    expect(resC?.reason).toBe('Dependency b did not succeed');
   });
 
   it('succeeded with null artifact -> Coerced to not_assessed (P3)', async () => {

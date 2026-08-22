@@ -23,9 +23,9 @@ describe('EPFO Service with Dependencies', () => {
       epfoProvider: epfoProviderMock,
     };
 
-    const recordId = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000001');
+    const result = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000001');
 
-    expect(recordId).toBe('rec-123');
+    expect(result).toEqual({ ok: true, recordId: 'rec-123' });
     expect(dbMock.createPendingRecord).toHaveBeenCalledWith(
       'case-123',
       'consent-123',
@@ -55,12 +55,46 @@ describe('EPFO Service with Dependencies', () => {
       epfoProvider: epfoProviderMock,
     };
 
-    const recordId = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000002');
+    const result = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000002');
 
-    expect(recordId).toBe('rec-123');
+    expect(result).toEqual({
+      ok: false,
+      recordId: 'rec-123',
+      error: 'EPFO history not found for UAN',
+    });
     expect(dbMock.updateRecordFailure).toHaveBeenCalledWith(
       'rec-123',
       'EPFO history not found for UAN',
+    );
+    expect(dbMock.updateRecordSuccess).not.toHaveBeenCalled();
+  });
+
+  it('saves failure and returns error when provider rejects', async () => {
+    const dbMock = {
+      createPendingRecord: vi.fn().mockResolvedValue('rec-123'),
+      updateRecordSuccess: vi.fn().mockResolvedValue(undefined),
+      updateRecordFailure: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const epfoProviderMock: EpfoProvider = {
+      fetchEmploymentHistory: vi.fn().mockRejectedValue(new Error('Network timeout')),
+    };
+
+    const deps: EpfoServiceDeps = {
+      db: dbMock,
+      epfoProvider: epfoProviderMock,
+    };
+
+    const result = await syncEpfoHistory(deps, 'case-123', 'consent-123', '100000000003');
+
+    expect(result).toEqual({
+      ok: false,
+      recordId: 'rec-123',
+      error: 'Provider error: Network timeout',
+    });
+    expect(dbMock.updateRecordFailure).toHaveBeenCalledWith(
+      'rec-123',
+      'Provider error: Network timeout',
     );
     expect(dbMock.updateRecordSuccess).not.toHaveBeenCalled();
   });
