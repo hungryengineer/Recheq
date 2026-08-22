@@ -1,5 +1,6 @@
 import { repository } from './repository';
 import { db } from './db';
+import { projectOpsSteps } from '@tieout/api/src/workflows/step-projection.js';
 
 export async function projectCaseDetail(caseId: string, orgId: string) {
   const caseRecord = await repository.getCaseByIdAndOrg(caseId, orgId);
@@ -87,6 +88,15 @@ export async function projectCaseDetail(caseId: string, orgId: string) {
       }
     : null;
 
+  // RCQ-20113 — per-step status with evidence, grouped by step.
+  const steps = projectOpsSteps({
+    caseRecord,
+    caseCreatedAt: caseRecord.created_at,
+    documents,
+    extractions,
+    epfoRecords,
+  });
+
   return {
     id: caseRecord.id,
     candidate_name: caseRecord.candidate_name,
@@ -104,5 +114,6 @@ export async function projectCaseDetail(caseId: string, orgId: string) {
     not_assessed: projectedNotAssessed,
     consent: consentInfo,
     documents: projectedDocs,
+    steps,
   };
 }
