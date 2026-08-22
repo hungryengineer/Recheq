@@ -9,6 +9,8 @@ import {
   type ExtractionLike,
 } from '../src/workflows/step-projection.js';
 import { getStatusHandler } from '../src/routes/public/status.js';
+import type { StatusRouteRequest, StatusRouteDeps } from '../src/routes/public/status.js';
+import type { CaseRecord } from '@tieout/schema';
 
 // ─── Fixtures ───────────────────────────────────────────────────
 
@@ -114,23 +116,61 @@ describe('RCQ-20113 — per-step status API', () => {
 
     it('getStatusHandler response contains no verdict/risk/findings keys anywhere', async () => {
       try {
-        const result = await getStatusHandler({ params: { token: 'tok' }, context: {} as never }, {
+        const request = {
+          params: { token: 'tok' },
+          context: {
+            requestId: 'req-test-1',
+            service: 'api',
+            startedAtMs: Date.now(),
+          },
+        } satisfies StatusRouteRequest;
+
+        const caseRecord = {
+          id: 'case-1',
+          org_id: 'org-1',
+          created_by: 'user-1',
+          employer_name: 'Acme Corp',
+          candidate_name: 'Jane Doe',
+          candidate_email: 'jane@example.com',
+          title: 'Senior Engineer BGV',
+          claimed_ctc: 1800000,
+          employment_start: '2021-01-01',
+          employment_end: '2023-12-31',
+          uan: null,
+          status: 'processing' as const,
+          // Ops-only fields that must NOT leak into the public response:
+          verdict: 'verified_with_notes',
+          risk_score: 42,
+          created_at: '2026-01-01T09:00:00Z',
+          updated_at: '2026-01-01T09:00:00Z',
+        } satisfies CaseRecord;
+
+        const deps = {
           tokenVerifier: {
-            verifyAndGetCaseId: async () => 'case-1',
+            verifyAndGetCaseId: async () => caseRecord.id,
           },
           db: {
-            getCaseById: async () => ({
-              id: 'case-1',
-              status: 'processing',
-              verdict: 'clear',
-              risk_score: 42,
-              created_at: '2026-01-01T09:00:00Z',
-            }),
-            getDocumentsForCase: async () => [doc()],
+            getCaseById: async () => caseRecord,
+            getDocumentsForCase: async () => [
+              {
+                id: 'doc-1',
+                case_id: 'case-1',
+                kind: 'payslip' as const,
+                status: 'extracted' as const,
+                original_filename: 'payslip.pdf',
+                mime_type: 'application/pdf',
+                sha256: 'a'.repeat(64),
+                size_bytes: 1024,
+                storage_path: 'private/case-1/payslip.pdf',
+                uploaded_at: '2026-01-01T10:00:00Z',
+              },
+            ],
             getCompletedEpfoRecords: async () => [],
             getExtractionsForCase: async () => [extraction()],
           },
-        } as unknown as Parameters<typeof getStatusHandler>[1]);
+        } satisfies StatusRouteDeps;
+
+        const result = await getStatusHandler(request, deps);
         const body = result as { status: number; body: Record<string, unknown> };
         expect(body.status).toBe(200);
 
