@@ -10,11 +10,9 @@ import { validationError, notFoundError } from '../../http/errors.js';
 import type { Database } from '../../db/client.js';
 
 function stripUndefined<T extends Record<string, unknown>>(
-  obj: T
+  obj: T,
 ): { [K in keyof T]?: Exclude<T[K], undefined> } {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([_, v]) => v !== undefined)
-  ) as any;
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined)) as any;
 }
 
 export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0]>[0];
