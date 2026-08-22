@@ -44,14 +44,23 @@ export function goneError(message: string = 'Gone', details?: unknown): AppError
 }
 
 export function toErrorResponse(error: unknown): { status: number; body: ApiError } {
-  if (error instanceof AppError) {
+  const isAppError =
+    error instanceof AppError ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'statusCode' in error &&
+      'code' in error &&
+      'message' in error);
+
+  if (isAppError) {
+    const appError = error as AppError;
     return {
-      status: error.statusCode,
+      status: appError.statusCode,
       body: {
         error: {
-          code: error.code,
-          message: error.message,
-          ...(error.details ? { details: error.details } : {}),
+          code: appError.code,
+          message: appError.message,
+          ...(appError.details ? { details: appError.details } : {}),
         },
       },
     };
