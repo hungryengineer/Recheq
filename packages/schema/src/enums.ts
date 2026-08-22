@@ -49,6 +49,7 @@ export type TokenPurpose = z.infer<typeof TokenPurpose>;
 // ─── Event Kind (audit events) ──────────────────────────────────
 export const EventKind = z.enum([
   'case_created',
+  'case_updated',
   'case_status_changed',
   'consent_granted',
   'consent_withdrawn',

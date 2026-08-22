@@ -217,8 +217,11 @@ describe('organization A cannot access organization B data', () => {
       getCaseByIdAndOrg: vi.fn().mockResolvedValue(null),
       createCase: vi.fn(),
       listCasesByOrg: vi.fn().mockResolvedValue([]),
+      updateCaseDetails: vi.fn(),
+      transaction: vi.fn(),
     };
-    await expect(getCase('case-org-b', 'org-a', { db })).rejects.toMatchObject({
+    const audit = { appendEvent: vi.fn() };
+    await expect(getCase('case-org-b', 'org-a', { db, audit })).rejects.toMatchObject({
       statusCode: 404,
     });
     expect(db.getCaseByIdAndOrg).toHaveBeenCalledWith('case-org-b', 'org-a');
@@ -230,7 +233,10 @@ describe('organization A cannot access organization B data', () => {
         getCaseByIdAndOrg: vi.fn().mockResolvedValue(null),
         createCase: vi.fn(),
         listCasesByOrg: vi.fn().mockResolvedValue([]),
+        updateCaseDetails: vi.fn(),
+        transaction: vi.fn(),
       },
+      audit: { appendEvent: vi.fn() },
     };
     const result = await getCaseHandler(
       {
@@ -249,8 +255,11 @@ describe('organization A cannot access organization B data', () => {
       listCasesByOrg: vi.fn().mockResolvedValue(orgACases),
       createCase: vi.fn(),
       getCaseByIdAndOrg: vi.fn(),
+      updateCaseDetails: vi.fn(),
+      transaction: vi.fn(),
     };
-    const result = await listCases('org-a', { db });
+    const audit = { appendEvent: vi.fn() };
+    const result = await listCases('org-a', { db, audit });
     expect(db.listCasesByOrg).toHaveBeenCalledWith('org-a');
     expect(result).toEqual(orgACases);
   });
@@ -260,10 +269,13 @@ describe('organization A cannot access organization B data', () => {
       listCasesByOrg: vi.fn().mockResolvedValue([]),
       createCase: vi.fn(),
       getCaseByIdAndOrg: vi.fn(),
+      updateCaseDetails: vi.fn(),
+      transaction: vi.fn(),
     };
+    const audit = { appendEvent: vi.fn() };
     await listCasesHandler(
       { context: mockCtx, auth: { userId: 'user-a', orgId: 'org-a' } },
-      { db },
+      { db, audit },
     );
     expect(db.listCasesByOrg).toHaveBeenCalledWith('org-a');
     expect(db.listCasesByOrg).not.toHaveBeenCalledWith('org-b');

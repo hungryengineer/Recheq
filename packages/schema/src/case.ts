@@ -22,6 +22,19 @@ export const CaseCreateInput = z.object({
 });
 export type CaseCreateInput = z.infer<typeof CaseCreateInput>;
 
+// ─── Case Update Input (KAN-62/64) ──────────────────────────────
+export const CaseUpdateInput = CaseCreateInput.pick({
+  employer_name: true,
+  candidate_name: true,
+  candidate_email: true,
+  title: true,
+  claimed_ctc: true,
+  employment_start: true,
+  employment_end: true,
+  uan: true,
+}).partial();
+export type CaseUpdateInput = z.infer<typeof CaseUpdateInput>;
+
 // ─── Case Record ────────────────────────────────────────────────
 export const CaseRecord = z.object({
   id: z.string().uuid(),

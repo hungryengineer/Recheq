@@ -5,6 +5,8 @@ import { toCaseRecord } from './case-queries.js';
 import type { Database } from './client.js';
 import type { CaseServiceDeps } from '../services/cases/case-service.js';
 
+export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0]>[0];
+
 type CaseRow = typeof cases.$inferSelect;
 
 /** Maps a DB case row to the @tieout/schema CaseSummary contract. */
@@ -21,6 +23,9 @@ function toCaseSummary(row: CaseRow): CaseSummary {
     created_at: row.created_at.toISOString(),
   };
 }
+
+import { AuditService } from '../audit/audit-service.js';
+import { DbAuditRepository } from '../audit/db-audit-repository.js';
 
 /**
  * Production adapter that backs the case service with the real database.
@@ -62,13 +67,41 @@ export function createCaseDeps(db: Database): CaseServiceDeps {
           .orderBy(desc(cases.created_at));
         return rows.map(toCaseSummary);
       },
-      async getCaseByIdAndOrg(caseId, orgId) {
-        const rows = await db
+      async getCaseByIdAndOrg(caseId, orgId, tx) {
+        const queryBuilder = tx ?? db;
+        const query = queryBuilder
           .select()
           .from(cases)
           .where(and(eq(cases.id, caseId), eq(cases.org_id, orgId)))
           .limit(1);
+
+        if (tx) {
+          // Lock row during transaction to prevent concurrent updates
+          query.for('update');
+        }
+
+        const rows = await query;
         return rows[0] ? toCaseRecord(rows[0]) : null;
+      },
+      async updateCaseDetails(tx, caseId, input) {
+        const queryBuilder = tx ?? db;
+        await queryBuilder
+          .update(cases)
+          .set({
+            ...input,
+            claimed_ctc: input.claimed_ctc !== undefined ? String(input.claimed_ctc) : undefined,
+            updated_at: new Date(),
+          })
+          .where(eq(cases.id, caseId));
+      },
+      async transaction(cb) {
+        return await db.transaction(async (tx) => cb(tx));
+      },
+    },
+    audit: {
+      async appendEvent(tx, input) {
+        const auditService = new AuditService(new DbAuditRepository(db));
+        return await auditService.appendEvent(tx, input);
       },
     },
   };

@@ -1,6 +1,13 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import {
+  ProfileUpdateInputSchema,
+  PasswordUpdateInputSchema,
+  OrganizationUpdateInputSchema,
+  InviteMemberInputSchema,
+} from '@tieout/schema';
+import type { ActionError } from './actions-types';
 
 export type ApiKey = {
   id: string;
@@ -88,4 +95,100 @@ export async function deleteApiKeyAction(
     console.error('Failed to delete API key:', error);
     return { success: false, error: 'An unexpected error occurred.' };
   }
+}
+
+export async function updateProfileAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = ProfileUpdateInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  // Simulate API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  return { success: true };
+}
+
+export async function updatePasswordAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = PasswordUpdateInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  // Simulate API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  return { success: true };
+}
+
+export async function updateOrganizationAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = OrganizationUpdateInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  // Simulate API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  return { success: true };
+}
+
+export async function inviteMemberAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = InviteMemberInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  // Simulate API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  return { success: true };
 }
