@@ -1,6 +1,5 @@
 import {
   CaseCreateInput,
-  type CaseUpdateInput,
   type CaseRecord,
   type CaseSummary,
   type EventInput,
@@ -12,7 +11,9 @@ import type { Database } from '../../db/client.js';
 function stripUndefined<T extends Record<string, unknown>>(
   obj: T,
 ): { [K in keyof T]?: Exclude<T[K], undefined> } {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined)) as any;
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined)) as unknown as {
+    [K in keyof T]?: Exclude<T[K], undefined>;
+  };
 }
 
 export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0]>[0];
