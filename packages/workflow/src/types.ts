@@ -74,7 +74,7 @@ export interface StepContext {
 export class RecoverableWorkflowError extends Error {
   constructor(
     message: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(message);
     this.name = 'RecoverableWorkflowError';
@@ -108,6 +108,6 @@ export interface VerificationStep<
   readonly timeoutMs: number;
   readonly dependsOn: readonly string[];
   readonly dataSource: DataSourceDeclaration; // R1.16
-  requires(ctx: TCtx): boolean; // pure
-  run(ctx: TCtx & { input?: TIn }): Promise<StepResult<TOut>>;
+  requires: (ctx: TCtx) => boolean; // pure
+  run: (ctx: TCtx & { input?: TIn }) => Promise<StepResult<TOut>>;
 }

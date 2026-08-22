@@ -1,5 +1,5 @@
 import { type VerificationStep, type StepResult, RecoverableWorkflowError } from '@tieout/workflow';
-import type { CaseProcessingDeps } from '../case-processing.js';
+
 import {
   createExtraction,
   updateExtractionSuccess,
@@ -69,13 +69,14 @@ export class ExtractionStep implements VerificationStep<
 
       await Promise.all(
         chunk.map(async (doc) => {
-          if (doc.kind !== 'payslip' && doc.kind !== 'form_16') {
-            console.error(`Unsupported document kind for extraction: ${doc.kind}`);
-            failedCount++;
-            return;
+          const isValidKind = (k: string): k is 'payslip' | 'form_16' =>
+            k === 'payslip' || k === 'form_16';
+
+          if (!isValidKind(doc.kind)) {
+            throw new Error(`Unsupported document kind: ${doc.kind}`);
           }
 
-          const kind = doc.kind as 'payslip' | 'form_16';
+          const kind = doc.kind;
 
           // Create pending extraction
           const extId = await createExtraction(deps.db, doc.id, {
