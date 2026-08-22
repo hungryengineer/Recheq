@@ -130,6 +130,9 @@ describe('RCQ-20116 — model independence', () => {
     const form16s = corpus.filter(
       (d): d is Extract<CorpusDoc, { kind: 'form16' }> => d.kind === 'form16',
     );
+
+    expect(payslips.length, 'corpus must contain at least one payslip').toBeGreaterThan(0);
+    expect(form16s.length, 'corpus must contain at least one form16').toBeGreaterThan(0);
     const fixtureExtractor = new FixtureExtractor({
       payslips: Object.fromEntries(payslips.map((d) => [d.name, d.data])),
       form16s: Object.fromEntries(form16s.map((d) => [d.name, d.data])),
@@ -148,61 +151,60 @@ describe('RCQ-20116 — model independence', () => {
 
     for (const doc of corpus) {
       // Both models produced a successful structured read of the document.
-      const structuredA =
-        doc.kind === 'payslip'
-          ? unwrap(
-              await fixtureExtractor.extractPayslip(req(doc.name)),
-              `${doc.name} fixture extraction`,
-            )
-          : unwrap(
-              await fixtureExtractor.extractForm16(req(doc.name)),
-              `${doc.name} fixture extraction`,
-            );
-      const structuredB =
-        doc.kind === 'payslip'
-          ? unwrap(
-              await nextModel.extractPayslip(req(doc.name)),
-              `${doc.name} next-model extraction`,
-            )
-          : unwrap(
-              await nextModel.extractForm16(req(doc.name)),
-              `${doc.name} next-model extraction`,
-            );
+      let outcomeA;
+      let outcomeB;
 
-      // The rules engine has NO input slot for provider/model identity —
-      // build the context exactly as assembleEvidence would.
-      const outcomeA =
-        doc.kind === 'payslip'
-          ? evaluate({
-              assembly: assemblyFor('payslip'),
-              payslip: structuredA,
-              form16: null,
-              epfoHistory: null,
-              forensics: null,
-            })
-          : evaluate({
-              assembly: assemblyFor('form16'),
-              payslip: null,
-              form16: structuredA,
-              epfoHistory: null,
-              forensics: null,
-            });
-      const outcomeB =
-        doc.kind === 'payslip'
-          ? evaluate({
-              assembly: assemblyFor('payslip'),
-              payslip: structuredB,
-              form16: null,
-              epfoHistory: null,
-              forensics: null,
-            })
-          : evaluate({
-              assembly: assemblyFor('form16'),
-              payslip: null,
-              form16: structuredB,
-              epfoHistory: null,
-              forensics: null,
-            });
+      if (doc.kind === 'payslip') {
+        const structuredA = unwrap(
+          await fixtureExtractor.extractPayslip(req(doc.name)),
+          `${doc.name} fixture extraction`,
+        );
+        const structuredB = unwrap(
+          await nextModel.extractPayslip(req(doc.name)),
+          `${doc.name} next-model extraction`,
+        );
+
+        outcomeA = evaluate({
+          assembly: assemblyFor('payslip'),
+          payslip: structuredA,
+          form16: null,
+          epfoHistory: null,
+          forensics: null,
+        });
+
+        outcomeB = evaluate({
+          assembly: assemblyFor('payslip'),
+          payslip: structuredB,
+          form16: null,
+          epfoHistory: null,
+          forensics: null,
+        });
+      } else {
+        const structuredA = unwrap(
+          await fixtureExtractor.extractForm16(req(doc.name)),
+          `${doc.name} fixture extraction`,
+        );
+        const structuredB = unwrap(
+          await nextModel.extractForm16(req(doc.name)),
+          `${doc.name} next-model extraction`,
+        );
+
+        outcomeA = evaluate({
+          assembly: assemblyFor('form16'),
+          payslip: null,
+          form16: structuredA,
+          epfoHistory: null,
+          forensics: null,
+        });
+
+        outcomeB = evaluate({
+          assembly: assemblyFor('form16'),
+          payslip: null,
+          form16: structuredB,
+          epfoHistory: null,
+          forensics: null,
+        });
+      }
 
       expect(outcomeB.findings, `${doc.name} findings under next model`).toEqual(outcomeA.findings);
       expect(outcomeB.score, `${doc.name} score under next model`).toBe(outcomeA.score);
