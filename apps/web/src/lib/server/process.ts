@@ -22,10 +22,10 @@ export async function startProcessing(caseId: string) {
       console.log(`[Worker] Case ${caseId} processed successfully`);
     })
     .catch((err) => {
+      // Catastrophic failure outside the engine's own transactional fallback
+      // (e.g. dependency construction or DB unavailable). Never mark the case
+      // `withdrawn` here — withdrawal is a candidate action, not an error
+      // state; the case stays `processing` so a verifier can reprocess it.
       console.error(`[Worker] Case ${caseId} processing failed:`, err);
-      // Fallback status update on catastrophic unhandled error
-      repository.updateCaseStatus(caseId, 'withdrawn').catch((e) => {
-        console.error(`[Worker] Failed to update fallback status for ${caseId}`, e);
-      });
     });
 }
