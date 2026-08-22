@@ -1,0 +1,22 @@
+{
+  "_fixture": "f16-xdoc-01",
+  "_description": "TAMPERED[cross-document-mismatch]: gross_total_income understated by Rs.100,000 vs paired payslip.",
+  "employee_name": "Priya Sharma",
+  "employee_pan": "ABCPS1234F",
+  "employer_name": "Tech Corp India Pvt Ltd",
+  "employer_tan": "MUMC12345B",
+  "employer_pan": "AAACT1234C",
+  "financial_year": "2023-24",
+  "assessment_year": "2024-25",
+  "total_tax_deducted": 48000,
+  "total_tax_deposited": 48000,
+  "gross_total_income": 447200,
+  "total_salary": 447200,
+  "exempt_allowances": 38400,
+  "standard_deduction": 50000,
+  "professional_tax": 2400,
+  "net_taxable_salary": 356400,
+  "total_income_tax_payable": 48000,
+  "extraction_notes": null,
+  "schema_version": "form16-v1"
+}

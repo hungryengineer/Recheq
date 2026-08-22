@@ -1,0 +1,204 @@
+{
+  "cases": [
+    {
+      "id": "case-clean-01",
+      "label": "clean",
+      "payslip": "ps-clean-01",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-02",
+      "label": "clean",
+      "payslip": "ps-clean-02",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-03",
+      "label": "clean",
+      "payslip": "ps-clean-03",
+      "form16": "f16-clean-03",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-04",
+      "label": "clean",
+      "payslip": "ps-clean-04",
+      "form16": "f16-clean-04",
+      "include_epfo": true,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-05",
+      "label": "clean",
+      "payslip": "ps-clean-05",
+      "form16": "f16-clean-05",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-06",
+      "label": "clean",
+      "payslip": "ps-clean-05",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": true,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-07",
+      "label": "clean",
+      "payslip": null,
+      "form16": "f16-clean-02",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-08",
+      "label": "clean",
+      "payslip": "ps-clean-04",
+      "form16": null,
+      "include_epfo": true,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-09",
+      "label": "clean",
+      "payslip": null,
+      "form16": "f16-clean-04",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-clean-10",
+      "label": "clean",
+      "payslip": "ps-clean-01",
+      "form16": "f16-clean-01",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": [],
+      "tamper_method": null
+    },
+    {
+      "id": "case-doctored-01",
+      "label": "doctored",
+      "payslip": "ps-amt-01",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": ["pf-implies-basic"],
+      "tamper_method": "amount-alteration"
+    },
+    {
+      "id": "case-doctored-02",
+      "label": "doctored",
+      "payslip": "ps-amt-02",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": ["pf-implies-basic"],
+      "tamper_method": "amount-alteration"
+    },
+    {
+      "id": "case-doctored-03",
+      "label": "doctored",
+      "payslip": "ps-net-01",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": ["payslip-arithmetic-net"],
+      "tamper_method": "arithmetic-break"
+    },
+    {
+      "id": "case-doctored-04",
+      "label": "doctored",
+      "payslip": "ps-net-02",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": ["payslip-arithmetic-net"],
+      "tamper_method": "arithmetic-break"
+    },
+    {
+      "id": "case-doctored-05",
+      "label": "doctored",
+      "payslip": "ps-clean-01",
+      "form16": "f16-xdoc-01",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": ["form16-reconciles-payslip"],
+      "tamper_method": "cross-document-mismatch"
+    },
+    {
+      "id": "case-doctored-06",
+      "label": "doctored",
+      "payslip": "ps-clean-03",
+      "form16": "f16-xdoc-02",
+      "include_epfo": false,
+      "include_forensics": false,
+      "expected_rules": ["form16-reconciles-payslip"],
+      "tamper_method": "cross-document-mismatch"
+    },
+    {
+      "id": "case-doctored-07",
+      "label": "doctored",
+      "payslip": "ps-font-01",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": true,
+      "expected_rules": ["forensics-font-anomalies"],
+      "tamper_method": "font-anomaly-tamper"
+    },
+    {
+      "id": "case-doctored-08",
+      "label": "doctored",
+      "payslip": "ps-font-02",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": true,
+      "expected_rules": ["forensics-font-anomalies"],
+      "tamper_method": "font-anomaly-tamper"
+    },
+    {
+      "id": "case-doctored-09",
+      "label": "doctored",
+      "payslip": "ps-mon-01",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": true,
+      "expected_rules": ["forensics-monetary-anomalies"],
+      "tamper_method": "monetary-region-tamper"
+    },
+    {
+      "id": "case-doctored-10",
+      "label": "doctored",
+      "payslip": "ps-mon-02",
+      "form16": null,
+      "include_epfo": false,
+      "include_forensics": true,
+      "expected_rules": ["forensics-monetary-anomalies"],
+      "tamper_method": "monetary-region-tamper"
+    }
+  ]
+}
