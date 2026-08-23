@@ -63,8 +63,6 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-
-
       - name: 🏗️ Build with Vercel
         run: npx vercel@50 build --prod --token="$VERCEL_TOKEN"
         env:
