@@ -50,7 +50,6 @@ jobs:
       # workspace filter build nor locate apps/web/.next — prebuilt avoids
       # both problems and any dependence on dashboard Root Directory state.
       - name: 🔗 Link Vercel project
-        working-directory: apps/web
         run: |
           mkdir -p .vercel
           printf '{"orgId":"%s","projectId":"%s"}\n' \
@@ -60,39 +59,16 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: '📥 Pull project settings'
-        working-directory: apps/web
         run: npx vercel@50 pull --yes --environment=production --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      # Pulled settings carry the dashboard Root Directory; we already run
-      # inside apps/web, so a non-empty rootDirectory double-prefixes paths
-      # (apps/web/apps/web/.next) and breaks output collection.
-      - name: '🧹 Scrub rootDirectory from pulled settings'
-        working-directory: apps/web
-        run: |
-          node -e "
-            const fs = require('fs');
-            const f = '.vercel/project.json';
-            const j = JSON.parse(fs.readFileSync(f, 'utf8'));
-            const scrub = (o) => {
-              if (o && typeof o === 'object') {
-                delete o.rootDirectory;
-                for (const v of Object.values(o)) scrub(v);
-              }
-            };
-            scrub(j);
-            fs.writeFileSync(f, JSON.stringify(j));
-          "
-
       - name: 🏗️ Build with Vercel
-        working-directory: apps/web
         run: npx vercel@50 build --prod --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: 🚀 Deploy prebuilt output
-        working-directory: apps/web
         run: npx vercel@50 deploy --prebuilt --prod --token="$VERCEL_TOKEN" --meta githubCommitSha="${{ github.sha }}"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

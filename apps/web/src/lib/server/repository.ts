@@ -16,7 +16,7 @@ export const repository = {
   createCase: async (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => {
     const [result] = await db
       .insert(schema.cases)
-      .values(input as any)
+      .values({ ...input, claimed_ctc: String(input.claimed_ctc) } as any)
       .returning();
     return result;
   },
@@ -43,9 +43,75 @@ export const repository = {
       .where(and(eq(schema.cases.id, caseId), eq(schema.cases.org_id, orgId)));
     return result || null;
   },
+  findExistingCase: async (
+    orgId: string,
+    candidateName: string,
+    candidateEmail: string,
+    employerName: string,
+  ) => {
+    const rows = await db
+      .select()
+      .from(schema.cases)
+      .where(
+        and(
+          eq(schema.cases.org_id, orgId),
+          eq(schema.cases.candidate_email, candidateEmail),
+          eq(schema.cases.candidate_name, candidateName),
+          eq(schema.cases.employer_name, employerName),
+        ),
+      )
+      .orderBy(desc(schema.cases.created_at));
+
+    const active = rows.find((r) => r.status !== 'complete' && r.status !== 'withdrawn');
+    if (!active) return null;
+
+    // Convert to CaseRecord format required by the return type
+    return {
+      id: active.id,
+      org_id: active.org_id,
+      created_by: active.created_by,
+      employer_name: active.employer_name,
+      candidate_name: active.candidate_name,
+      candidate_email: active.candidate_email,
+      title: active.title,
+      claimed_ctc: Number(active.claimed_ctc),
+      employment_start: active.employment_start,
+      employment_end: active.employment_end,
+      uan: active.uan,
+      status: active.status as any,
+      verdict: active.verdict as any,
+      risk_score: active.risk_score,
+      created_at: active.created_at.toISOString(),
+      updated_at: active.updated_at.toISOString(),
+    } as CaseRecord;
+  },
   getCaseById: async (caseId: string) => {
     const [result] = await db.select().from(schema.cases).where(eq(schema.cases.id, caseId));
     return result || null;
+  },
+  updateCaseDetails: async (
+    tx: unknown,
+    caseId: string,
+    input: Partial<
+      Omit<
+        CaseRecord,
+        | 'id'
+        | 'org_id'
+        | 'created_by'
+        | 'created_at'
+        | 'updated_at'
+        | 'status'
+        | 'verdict'
+        | 'risk_score'
+      >
+    >,
+  ) => {
+    const trx = tx ? (tx as any) : db;
+    const updateData = { ...input, updated_at: new Date() };
+    if (updateData.claimed_ctc !== undefined) {
+      updateData.claimed_ctc = String(updateData.claimed_ctc) as any;
+    }
+    await trx.update(schema.cases).set(updateData).where(eq(schema.cases.id, caseId));
   },
   updateCaseStatus: async (caseId: string, status: CaseStatus) => {
     await db.update(schema.cases).set({ status }).where(eq(schema.cases.id, caseId));
