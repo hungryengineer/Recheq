@@ -16,6 +16,7 @@ export function CreateCaseForm() {
   const [copied, setCopied] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,6 +26,7 @@ export function CreateCaseForm() {
     setSuccessLink(null);
     setCopied(false);
     setIsDuplicateModalOpen(false);
+    setIsSuccessModalOpen(false);
 
     const formData = new FormData(e.currentTarget);
     const input = {
@@ -76,6 +78,7 @@ export function CreateCaseForm() {
         }
       } else {
         setSuccessLink(result.candidate_link ?? null);
+        setIsSuccessModalOpen(true);
       }
     } catch (err: unknown) {
       const error = err as Error;
@@ -356,6 +359,56 @@ export function CreateCaseForm() {
 
             <button
               onClick={() => setIsDuplicateModalOpen(false)}
+              className="w-full bg-[var(--color-fg)] hover:opacity-90 text-[var(--color-surface)] font-medium py-2.5 rounded-[var(--radius-control)] transition-colors text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 inset-x-0 h-1 bg-green-500"></div>
+
+            <button
+              onClick={() => setIsSuccessModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6 mt-2">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-[var(--color-fg)] mb-2">Success!</h3>
+              <p className="text-sm text-[var(--color-fg-muted)]">
+                The new case was created successfully, and an invitation email has been sent to the
+                candidate.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsSuccessModalOpen(false)}
               className="w-full bg-[var(--color-fg)] hover:opacity-90 text-[var(--color-surface)] font-medium py-2.5 rounded-[var(--radius-control)] transition-colors text-sm"
             >
               Close

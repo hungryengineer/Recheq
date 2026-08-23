@@ -131,7 +131,7 @@ export async function createCase(
       await deps.db.createToken(tx, {
         hash,
         case_id: record.id,
-        purpose: 'document_upload',
+        purpose: 'consent',
         expires_at: expiresAt,
       });
 

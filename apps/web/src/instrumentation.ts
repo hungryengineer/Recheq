@@ -1,6 +1,11 @@
 import { _initSecretKey } from '@tieout/api/src/security/jwt.js';
 
-export function register() {
+export async function register() {
   // Validate JWT secret on API startup
   _initSecretKey();
+
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { startWorkers } = await import('@tieout/api/src/workers/worker.js');
+    await startWorkers().catch(err => console.error('Failed to start workers', err));
+  }
 }

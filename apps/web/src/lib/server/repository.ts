@@ -274,6 +274,10 @@ export const repository = {
     // Currently no forensics table, return empty array for now as per schema
     return [];
   },
+  createToken: async (tx: unknown, data: { hash: string, case_id: string, purpose: string, expires_at: Date }) => {
+    const trx = tx ? (tx as any) : db;
+    await trx.insert(schema.tokens).values(data);
+  },
   transaction: async (cb: Parameters<typeof db.transaction>[0]) => {
     return await db.transaction(cb);
   },
