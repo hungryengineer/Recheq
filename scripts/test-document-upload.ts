@@ -1,30 +1,71 @@
 import { createDb, schema } from '../services/api/src/db/client.js';
+import { eq } from 'drizzle-orm';
+import { PDFDocument } from 'pdf-lib';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import 'dotenv/config';
 
+// Cleanup bookkeeping: only rows created by this run are removed.
+const created = {
+  orgId: null as string | null,
+  caseId: null as string | null,
+  userId: null as string | null,
+};
+
 async function main() {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) throw new Error('DATABASE_URL is required');
+
+  // Guard against pointing this fixture-seeding script at a real database.
+  const isLocalDb = /(@|\/\/)(localhost|127\.0\.0\.1)[:/]/.test(dbUrl);
+  if (!isLocalDb && process.env.ALLOW_REMOTE_TEST_DB !== 'yes') {
+    throw new Error(
+      'Refusing to seed a non-local database. Set ALLOW_REMOTE_TEST_DB=yes to override.',
+    );
+  }
+
   const db = createDb(dbUrl);
 
   console.log('1. Setting up test data...');
 
   // Create a dummy org
   const orgId = crypto.randomUUID();
+  created.orgId = orgId;
   await db.insert(schema.organizations).values({
     id: orgId,
     name: 'Test Corp for Upload',
     slug: `test-corp-${Date.now()}`,
   });
 
+  // Ensure the fallback user exists before referencing it as created_by
+  const devUserId = process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001';
+  const existing = await db.select().from(schema.users).where(eq(schema.users.id, devUserId));
+  if (existing.length === 0) {
+    const inserted = await db
+      .insert(schema.users)
+      .values({
+        id: devUserId,
+        org_id: orgId,
+        email: 'upload-test-runner@tieout.test',
+        name: 'Upload Test Runner',
+      })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted.length > 0) {
+      created.userId = devUserId;
+    } else {
+      throw new Error(`DEV_USER_ID ${devUserId} does not exist and could not be created`);
+    }
+  }
+
   // Create a dummy case in 'awaiting_documents' state
   const caseId = crypto.randomUUID();
+  created.caseId = caseId;
   await db.insert(schema.cases).values({
     id: caseId,
     org_id: orgId,
-    created_by: process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001',
+    created_by: devUserId,
     employer_name: 'Acme Corp',
     candidate_name: 'Jane Doe Upload Test',
     candidate_email: `jane.upload.${Date.now()}@example.com`,
@@ -48,13 +89,12 @@ async function main() {
   console.log(`✅ Created Case ID: ${caseId}`);
   console.log(`✅ Generated Token: ${tokenValue}`);
 
-  // 2. Create a dummy minimal PDF file
+  // 2. Create a structurally valid PDF via pdf-lib
   const dummyPdfPath = path.join(process.cwd(), 'dummy-payslip.pdf');
-  // A minimal valid PDF structure
-  const minimalPdf = Buffer.from(
-    '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Count 0 /Kids [] >>\nendobj\nxref\n0 3\n0000000000 65535 f \n0000000010 00000 n \n0000000060 00000 n \ntrailer\n<< /Size 3 /Root 1 0 R >>\nstartxref\n111\n%%EOF',
-    'utf-8',
-  );
+  const doc = await PDFDocument.create();
+  doc.addPage([600, 800]);
+  doc.setTitle('Payslip - Upload Test');
+  const minimalPdf = Buffer.from(await doc.save());
   fs.writeFileSync(dummyPdfPath, minimalPdf);
   console.log(`✅ Created dummy PDF file: ${dummyPdfPath}`);
 
@@ -95,15 +135,45 @@ async function main() {
       const responseBody = await response.json();
       console.log(`Response Status: ${response.status}`);
       console.dir(responseBody, { depth: null });
+      if (!response.ok) {
+        process.exitCode = 1;
+      }
     } catch (e) {
       console.error('Fetch failed:', e);
+      process.exitCode = 1;
     }
   }
-
-  process.exit(0);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    // Best-effort cleanup of every row this run created. FKs have no ON
+    // DELETE CASCADE here, so go children-first: documents/events/tokens
+    // reference the case; the case and (only if we created it) the user
+    // reference the organization.
+    if (!created.orgId) return;
+    try {
+      const dbUrl = process.env.DATABASE_URL!;
+      const db = createDb(dbUrl);
+      if (created.caseId) {
+        await db.delete(schema.documents).where(eq(schema.documents.case_id, created.caseId));
+        await db.delete(schema.events).where(eq(schema.events.case_id, created.caseId));
+        await db.delete(schema.tokens).where(eq(schema.tokens.case_id, created.caseId));
+        await db.delete(schema.cases).where(eq(schema.cases.id, created.caseId));
+        console.log(`🧹 Cleaned up test case ${created.caseId}`);
+      }
+      if (created.userId) {
+        await db.delete(schema.users).where(eq(schema.users.id, created.userId));
+        console.log('🧹 Cleaned up test user');
+      }
+      await db.delete(schema.organizations).where(eq(schema.organizations.id, created.orgId));
+      console.log(`🧹 Cleaned up test org ${created.orgId}`);
+      await db.$client.end();
+    } catch (cleanupErr) {
+      console.error('⚠ Cleanup failed:', cleanupErr);
+    }
+  });
