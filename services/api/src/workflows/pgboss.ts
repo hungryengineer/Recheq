@@ -12,6 +12,11 @@ const JOB_CONFIGS: Record<string, JobConfig> = {
     retryDelay: 30,
     expireInSeconds: 86400, // 24h
   },
+  EMAIL_DELIVERY: {
+    retryLimit: 5,
+    retryDelay: 60, // 1m
+    expireInSeconds: 86400, // 24h
+  },
   EMPLOYER_WORKFLOW: {
     retryLimit: 2,
     retryDelay: 60,
@@ -60,6 +65,7 @@ export async function initPgBoss(): Promise<PgBoss> {
     boss.createQueue('employer_workflow'),
     boss.createQueue('retention_cleanup'),
     boss.createQueue('webhook_delivery'),
+    boss.createQueue('email_delivery'),
   ]);
 
   return boss;

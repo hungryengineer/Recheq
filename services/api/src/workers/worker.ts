@@ -13,6 +13,8 @@ export interface JobContext {
 // platform decision. This worker only owns employer/retention/webhook jobs.
 
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
+import { processEmailDelivery } from '../workflows/email-worker.js';
+
 async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
   await processEmployerWorkflowJob(jobs);
 }
@@ -40,6 +42,8 @@ export async function startWorkers(): Promise<void> {
       startQueue('employer_workflow', 2, processEmployerJob),
       startQueue('retention_cleanup', 1, retentionJob),
       startQueue('webhook_delivery', 3, webhookJob),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      startQueue('email_delivery', 2, processEmailDelivery as any),
     ]);
 
     console.log('workers started');

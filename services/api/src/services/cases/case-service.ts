@@ -5,6 +5,8 @@ import {
   type EventInput,
   type EventRecord,
 } from '@tieout/schema';
+import crypto from 'node:crypto';
+import { publishJob } from '../../workflows/pgboss.js';
 import { validationError, notFoundError, conflictError } from '../../http/errors.js';
 import type { Database } from '../../db/client.js';
 
@@ -24,7 +26,8 @@ export interface CaseServiceDeps {
   db: {
     createCase: (
       input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>,
-    ) => Promise<CaseRecord>;
+      tx?: TransactionHandle,
+    ) => Promise<CaseRecord | null>;
     updateCaseDetails: (
       tx: TransactionHandle,
       caseId: string,
@@ -54,6 +57,10 @@ export interface CaseServiceDeps {
       candidateEmail: string,
       employerName: string,
     ) => Promise<CaseRecord | null>;
+    createToken?: (
+      tx: TransactionHandle,
+      data: { hash: string; case_id: string; purpose: string; expires_at: Date },
+    ) => Promise<void>;
     transaction: <T>(cb: (tx: TransactionHandle) => Promise<T>) => Promise<T>;
   };
   audit: {
@@ -94,24 +101,63 @@ export async function createCase(
     throw validationError('Employment end date cannot be before start date');
   }
 
-  // Create the record
-  const recordToCreate: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'> = {
-    org_id: orgId,
-    created_by: userId,
-    employer_name: data.employer_name,
-    candidate_name: data.candidate_name,
-    candidate_email: data.candidate_email,
-    title: data.title,
-    claimed_ctc: data.claimed_ctc,
-    employment_start: data.employment_start,
-    employment_end: data.employment_end,
-    uan: data.uan ?? null,
-    status: 'awaiting_consent',
-    verdict: null,
-    risk_score: null,
-  };
+  const outbox: Array<() => Promise<unknown>> = [];
 
-  return await deps.db.createCase(recordToCreate);
+  const createdRecord = await deps.db.transaction(async (tx) => {
+    const recordToCreate: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'> = {
+      org_id: orgId,
+      created_by: userId,
+      employer_name: data.employer_name,
+      candidate_name: data.candidate_name,
+      candidate_email: data.candidate_email,
+      title: data.title,
+      claimed_ctc: data.claimed_ctc,
+      employment_start: data.employment_start,
+      employment_end: data.employment_end,
+      uan: data.uan ?? null,
+      status: 'awaiting_consent',
+      verdict: null,
+      risk_score: null,
+    };
+
+    const record = await deps.db.createCase(recordToCreate, tx);
+
+    if (record && deps.db.createToken) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+
+      await deps.db.createToken(tx, {
+        hash,
+        case_id: record.id,
+        purpose: 'document_upload',
+        expires_at: expiresAt,
+      });
+
+      outbox.push(async () => {
+        await publishJob('EMAIL_DELIVERY', {
+          to_email: record.candidate_email,
+          candidate_name: record.candidate_name,
+          employer_name: record.employer_name,
+          upload_token: rawToken,
+        });
+      });
+    }
+
+    return record;
+  });
+
+  if (!createdRecord) {
+    throw new Error('Failed to create case');
+  }
+
+  // Execute outbox jobs after transaction has committed
+  await Promise.all(
+    outbox.map((fn) => fn().catch((err) => console.error('Outbox job failed', err))),
+  );
+
+  return createdRecord;
 }
 
 export async function updateCase(

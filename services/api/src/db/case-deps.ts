@@ -1,6 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { CaseStatus, Verdict, type CaseSummary } from '@tieout/schema';
 import { cases } from './schema/cases.js';
+import { tokens } from './schema/tokens.js';
 import { toCaseRecord } from './case-queries.js';
 import type { Database } from './client.js';
 import type { CaseServiceDeps } from '../services/cases/case-service.js';
@@ -35,8 +36,9 @@ import { DbAuditRepository } from '../audit/db-audit-repository.js';
 export function createCaseDeps(db: Database): CaseServiceDeps {
   return {
     db: {
-      async createCase(input) {
-        const [row] = await db
+      async createCase(input, tx) {
+        const queryBuilder = tx ?? db;
+        const [row] = await queryBuilder
           .insert(cases)
           .values({
             org_id: input.org_id,
@@ -84,6 +86,15 @@ export function createCaseDeps(db: Database): CaseServiceDeps {
         // Avoid terminal states to prevent rejecting valid re-verifications of old cases
         const active = rows.find((r) => r.status !== 'complete' && r.status !== 'withdrawn');
         return active ? toCaseRecord(active) : null;
+      },
+      async createToken(tx, data) {
+        const queryBuilder = tx ?? db;
+        await queryBuilder.insert(tokens).values({
+          hash: data.hash,
+          case_id: data.case_id,
+          purpose: data.purpose,
+          expires_at: data.expires_at,
+        });
       },
       async getCaseByIdAndOrg(caseId, orgId, tx) {
         const queryBuilder = tx ?? db;

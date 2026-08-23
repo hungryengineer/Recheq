@@ -16,6 +16,7 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "@tieout/config": "workspace:*",
     "@tieout/rules": "workspace:*",
     "@tieout/schema": "workspace:*",
