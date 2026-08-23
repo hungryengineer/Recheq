@@ -7,22 +7,31 @@ import { cookies } from 'next/headers';
 import { verifyToken } from '@tieout/api/src/security/jwt.js';
 import { getDb } from '@/lib/server/db';
 import { schema } from '@tieout/api/src/db/client.js';
-import { eq } from 'drizzle-orm';export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+import { eq } from 'drizzle-orm';
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const token = cookieStore.get('recheq_session')?.value;
-  
+
   let initialUser = undefined;
-  
+
   if (token) {
     const payload = await verifyToken(token);
     if (payload?.userId) {
       const db = getDb();
-      const userRes = await db.select().from(schema.users).where(eq(schema.users.id, payload.userId)).limit(1);
+      const userRes = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, payload.userId))
+        .limit(1);
       if (userRes.length > 0) {
         const user = userRes[0];
-        const orgRes = await db.select().from(schema.organizations).where(eq(schema.organizations.id, user.org_id)).limit(1);
+        const orgRes = await db
+          .select()
+          .from(schema.organizations)
+          .where(eq(schema.organizations.id, user.org_id))
+          .limit(1);
         const org = orgRes[0];
-        
+
         initialUser = {
           name: user.name,
           email: user.email,

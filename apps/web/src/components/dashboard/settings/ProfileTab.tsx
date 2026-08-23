@@ -88,7 +88,12 @@ export function ProfileTab() {
               {avatar ? (
                 <Image src={avatar} alt="Avatar" fill className="object-cover" />
               ) : (
-                name?.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || '?'
+                name
+                  ?.split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase() || '?'
               )}
             </div>
             <input

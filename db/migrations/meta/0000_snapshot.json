@@ -60,12 +60,8 @@
           "name": "api_keys_org_id_organizations_id_fk",
           "tableFrom": "api_keys",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["org_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -203,12 +199,8 @@
           "name": "cases_org_id_organizations_id_fk",
           "tableFrom": "cases",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["org_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -216,12 +208,8 @@
           "name": "cases_created_by_users_id_fk",
           "tableFrom": "cases",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -312,12 +300,8 @@
           "name": "consents_case_id_cases_id_fk",
           "tableFrom": "consents",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -327,9 +311,7 @@
         "consents_token_hash_unique": {
           "name": "consents_token_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {},
@@ -410,12 +392,8 @@
           "name": "documents_case_id_cases_id_fk",
           "tableFrom": "documents",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -425,10 +403,7 @@
         "uq_documents_case_sha256": {
           "name": "uq_documents_case_sha256",
           "nullsNotDistinct": false,
-          "columns": [
-            "case_id",
-            "sha256"
-          ]
+          "columns": ["case_id", "sha256"]
         }
       },
       "policies": {},
@@ -516,12 +491,8 @@
           "name": "employer_requests_case_id_cases_id_fk",
           "tableFrom": "employer_requests",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -531,9 +502,7 @@
         "employer_requests_token_hash_unique": {
           "name": "employer_requests_token_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {},
@@ -608,12 +577,8 @@
           "name": "epfo_records_case_id_cases_id_fk",
           "tableFrom": "epfo_records",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -621,12 +586,8 @@
           "name": "epfo_records_consent_id_consents_id_fk",
           "tableFrom": "epfo_records",
           "tableTo": "consents",
-          "columnsFrom": [
-            "consent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["consent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -704,12 +665,8 @@
           "name": "events_case_id_cases_id_fk",
           "tableFrom": "events",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -719,10 +676,7 @@
         "uq_events_case_seq": {
           "name": "uq_events_case_seq",
           "nullsNotDistinct": false,
-          "columns": [
-            "case_id",
-            "seq"
-          ]
+          "columns": ["case_id", "seq"]
         }
       },
       "policies": {},
@@ -803,12 +757,8 @@
           "name": "extractions_document_id_documents_id_fk",
           "tableFrom": "extractions",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -912,12 +862,8 @@
           "name": "findings_case_id_cases_id_fk",
           "tableFrom": "findings",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1014,12 +960,8 @@
           "name": "forensics_document_id_documents_id_fk",
           "tableFrom": "forensics",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1029,9 +971,7 @@
         "forensics_document_id_unique": {
           "name": "forensics_document_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "document_id"
-          ]
+          "columns": ["document_id"]
         }
       },
       "policies": {},
@@ -1107,12 +1047,8 @@
           "name": "users_org_id_organizations_id_fk",
           "tableFrom": "users",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["org_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1122,9 +1058,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1189,12 +1123,8 @@
           "name": "tokens_case_id_cases_id_fk",
           "tableFrom": "tokens",
           "tableTo": "cases",
-          "columnsFrom": [
-            "case_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["case_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1250,9 +1180,7 @@
         "organizations_slug_unique": {
           "name": "organizations_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},

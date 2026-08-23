@@ -132,7 +132,8 @@ export async function updateProfileAction(
 
   try {
     const db = getDb();
-    await db.update(users)
+    await db
+      .update(users)
       .set({
         name: parsed.data.name,
         email: parsed.data.email,
@@ -146,7 +147,7 @@ export async function updateProfileAction(
   }
 
   revalidatePath('/', 'layout');
-  
+
   return { success: true };
 }
 
@@ -192,8 +193,10 @@ export async function updatePasswordAction(
     }
 
     const newHash = await bcrypt.hash(parsed.data.newPassword, 10);
-    await db.update(users).set({ password_hash: newHash, updated_at: new Date() }).where(eq(users.id, payload.userId));
-
+    await db
+      .update(users)
+      .set({ password_hash: newHash, updated_at: new Date() })
+      .where(eq(users.id, payload.userId));
   } catch (error) {
     console.error('Failed to update password:', error);
     return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
@@ -233,7 +236,8 @@ export async function updateOrganizationAction(
 
   try {
     const db = getDb();
-    await db.update(organizations)
+    await db
+      .update(organizations)
       .set({
         name: parsed.data.companyName,
         updated_at: new Date(),
