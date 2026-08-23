@@ -1,6 +1,3 @@
-'use server';
-
-import { revalidatePath } from 'next/cache';
 import { CaseCreateInput } from '@tieout/schema';
 import { apiClient, ApiError } from './client';
 import type {
@@ -47,9 +44,6 @@ export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
       method: 'POST',
       body: JSON.stringify(input),
     });
-
-    // Invalidate the cases page cache so Next.js re-renders the list with the fresh data
-    revalidatePath('/cases');
 
     return result;
   } catch (err: unknown) {
@@ -106,7 +100,6 @@ export async function updateCase(caseId: string, rawInput: unknown): Promise<Upd
       body: JSON.stringify(input),
     });
 
-    revalidatePath(`/cases/${caseId}`);
     return result;
   } catch (err: unknown) {
     if (err instanceof ApiError) {

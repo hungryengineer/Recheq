@@ -70,7 +70,7 @@ export function CaseEditModal({ caseRecord, onClose }: CaseEditModalProps) {
           setGeneralError(error.message ?? 'Failed to update case');
         }
       } else {
-        router.refresh(); // Refresh page to get updated data
+        router.refresh();
         onClose();
       }
     } catch (err: unknown) {
