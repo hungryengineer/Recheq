@@ -6,11 +6,12 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@tieout/schema', '@tieout/api', '@tieout/rules'],
   turbopack: {},
   serverExternalPackages: ['postgres', 'drizzle-orm', 'pdfjs-dist'],
-  // Pin the tracing root to the monorepo root: when `vercel build` runs in
-  // apps/web, Next's inference of the workspace root misfires and emits
-  // traced paths like "/node_modules/.pnpm/..." which then fail ENOENT
-  // during output collection.
-  outputFileTracingRoot: path.join(import.meta.dirname, '..', '..'),
+  // Pin the tracing root to the monorepo root only on Vercel: when `vercel build` runs in
+  // apps/web, Next's inference of the workspace root misfires. However, setting this in
+  // a standard workspace build (like in GitHub Actions) breaks Next's tracing paths.
+  outputFileTracingRoot: process.env.VERCEL
+    ? path.join(import.meta.dirname, '..', '..')
+    : undefined,
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
