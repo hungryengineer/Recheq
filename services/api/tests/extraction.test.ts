@@ -202,6 +202,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         pf_account_number: 'PF123',
         extraction_notes: 'Clear document',
         schema_version: 'payslip-v1',
+pan: null,
       };
 
       const mockResult: ExtractionResult<PayslipExtraction> = {
@@ -275,6 +276,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         pf_account_number: 'PF123',
         extraction_notes: 'Clear document',
         schema_version: 'payslip-v1',
+pan: null,
       };
 
       const mockResult2: ExtractionResult<PayslipExtraction> = {
@@ -411,6 +413,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
         pf_account_number: 'PF123',
         extraction_notes: 'Clear document',
         schema_version: 'payslip-v1',
+pan: null,
       };
 
       const validResult: ExtractionResult<PayslipExtraction> = {
@@ -592,6 +595,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
             pf_account_number: 'PF999',
             extraction_notes: 'Custom fixture',
             schema_version: 'payslip-v1' as const,
+pan: null,
           },
         },
         form16s: {},
@@ -719,6 +723,7 @@ describe('DOC-01 — Provider-Independent Document Extraction', () => {
           pf_account_number: 'PF123',
           extraction_notes: null,
           schema_version: 'payslip-v1',
+pan: null,
         },
         rawOutput: '{}',
         modelId: 'test',
@@ -892,6 +897,7 @@ describe('GeminiExtractor', () => {
         pf_account_number: null,
         extraction_notes: null,
         schema_version: 'payslip-v1',
+pan: null,
       };
 
       fetchMock.mockResolvedValue({
@@ -952,6 +958,7 @@ describe('GeminiExtractor', () => {
                       pf_account_number: null,
                       extraction_notes: 'test',
                       schema_version: 'payslip-v1',
+pan: null,
                     }),
                   },
                 ],
@@ -1084,6 +1091,7 @@ describe('GeminiExtractor', () => {
       pf_account_number: null,
       extraction_notes: null,
       schema_version: 'payslip-v1',
+pan: null,
     };
 
     it('passes through valid extraction without retry', async () => {
@@ -1258,6 +1266,7 @@ describe('GeminiExtractor', () => {
         pf_account_number: null,
         extraction_notes: null,
         schema_version: 'payslip-v1',
+pan: null,
       };
 
       const succeedingGemini: LlmDocumentExtractor = {

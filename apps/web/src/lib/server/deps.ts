@@ -14,7 +14,7 @@ import { db } from './db';
 import { AuditService } from '@tieout/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js';
 import { FixtureEpfoProvider } from '@tieout/api/src/epfo/fixture-epfo-provider.js';
-import { FixtureExtractor } from '@tieout/api/src/extraction/fixture-extractor.js';
+import { RegexDocumentExtractor } from '@tieout/api/src/extraction/providers/regex-extractor.js';
 
 export function buildDeps(): CaseProcessingDeps {
   if (!globalForDeps.__deps) {
@@ -42,7 +42,7 @@ export function buildDeps(): CaseProcessingDeps {
       db: repository,
       audit: auditService,
       epfoProvider: new FixtureEpfoProvider(),
-      extractor: new FixtureExtractor(),
+      extractor: new RegexDocumentExtractor(),
       tokenVerifier,
     } as any;
   }
