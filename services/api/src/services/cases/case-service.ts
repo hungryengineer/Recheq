@@ -5,7 +5,7 @@ import {
   type EventInput,
   type EventRecord,
 } from '@tieout/schema';
-import { validationError, notFoundError } from '../../http/errors.js';
+import { validationError, notFoundError, conflictError } from '../../http/errors.js';
 import type { Database } from '../../db/client.js';
 
 function stripUndefined<T extends Record<string, unknown>>(
@@ -48,6 +48,12 @@ export interface CaseServiceDeps {
       orgId: string,
       tx?: TransactionHandle,
     ) => Promise<CaseRecord | null>;
+    findExistingCase: (
+      orgId: string,
+      candidateName: string,
+      candidateEmail: string,
+      employerName: string,
+    ) => Promise<CaseRecord | null>;
     transaction: <T>(cb: (tx: TransactionHandle) => Promise<T>) => Promise<T>;
   };
   audit: {
@@ -67,6 +73,19 @@ export async function createCase(
     throw validationError('Invalid case input', parsed.error.errors);
   }
   const data = parsed.data;
+
+  // Idempotency / Duplicate check: Prevent creating a duplicate active case for the same candidate & employer
+  const existingCase = await deps.db.findExistingCase(
+    orgId,
+    data.candidate_name,
+    data.candidate_email,
+    data.employer_name,
+  );
+  if (existingCase) {
+    throw conflictError(
+      `An active case already exists for ${data.candidate_name} at ${data.employer_name}.`,
+    );
+  }
 
   // Business rule validation: end date must not be before start date
   const start = new Date(data.employment_start);

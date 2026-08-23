@@ -216,6 +216,7 @@ describe('organization A cannot access organization B data', () => {
     const db = {
       getCaseByIdAndOrg: vi.fn().mockResolvedValue(null),
       createCase: vi.fn(),
+      findExistingCase: vi.fn(),
       listCasesByOrg: vi.fn().mockResolvedValue([]),
       updateCaseDetails: vi.fn(),
       transaction: vi.fn(),
@@ -232,6 +233,7 @@ describe('organization A cannot access organization B data', () => {
       db: {
         getCaseByIdAndOrg: vi.fn().mockResolvedValue(null),
         createCase: vi.fn(),
+        findExistingCase: vi.fn(),
         listCasesByOrg: vi.fn().mockResolvedValue([]),
         updateCaseDetails: vi.fn(),
         transaction: vi.fn(),
@@ -254,6 +256,7 @@ describe('organization A cannot access organization B data', () => {
     const db = {
       listCasesByOrg: vi.fn().mockResolvedValue(orgACases),
       createCase: vi.fn(),
+      findExistingCase: vi.fn(),
       getCaseByIdAndOrg: vi.fn(),
       updateCaseDetails: vi.fn(),
       transaction: vi.fn(),
@@ -268,6 +271,7 @@ describe('organization A cannot access organization B data', () => {
     const db = {
       listCasesByOrg: vi.fn().mockResolvedValue([]),
       createCase: vi.fn(),
+      findExistingCase: vi.fn(),
       getCaseByIdAndOrg: vi.fn(),
       updateCaseDetails: vi.fn(),
       transaction: vi.fn(),

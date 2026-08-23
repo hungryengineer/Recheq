@@ -67,6 +67,24 @@ export function createCaseDeps(db: Database): CaseServiceDeps {
           .orderBy(desc(cases.created_at));
         return rows.map(toCaseSummary);
       },
+      async findExistingCase(orgId, candidateName, candidateEmail, employerName) {
+        const rows = await db
+          .select()
+          .from(cases)
+          .where(
+            and(
+              eq(cases.org_id, orgId),
+              eq(cases.candidate_email, candidateEmail),
+              eq(cases.candidate_name, candidateName),
+              eq(cases.employer_name, employerName),
+            ),
+          )
+          .orderBy(desc(cases.created_at));
+
+        // Avoid terminal states to prevent rejecting valid re-verifications of old cases
+        const active = rows.find((r) => r.status !== 'complete' && r.status !== 'withdrawn');
+        return active ? toCaseRecord(active) : null;
+      },
       async getCaseByIdAndOrg(caseId, orgId, tx) {
         const queryBuilder = tx ?? db;
         const query = queryBuilder
