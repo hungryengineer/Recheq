@@ -1,6 +1,19 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import {
+  ProfileUpdateInputSchema,
+  PasswordUpdateInputSchema,
+  OrganizationUpdateInputSchema,
+  InviteMemberInputSchema,
+} from '@tieout/schema';
+import type { ActionError } from './actions-types';
+import { getDb } from '@/lib/server/db';
+import { users } from '@tieout/api/src/db/schema/users.js';
+import { organizations } from '@tieout/api/src/db/schema/organizations.js';
+import { eq } from 'drizzle-orm';
+import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { revalidatePath } from 'next/cache';
 
 export type ApiKey = {
   id: string;
@@ -88,4 +101,178 @@ export async function deleteApiKeyAction(
     console.error('Failed to delete API key:', error);
     return { success: false, error: 'An unexpected error occurred.' };
   }
+}
+
+export async function updateProfileAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = ProfileUpdateInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+  if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
+
+  const payload = await verifyToken(token);
+  if (!payload?.userId) {
+    return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
+  }
+
+  try {
+    const db = getDb();
+    await db
+      .update(users)
+      .set({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        avatar: parsed.data.avatar,
+        updated_at: new Date(),
+      })
+      .where(eq(users.id, payload.userId));
+  } catch (error) {
+    console.error('Failed to update profile:', error);
+    return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
+  }
+
+  revalidatePath('/', 'layout');
+
+  return { success: true };
+}
+
+export async function updatePasswordAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = PasswordUpdateInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+  if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
+
+  const payload = await verifyToken(token);
+  if (!payload?.userId) return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
+
+  try {
+    const db = getDb();
+    const userResult = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1);
+    const user = userResult[0];
+    if (!user) return { error: { code: 'UNAUTHORIZED', message: 'User not found' } };
+
+    if (!user.password_hash) {
+      return { error: { code: 'VALIDATION_ERROR', message: 'SSO users cannot update password.' } };
+    }
+
+    const { default: bcrypt } = await import('bcryptjs');
+    const isValid = await bcrypt.compare(parsed.data.currentPassword, user.password_hash);
+    if (!isValid) {
+      return { error: { code: 'VALIDATION_ERROR', message: 'Incorrect current password' } };
+    }
+
+    const newHash = await bcrypt.hash(parsed.data.newPassword, 10);
+    await db
+      .update(users)
+      .set({ password_hash: newHash, updated_at: new Date() })
+      .where(eq(users.id, payload.userId));
+  } catch (error) {
+    console.error('Failed to update password:', error);
+    return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
+  }
+
+  revalidatePath('/', 'layout');
+
+  return { success: true };
+}
+
+export async function updateOrganizationAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = OrganizationUpdateInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+  if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
+
+  const payload = await verifyToken(token);
+  if (!payload?.orgId) {
+    return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
+  }
+
+  try {
+    const db = getDb();
+    await db
+      .update(organizations)
+      .set({
+        name: parsed.data.companyName,
+        updated_at: new Date(),
+      })
+      .where(eq(organizations.id, payload.orgId));
+  } catch (error) {
+    console.error('Failed to update organization:', error);
+    return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
+  }
+
+  revalidatePath('/', 'layout');
+
+  return { success: true };
+}
+
+export async function inviteMemberAction(
+  data: unknown,
+): Promise<{ success: boolean } | ActionError> {
+  const parsed = InviteMemberInputSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      error: {
+        code: 'VALIDATION_ERROR',
+        details: {
+          fields: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      },
+    };
+  }
+
+  // Simulate API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  return { success: true };
 }

@@ -13,7 +13,7 @@ export {
   EventKind,
 } from './enums.js';
 
-export { CaseCreateInput, CaseRecord, CaseSummary } from './case.js';
+export { CaseCreateInput, CaseUpdateInput, CaseRecord, CaseSummary } from './case.js';
 export * from './auth.js';
 
 export { DocumentRecord, DocumentUploadInput } from './document.js';
@@ -29,3 +29,4 @@ export { EventRecord, EventInput } from './event.js';
 export { SalaryComponent, PayslipExtraction } from './payslip.js';
 
 export { Form16Extraction } from './form16.js';
+export * from './settings.js';

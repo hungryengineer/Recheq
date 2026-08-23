@@ -5,9 +5,9 @@
  *
  * Usage: pnpm check:storage
  *
- * Exercises the full flow: create case -> send invite -> issue consent token
- * -> grant consent -> upload a document (sniffed as PDF) -> verify the object
- * is in the bucket (headObject) -> verify the DB record + dedup path.
+ * Exercises the full flow: create case -> issue consent token -> grant
+ * consent -> upload a document (sniffed as PDF) -> verify the object is in
+ * the bucket (headObject) -> verify the DB record + dedup path.
  *
  * Reads DATABASE_URL (local Postgres or Neon) and S3_* env vars (local MinIO
  * or a remote S3-compatible provider such as Backblaze B2).
@@ -26,7 +26,6 @@ import { createTokenService } from '../services/api/src/db/token-deps.js';
 import { createCase } from '../services/api/src/services/cases/case-service.js';
 import { grantConsent, hashToken } from '../services/api/src/services/consent/consent-service.js';
 import { uploadDocument } from '../services/api/src/services/documents/document-service.js';
-import { transitionCaseStatus } from '../services/api/src/domain/case-status.js';
 import { createDocumentStorageFromEnv } from '../services/api/src/storage/document-storage.js';
 import { cases } from '../services/api/src/db/schema/cases.js';
 import { consents } from '../services/api/src/db/schema/consents.js';
@@ -83,12 +82,10 @@ try {
   cleanup.caseId = created.id;
   console.log(`✅ createCase -> ${created.id} (${created.status})`);
 
-  // ── 2. Send invite (draft -> awaiting_consent) ───────────────
-  const invitedStatus = transitionCaseStatus(created.status, 'invite_sent');
-  await consentDeps.db.updateCaseStatus(created.id, invitedStatus);
-  console.log(`✅ invite_sent -> ${invitedStatus}`);
+  // Cases are created directly in awaiting_consent (invite_sent is only valid
+  // from draft), so the next step in the flow is the consent token.
 
-  // ── 3. Issue and verify a consent token ──────────────────────
+  // ── 2. Issue and verify a consent token ──────────────────────
   const rawToken = await tokenService.createToken(created.id, 'consent', 60 * 60 * 1000);
   cleanup.rawToken = rawToken;
   const verifiedCaseId = await tokenService.verifyAndGetCaseId(rawToken, 'consent');
@@ -97,7 +94,7 @@ try {
   }
   console.log('✅ consent token issued and verified');
 
-  // ── 4. Grant consent (awaiting_consent -> awaiting_documents) ─
+  // ── 3. Grant consent (awaiting_consent -> awaiting_documents) ─
   const consent = await grantConsent(
     created.id,
     {
