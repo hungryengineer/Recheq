@@ -7,10 +7,16 @@ import path from 'node:path';
 import 'dotenv/config';
 
 // Cleanup bookkeeping: only rows created by this run are removed.
-const created = {
-  orgId: null as string | null,
-  caseId: null as string | null,
-  userId: null as string | null,
+type CreatedFixtures = {
+  orgId: string | null;
+  caseId: string | null;
+  userId: string | null;
+};
+
+const created: CreatedFixtures = {
+  orgId: null,
+  caseId: null,
+  userId: null,
 };
 
 async function main() {
@@ -151,6 +157,15 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
+    // Without --run the printed cURL command still needs the fixtures, so
+    // cleanup only happens after an actual upload attempt.
+    const ranUpload = process.argv.includes('--run');
+    if (!ranUpload) {
+      console.log(
+        `\nℹ Fixtures left in place for manual testing (org ${created.orgId}, case ${created.caseId}). Re-run with --run to auto-clean.`,
+      );
+      return;
+    }
     // Best-effort cleanup of every row this run created. FKs have no ON
     // DELETE CASCADE here, so go children-first: documents/events/tokens
     // reference the case; the case and (only if we created it) the user
