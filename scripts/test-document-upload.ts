@@ -24,19 +24,25 @@ async function main() {
   await db.insert(schema.cases).values({
     id: caseId,
     org_id: orgId,
+    created_by: process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001',
+    employer_name: 'Acme Corp',
     candidate_name: 'Jane Doe Upload Test',
     candidate_email: `jane.upload.${Date.now()}@example.com`,
+    title: 'Upload flow test',
+    claimed_ctc: '1200000.00',
+    employment_start: '2024-01-01',
+    employment_end: '2025-12-31',
     status: 'awaiting_documents',
   });
 
-  // Create a token for the candidate
+  // Create a token for the candidate. Tokens are stored by their SHA-256
+  // hash; the raw value only ever appears in the candidate-facing URL.
   const tokenValue = crypto.randomBytes(32).toString('base64url');
   await db.insert(schema.tokens).values({
-    id: crypto.randomUUID(),
+    hash: crypto.createHash('sha256').update(tokenValue).digest('hex'),
     case_id: caseId,
-    token: tokenValue,
     purpose: 'consent',
-    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
   console.log(`✅ Created Case ID: ${caseId}`);
