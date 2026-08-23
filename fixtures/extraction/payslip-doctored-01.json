@@ -1,16 +1,33 @@
 {
   "_fixture": "payslip-doctored-01",
-  "_description": "Doctored payslip — gross salary printed does not match sum of earnings components. Indicates possible alteration of individual line items after gross was set.",
+  "_description": "Doctored payslip \u2014 gross salary printed does not match sum of earnings components. Indicates possible alteration of individual line items after gross was set.",
   "employee_name": "Rahul Verma",
   "employee_id": "RV-0055",
   "employer_name": "Tech Corp India Pvt Ltd",
   "month": "January",
   "year": 2024,
-  "basic": { "raw_label": "Basic Salary", "amount": 90000 },
-  "hra": { "raw_label": "House Rent Allowance", "amount": 36000 },
-  "da": { "raw_label": "Dearness Allowance", "amount": 9000 },
-  "special_allowance": { "raw_label": "Special Allowance", "amount": 20000 },
-  "other_allowances": [{ "raw_label": "Transport Allowance", "amount": 3200 }],
+  "basic": {
+    "raw_label": "Basic Salary",
+    "amount": 90000
+  },
+  "hra": {
+    "raw_label": "House Rent Allowance",
+    "amount": 36000
+  },
+  "da": {
+    "raw_label": "Dearness Allowance",
+    "amount": 9000
+  },
+  "special_allowance": {
+    "raw_label": "Special Allowance",
+    "amount": 20000
+  },
+  "other_allowances": [
+    {
+      "raw_label": "Transport Allowance",
+      "amount": 3200
+    }
+  ],
   "gross_salary": 140000,
   "pf_deduction": 10800,
   "professional_tax": 200,
@@ -20,6 +37,7 @@
   "net_salary": 107000,
   "uan": "100000000055",
   "pf_account_number": "MH/BAN/12345/000/0000055",
+  "pan": null,
   "extraction_notes": null,
   "schema_version": "payslip-v1"
 }
