@@ -17,31 +17,50 @@ export class ApiError extends Error {
   }
 }
 
-import { cookies } from 'next/headers';
-
 export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-  const baseUrl =
-    process.env.APP_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000');
+  const isBrowser = typeof window !== 'undefined';
+  let baseUrl = '';
+
+  if (!isBrowser) {
+    const { headers } = await import('next/headers');
+    const headersList = await headers();
+    const host = headersList.get('host');
+    const protocol =
+      headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+
+    const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+
+    baseUrl =
+      process.env.APP_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      (host
+        ? `${protocol}://${host}`
+        : vercelUrl
+          ? `https://${vercelUrl}`
+          : 'http://localhost:3000');
+  }
+
   const url = `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get('recheq_session')?.value;
+  let token: string | undefined;
+  if (!isBrowser) {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    token = cookieStore.get('recheq_session')?.value;
+  }
 
-  const headers: Record<string, string> = {
+  const headersObj: Record<string, string> = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...((options.headers as Record<string, string>) || {}),
   };
 
   if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    headersObj['Content-Type'] = headersObj['Content-Type'] || 'application/json';
   }
 
   const response = await fetch(url, {
     ...options,
-    headers,
+    headers: headersObj,
   });
 
   if (!response.ok) {
