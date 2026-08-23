@@ -6,8 +6,10 @@ import { isCreateCaseError } from '../../lib/api/actions-types';
 import { CaseCreateInput } from '@tieout/schema';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, QrCode } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function CreateCaseForm() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -76,6 +78,7 @@ export function CreateCaseForm() {
         }
       } else {
         setSuccessLink(result.candidate_link ?? null);
+        router.refresh();
       }
     } catch (err: unknown) {
       const error = err as Error;
