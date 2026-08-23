@@ -1,4 +1,5 @@
 import { createDb, schema } from '../services/api/src/db/client.js';
+import { createDocumentStorageFromEnv } from '../services/api/src/storage/document-storage.js';
 import { eq } from 'drizzle-orm';
 import { PDFDocument } from 'pdf-lib';
 import crypto from 'node:crypto';
@@ -6,17 +7,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import 'dotenv/config';
 
-// Cleanup bookkeeping: only rows created by this run are removed.
+// Cleanup bookkeeping: only rows/objects created by this run are removed.
 type CreatedFixtures = {
   orgId: string | null;
   caseId: string | null;
   userId: string | null;
+  storagePath: string | null;
 };
 
 const created: CreatedFixtures = {
   orgId: null,
   caseId: null,
   userId: null,
+  storagePath: null,
 };
 
 async function main() {
@@ -143,6 +146,8 @@ async function main() {
       console.dir(responseBody, { depth: null });
       if (!response.ok) {
         process.exitCode = 1;
+      } else {
+        created.storagePath = responseBody?.data?.storage_path ?? null;
       }
     } catch (e) {
       console.error('Fetch failed:', e);
@@ -166,29 +171,55 @@ main()
       );
       return;
     }
-    // Best-effort cleanup of every row this run created. FKs have no ON
-    // DELETE CASCADE here, so go children-first: documents/events/tokens
-    // reference the case; the case and (only if we created it) the user
-    // reference the organization.
+    // Best-effort cleanup of everything this run created. Each step runs
+    // independently so one failure doesn't strand the rest; the DB client
+    // is closed in an outer finally. FKs have no ON DELETE CASCADE here,
+    // so go children-first.
     if (!created.orgId) return;
+    const db = createDb(process.env.DATABASE_URL!);
+    const step = async (label: string, fn: () => Promise<unknown>): Promise<void> => {
+      try {
+        await fn();
+        console.log(`🧹 ${label}`);
+      } catch (e) {
+        console.error(`⚠ ${label} failed:`, e);
+        process.exitCode = 1;
+      }
+    };
     try {
-      const dbUrl = process.env.DATABASE_URL!;
-      const db = createDb(dbUrl);
-      if (created.caseId) {
-        await db.delete(schema.documents).where(eq(schema.documents.case_id, created.caseId));
-        await db.delete(schema.events).where(eq(schema.events.case_id, created.caseId));
-        await db.delete(schema.tokens).where(eq(schema.tokens.case_id, created.caseId));
-        await db.delete(schema.cases).where(eq(schema.cases.id, created.caseId));
-        console.log(`🧹 Cleaned up test case ${created.caseId}`);
+      if (created.storagePath) {
+        try {
+          await createDocumentStorageFromEnv().deleteObject(created.storagePath);
+          console.log('🧹 Cleaned up bucket object');
+        } catch (e) {
+          console.error('⚠ Bucket cleanup failed:', e);
+        }
       }
-      if (created.userId) {
-        await db.delete(schema.users).where(eq(schema.users.id, created.userId));
-        console.log('🧹 Cleaned up test user');
+      const caseId = created.caseId;
+      if (caseId) {
+        await step('Cleaned up documents', () =>
+          db.delete(schema.documents).where(eq(schema.documents.case_id, caseId)),
+        );
+        await step('Cleaned up events', () =>
+          db.delete(schema.events).where(eq(schema.events.case_id, caseId)),
+        );
+        await step('Cleaned up tokens', () =>
+          db.delete(schema.tokens).where(eq(schema.tokens.case_id, caseId)),
+        );
+        await step(`Cleaned up test case ${caseId}`, () =>
+          db.delete(schema.cases).where(eq(schema.cases.id, caseId)),
+        );
       }
-      await db.delete(schema.organizations).where(eq(schema.organizations.id, created.orgId));
-      console.log(`🧹 Cleaned up test org ${created.orgId}`);
+      const userId = created.userId;
+      if (userId) {
+        await step('Cleaned up test user', () =>
+          db.delete(schema.users).where(eq(schema.users.id, userId)),
+        );
+      }
+      await step(`Cleaned up test org ${created.orgId}`, () =>
+        db.delete(schema.organizations).where(eq(schema.organizations.id, created.orgId!)),
+      );
+    } finally {
       await db.$client.end();
-    } catch (cleanupErr) {
-      console.error('⚠ Cleanup failed:', cleanupErr);
     }
   });
