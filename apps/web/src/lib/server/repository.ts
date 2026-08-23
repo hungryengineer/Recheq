@@ -16,7 +16,7 @@ export const repository = {
   createCase: async (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => {
     const [result] = await db
       .insert(schema.cases)
-      .values(input as any)
+      .values({ ...input, claimed_ctc: String(input.claimed_ctc) } as any)
       .returning();
     return result;
   },
