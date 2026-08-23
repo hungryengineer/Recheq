@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { projectCaseDetail } from '@/lib/server/projections';
 import { validate } from 'uuid';
+import { toHandler } from '@/lib/server/adapter';
+import { updateCaseHandler } from '@tieout/api/src/routes/cases/update.js';
+import { deleteCaseHandler } from '@tieout/api/src/routes/cases/delete.js';
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const requestId = crypto.randomUUID();
@@ -71,3 +74,6 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     );
   }
 }
+
+export const PATCH = toHandler(updateCaseHandler);
+export const DELETE = toHandler(deleteCaseHandler);

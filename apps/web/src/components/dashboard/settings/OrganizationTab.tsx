@@ -4,7 +4,11 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, MoreHorizontal, Loader2, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import { updateOrganizationAction, inviteMemberAction } from '@/lib/api/settings';
+import {
+  updateOrganizationAction,
+  inviteMemberAction,
+  getOrganizationMembersAction,
+} from '@/lib/api/settings';
 
 export function OrganizationTab() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -31,12 +35,37 @@ export function OrganizationTab() {
     );
   };
 
-  const [members, setMembers] = useState([
-    { id: 1, role: 'Owner', color: 'blue' },
-    { id: 2, name: 'Sarah Jenkins', email: 'sarah@acme.com', role: 'Verifier', color: 'emerald' },
-  ]);
+  const [members, setMembers] = useState<
+    Array<{ id: string; name: string; email: string; role: string; color: string }>
+  >([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  React.useEffect(() => {
+    async function loadMembers() {
+      try {
+        const result = await getOrganizationMembersAction();
+        if (result && 'data' in result && result.data) {
+          const colors = ['blue', 'emerald', 'purple', 'amber', 'rose'];
+          setMembers(
+            result.data.map((user, i) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role.charAt(0).toUpperCase() + user.role.slice(1),
+              color: colors[i % colors.length],
+            })),
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoadingMembers(false);
+      }
+    }
+    loadMembers();
+  }, []);
+
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const handleUpdateCompany = async () => {
     setIsUpdating(true);
@@ -93,8 +122,9 @@ export function OrganizationTab() {
     }
   };
 
-  const handleRemoveMember = async (id: number) => {
-    if (id === 1) {
+  const handleRemoveMember = async (id: string) => {
+    // Basic frontend safety
+    if (members.find((m) => m.id === id)?.role.toLowerCase() === 'owner') {
       toast.error('Cannot remove the organization owner');
       return;
     }
@@ -186,53 +216,75 @@ export function OrganizationTab() {
               </tr>
             </thead>
             <tbody className="bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
-              {members.map((member) => {
-                const memberName = member.id === 1 ? name : member.name;
-                const memberEmail = member.id === 1 ? email : member.email;
-                const memberInitials =
-                  member.id === 1 ? getInitials(name) : getInitials(member.name || '');
-                return (
-                  <tr key={member.id} className="hover:bg-[var(--color-page)] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-full bg-${member.color}-100 dark:bg-${member.color}-900/30 text-xs font-semibold text-${member.color}-700 dark:text-${member.color}-400`}
-                        >
-                          {memberInitials}
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-[var(--color-fg)]">{memberName}</p>
-                          <p className="text-xs text-[var(--color-fg-muted)]">{memberEmail}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-fg)]">{member.role}</td>
-                    <td className="px-4 py-3 text-right text-sm relative">
-                      <button
-                        onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                        aria-expanded={openMenuId === member.id}
-                        aria-label="Member actions"
-                        className="text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
-                      >
-                        <MoreHorizontal className="w-5 h-5" />
-                      </button>
-                      {openMenuId === member.id && (
-                        <div className="absolute right-8 top-8 w-32 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-10 overflow-hidden">
-                          <button
-                            onClick={() => {
-                              handleRemoveMember(member.id);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-[var(--color-page)] transition-colors"
+              {isLoadingMembers ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-sm text-[var(--color-fg-muted)]"
+                  >
+                    <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
+                    Loading members...
+                  </td>
+                </tr>
+              ) : members.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-sm text-[var(--color-fg-muted)]"
+                  >
+                    No members found.
+                  </td>
+                </tr>
+              ) : (
+                members.map((member) => {
+                  const memberName = member.name;
+                  const memberEmail = member.email;
+                  const memberInitials = getInitials(member.name || '');
+                  return (
+                    <tr key={member.id} className="hover:bg-[var(--color-page)] transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <div
+                            className={`flex h-8 w-8 items-center justify-center rounded-full bg-${member.color}-100 dark:bg-${member.color}-900/30 text-xs font-semibold text-${member.color}-700 dark:text-${member.color}-400`}
                           >
-                            Remove
-                          </button>
+                            {memberInitials}
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm font-medium text-[var(--color-fg)]">
+                              {memberName}
+                            </p>
+                            <p className="text-xs text-[var(--color-fg-muted)]">{memberEmail}</p>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--color-fg)]">{member.role}</td>
+                      <td className="px-4 py-3 text-right text-sm relative">
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+                          aria-expanded={openMenuId === member.id}
+                          aria-label="Member actions"
+                          className="text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+                        >
+                          <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                        {openMenuId === member.id && (
+                          <div className="absolute right-8 top-8 w-32 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-10 overflow-hidden">
+                            <button
+                              onClick={() => {
+                                handleRemoveMember(member.id);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-[var(--color-page)] transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

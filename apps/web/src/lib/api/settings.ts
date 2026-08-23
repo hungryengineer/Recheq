@@ -276,3 +276,32 @@ export async function inviteMemberAction(
 
   return { success: true };
 }
+
+export async function getOrganizationMembersAction() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+  if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
+
+  const payload = await verifyToken(token);
+  if (!payload?.orgId) {
+    return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
+  }
+
+  try {
+    const db = getDb();
+    const orgUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.org_id, payload.orgId));
+
+    return { data: orgUsers };
+  } catch (error) {
+    console.error('Failed to get members:', error);
+    return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
+  }
+}
