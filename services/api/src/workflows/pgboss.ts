@@ -1,4 +1,10 @@
 import PgBoss from 'pg-boss';
+import * as dotenv from 'dotenv';
+import path from 'path';
+
+// Forcefully inject .env.local because Next.js Turbopack sometimes isolates
+// instrumentation.ts workers from the main Next.js environment cache.
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
 
 export interface JobConfig {
   retryLimit: number;
@@ -10,22 +16,22 @@ const JOB_CONFIGS: Record<string, JobConfig> = {
   CASE_PROCESSING: {
     retryLimit: 3,
     retryDelay: 30,
-    expireInSeconds: 86400, // 24h
+    expireInSeconds: 3600, // 1h
   },
   EMAIL_DELIVERY: {
     retryLimit: 5,
     retryDelay: 60, // 1m
-    expireInSeconds: 86400, // 24h
+    expireInSeconds: 3600, // 1h
   },
   EMPLOYER_WORKFLOW: {
     retryLimit: 2,
     retryDelay: 60,
-    expireInSeconds: 604800, // 7 days
+    expireInSeconds: 43200, // 12h
   },
   RETENTION_CLEANUP: {
     retryLimit: 1,
     retryDelay: 300,
-    expireInSeconds: 2592000, // 30 days
+    expireInSeconds: 43200, // 12h
   },
   WEBHOOK_DELIVERY: {
     retryLimit: 5,
@@ -38,6 +44,9 @@ let boss: PgBoss | null = null;
 
 export async function initPgBoss(): Promise<PgBoss> {
   if (boss) return boss;
+
+  // Attempt to load .env.local from the web workspace root just in case
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
   const connectionString = process.env.DATABASE_URL;
 
@@ -59,14 +68,20 @@ export async function initPgBoss(): Promise<PgBoss> {
     throw error;
   }
 
-  // Create queues. Note: case processing is fired in-process from the submit
-  // route (platform decision) and deliberately has no queue here.
-  await Promise.all([
-    boss.createQueue('employer_workflow'),
-    boss.createQueue('retention_cleanup'),
-    boss.createQueue('webhook_delivery'),
-    boss.createQueue('email_delivery'),
-  ]);
+  try {
+    // Run sequentially to minimize deadlock chances in Neon Serverless/HMR
+    await boss.createQueue('employer_workflow');
+    await boss.createQueue('retention_cleanup');
+    await boss.createQueue('webhook_delivery');
+    await boss.createQueue('email_delivery');
+  } catch (error: unknown) {
+    // Ignore PostgreSQL deadlock errors (40P01) or duplicate table errors that happen
+    // when Next.js HMR concurrently boots multiple instrumentation routines.
+    const err = error as { code?: string };
+    if (err.code !== '40P01' && err.code !== '42P07') {
+      console.warn('Non-fatal error creating pg-boss queues:', error);
+    }
+  }
 
   return boss;
 }
@@ -109,7 +124,7 @@ export async function publishJob(
 
   checkPii(data);
 
-  const pgBoss = await getPgBoss();
+  const pgBoss = await initPgBoss();
   const config = JOB_CONFIGS[queue] || { retryLimit: 3, retryDelay: 60, expireInSeconds: 300 };
 
   const publishOptions: PgBoss.SendOptions = {
@@ -125,8 +140,9 @@ export async function publishJob(
     publishOptions.startAfter = options.delaySeconds;
   }
 
-  const jobId = await pgBoss.send(queue, data as object, publishOptions);
-  console.log('job published', { queue, jobId, caseId: data.case_id });
+  const targetQueue = queue.toLowerCase();
+  const jobId = await pgBoss.send(targetQueue, data as object, publishOptions);
+  console.log('job published', { queue: targetQueue, jobId, caseId: data.case_id });
   return String(jobId || '');
 }
 

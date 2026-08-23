@@ -1,6 +1,6 @@
-import sendgrid from '@sendgrid/mail';
 import { z } from 'zod';
 import type PgBoss from 'pg-boss';
+import nodemailer from 'nodemailer';
 
 const EmailDeliveryPayload = z.object({
   to_email: z.string().email(),
@@ -11,7 +11,8 @@ const EmailDeliveryPayload = z.object({
 
 type EmailDeliveryJob = z.infer<typeof EmailDeliveryPayload>;
 
-export async function processEmailDelivery(jobs: PgBoss.Job<EmailDeliveryJob>[]): Promise<void> {
+export async function processEmailDelivery(jobsParam: PgBoss.Job<EmailDeliveryJob> | PgBoss.Job<EmailDeliveryJob>[]): Promise<void> {
+  const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   for (const job of jobs) {
     const parsed = EmailDeliveryPayload.safeParse(job.data);
 
@@ -20,34 +21,23 @@ export async function processEmailDelivery(jobs: PgBoss.Job<EmailDeliveryJob>[])
         jobId: job.id,
         errors: parsed.error.errors,
       });
-      // We throw to let PgBoss handle the failure and potential retries,
-      // though validation errors won't resolve on retry.
       throw new Error('Invalid email delivery payload');
     }
 
     const { to_email, candidate_name, employer_name, upload_token } = parsed.data;
 
-    const apiKey = process.env.SENDGRID_API_KEY;
-    if (!apiKey) {
-      // SECURITY: Fail hard if the API key is not configured, so the job stays in the queue and retries later.
-      throw new Error('SENDGRID_API_KEY is not configured');
+    const user = process.env['GMAIL_USER'];
+    const pass = process.env['GMAIL_APP_PASSWORD'];
+    
+    if (!user || !pass) {
+      throw new Error('GMAIL_USER or GMAIL_APP_PASSWORD is not configured');
     }
 
-    sendgrid.setApiKey(apiKey);
-
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@recheq.com';
-
     // Construct the document upload link
-    // Expects NEXT_PUBLIC_APP_URL to be set (e.g. http://localhost:3000 or https://recheq.com)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000';
     const uploadLink = `${appUrl}/c/${upload_token}/upload`;
 
-    const msg = {
-      to: to_email,
-      from: fromEmail,
-      subject: `Action Required: Document Upload for ${employer_name}`,
-      text: `Hello ${candidate_name},\n\nPlease upload the required documents for your background check with ${employer_name}.\n\nYou can securely upload your documents using the following link:\n${uploadLink}\n\nThank you,\nThe Recheq Team`,
-      html: `
+    const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -103,17 +93,29 @@ export async function processEmailDelivery(jobs: PgBoss.Job<EmailDeliveryJob>[])
   </table>
 </body>
 </html>
-      `,
-    };
+    `;
 
     try {
-      await sendgrid.send(msg);
-      console.log('Email delivered successfully', { jobId: job.id, to: to_email });
-    } catch (error) {
-      console.error('Failed to send email via SendGrid', {
-        jobId: job.id,
-        error: error instanceof Error ? error.message : error,
+      console.log(`[Email Worker] 🚀 Attempting to send Gmail to: ${to_email}`);
+      
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user,
+          pass,
+        },
       });
+
+      const info = await transporter.sendMail({
+        from: `"Recheq Background Verification" <${user}>`,
+        to: to_email,
+        subject: `Action Required: Document Upload for ${employer_name}`,
+        html: htmlContent,
+      });
+
+      console.log(`[Email Worker] ✅ Successfully sent Gmail to: ${to_email} (MessageId: ${info.messageId})`);
+    } catch (error) {
+      console.error(`[Email Worker] ❌ Gmail SMTP Error for ${to_email}:`, error instanceof Error ? error.message : error);
       throw error;
     }
   }

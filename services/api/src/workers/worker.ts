@@ -1,5 +1,5 @@
 import type PgBoss from 'pg-boss';
-import { getPgBoss } from '../workflows/pgboss.js';
+import { initPgBoss, getPgBoss } from '../workflows/pgboss.js';
 
 export interface JobContext {
   case_id: string;
@@ -15,19 +15,22 @@ export interface JobContext {
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
 import { processEmailDelivery } from '../workflows/email-worker.js';
 
-async function processEmployerJob(jobs: PgBoss.Job[]): Promise<void> {
+async function processEmployerJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
+  const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   await processEmployerWorkflowJob(jobs);
 }
-async function retentionJob(jobs: PgBoss.Job[]): Promise<void> {
+async function retentionJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
+  const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   for (const job of jobs) console.log('retention cleanup', { id: job.id });
 }
-async function webhookJob(jobs: PgBoss.Job[]): Promise<void> {
+async function webhookJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
+  const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   for (const job of jobs) console.log('webhook delivery', { id: job.id });
 }
 
 export async function startWorkers(): Promise<void> {
   try {
-    const boss = await getPgBoss();
+    const boss = await initPgBoss();
 
     const startQueue = (
       queue: string,
