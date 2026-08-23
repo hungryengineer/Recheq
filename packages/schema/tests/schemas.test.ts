@@ -193,7 +193,7 @@ describe('PayslipExtraction', () => {
       pf_account_number: null,
       extraction_notes: null,
       schema_version: 'payslip-v1',
-pan: null,
+      pan: null,
     };
     expect(PayslipExtraction.parse(extraction)).toEqual(extraction);
   });
@@ -221,7 +221,7 @@ pan: null,
       pf_account_number: 'PF123',
       extraction_notes: null,
       schema_version: 'payslip-v1',
-pan: null,
+      pan: null,
     };
     expect(PayslipExtraction.parse(extraction)).toEqual(extraction);
   });

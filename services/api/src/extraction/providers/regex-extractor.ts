@@ -1,5 +1,9 @@
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
-import type { LlmDocumentExtractor, ExtractionRequest, ExtractionResult } from '../llm-document-extractor.js';
+import type {
+  LlmDocumentExtractor,
+  ExtractionRequest,
+  ExtractionResult,
+} from '../llm-document-extractor.js';
 import { ExtractionFailureType } from '../llm-document-extractor.js';
 
 export class RegexDocumentExtractor implements LlmDocumentExtractor {
@@ -12,8 +16,9 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
 
     try {
       // Extract PAN: PAN followed by optional chars and then the PAN format
-      const panMatch = text.match(/PAN\s*([A-Z]{5}\d{4}[A-Z])/i) || text.match(/([A-Z]{5}\d{4}[A-Z])/);
-      const pan = panMatch ? panMatch[1] : null;
+      const panMatch =
+        text.match(/PAN\s*([A-Z]{5}\d{4}[A-Z])/i) || text.match(/([A-Z]{5}\d{4}[A-Z])/);
+      const pan = panMatch?.[1] ?? null;
 
       // Extract TDS: TDS followed by anything not a digit, then the amount
       const tdsMatch = text.match(/TDS[^\d]*([\d,]+\.\d{2})/i);
@@ -24,9 +29,12 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
       const salary = netPayMatch ? parseFloat(netPayMatch[1]!.replace(/,/g, '')) : null;
 
       // Extract Org Name
-      const lines = text.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+      const lines = text
+        .split('\n')
+        .map((l: string) => l.trim())
+        .filter((l: string) => l.length > 0);
       const pvtLtdMatch = lines.find((l: string) => l.toLowerCase().includes('pvt. ltd.'));
-      const orgName = pvtLtdMatch ? pvtLtdMatch : (lines[0] || null);
+      const orgName = pvtLtdMatch ?? lines[0] ?? null;
 
       const data: PayslipExtraction = {
         employer_name: orgName,
@@ -48,7 +56,7 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
         pf_account_number: null,
         extraction_notes: 'Extracted using regex fast-path',
         schema_version: 'payslip-v1',
-        
+
         basic: { raw_label: null, amount: null },
         hra: { raw_label: null, amount: null },
         da: { raw_label: null, amount: null },
