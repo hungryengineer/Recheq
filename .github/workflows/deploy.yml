@@ -44,14 +44,13 @@ jobs:
       - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Run all Vercel CLI commands from the monorepo root. The Vercel
-      # dashboard has rootDirectory set to "apps/web", which tells the CLI
-      # where to find the Next.js app. Previously we ran from apps/web and
-      # tried to scrub rootDirectory from pulled settings, but Vercel CLI
-      # v50 re-fetches settings from the API during `build --prod --token`,
-      # bypassing the local scrub and doubling the path to
-      # apps/web/apps/web/.next. Running from the root avoids this entirely.
+      # Build on the runner where the full pnpm workspace is present, then
+      # upload only the compiled output. CLI deploys resolve settings from the
+      # uploaded directory, so a monorepo root upload can neither run the
+      # workspace filter build nor locate apps/web/.next — prebuilt avoids
+      # both problems and any dependence on dashboard Root Directory state.
       - name: 🔗 Link Vercel project
+        working-directory: apps/web
         run: |
           mkdir -p .vercel
           printf '{"orgId":"%s","projectId":"%s"}\n' \
@@ -61,16 +60,53 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: '📥 Pull project settings'
+        working-directory: apps/web
         run: npx vercel@50 pull --yes --environment=production --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
+      # Pulled settings carry the dashboard Root Directory; we already run
+      # inside apps/web, so a non-empty rootDirectory double-prefixes paths
+      # (apps/web/apps/web/.next) and breaks output collection.
+      # Scrub rootDirectory from ALL Vercel config files to prevent this.
+      - name: '🧹 Scrub rootDirectory from pulled settings'
+        working-directory: apps/web
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const scrub = (o) => {
+              if (o && typeof o === 'object') {
+                delete o.rootDirectory;
+                for (const v of Object.values(o)) scrub(v);
+              }
+            };
+            // Scrub project.json (link + settings)
+            for (const f of ['project.json', 'project/settings.json']) {
+              const p = path.join('.vercel', f);
+              if (!fs.existsSync(p)) continue;
+              const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+              scrub(j);
+              fs.writeFileSync(p, JSON.stringify(j));
+            }
+          "
+          echo '--- Vercel config after scrub ---'
+          cat .vercel/project.json
+
+      # IMPORTANT: Do NOT pass --token here. Vercel CLI v50 re-fetches
+      # project settings from the API when --token is provided, which
+      # restores rootDirectory and causes the double-prefix bug
+      # (apps/web/apps/web/.next). Without --token, the CLI uses the
+      # locally scrubbed settings. Environment variables are already
+      # available from the prior `vercel pull` step.
       - name: 🏗️ Build with Vercel
-        run: npx vercel@50 build --prod --token="$VERCEL_TOKEN"
+        working-directory: apps/web
+        run: npx vercel@50 build --prod
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: 🚀 Deploy prebuilt output
+        working-directory: apps/web
         run: npx vercel@50 deploy --prebuilt --prod --token="$VERCEL_TOKEN" --meta githubCommitSha="${{ github.sha }}"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
