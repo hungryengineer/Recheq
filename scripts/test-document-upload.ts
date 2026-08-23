@@ -10,7 +10,7 @@ async function main() {
   const db = createDb(dbUrl);
 
   console.log('1. Setting up test data...');
-  
+
   // Create a dummy org
   const orgId = crypto.randomUUID();
   await db.insert(schema.organizations).values({
@@ -38,7 +38,7 @@ async function main() {
     purpose: 'consent',
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   });
-  
+
   console.log(`✅ Created Case ID: ${caseId}`);
   console.log(`✅ Generated Token: ${tokenValue}`);
 
@@ -47,7 +47,7 @@ async function main() {
   // A minimal valid PDF structure
   const minimalPdf = Buffer.from(
     '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Count 0 /Kids [] >>\nendobj\nxref\n0 3\n0000000000 65535 f \n0000000010 00000 n \n0000000060 00000 n \ntrailer\n<< /Size 3 /Root 1 0 R >>\nstartxref\n111\n%%EOF',
-    'utf-8'
+    'utf-8',
   );
   fs.writeFileSync(dummyPdfPath, minimalPdf);
   console.log(`✅ Created dummy PDF file: ${dummyPdfPath}`);
@@ -60,20 +60,22 @@ async function main() {
   console.log('🚀 READY TO TEST UPLOAD 🚀');
   console.log('==================================================');
   console.log('To test the upload endpoint, run the following cURL command:\n');
-  
+
   const curlCommand = `curl -X POST "${endpoint}" \\
   -F "kind=payslip" \\
   -F "file=@${dummyPdfPath}"`;
-  
+
   console.log(curlCommand);
-  console.log('\nOr, if you want this script to automatically perform the fetch, run it again with the --run flag.');
-  
+  console.log(
+    '\nOr, if you want this script to automatically perform the fetch, run it again with the --run flag.',
+  );
+
   // 4. Optionally run the fetch
   if (process.argv.includes('--run')) {
     console.log('\nExecuting fetch...');
     const formData = new FormData();
     formData.append('kind', 'payslip');
-    
+
     // Convert buffer to Blob for fetch
     const fileBlob = new Blob([minimalPdf], { type: 'application/pdf' });
     formData.append('file', fileBlob, 'dummy-payslip.pdf');
@@ -83,7 +85,7 @@ async function main() {
         method: 'POST',
         body: formData,
       });
-      
+
       const responseBody = await response.json();
       console.log(`Response Status: ${response.status}`);
       console.dir(responseBody, { depth: null });

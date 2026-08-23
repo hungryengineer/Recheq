@@ -9,7 +9,9 @@ const nextConfig: NextConfig = {
   // Pin the tracing root to the monorepo root only on Vercel: when `vercel build` runs in
   // apps/web, Next's inference of the workspace root misfires. However, setting this in
   // a standard workspace build (like in GitHub Actions) breaks Next's tracing paths.
-  outputFileTracingRoot: process.env.VERCEL ? path.join(import.meta.dirname, '..', '..') : undefined,
+  outputFileTracingRoot: process.env.VERCEL
+    ? path.join(import.meta.dirname, '..', '..')
+    : undefined,
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
