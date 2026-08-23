@@ -107,10 +107,11 @@ export const repository = {
     >,
   ) => {
     const trx = tx ? (tx as any) : db;
-    await trx
-      .update(schema.cases)
-      .set({ ...input, updated_at: new Date() })
-      .where(eq(schema.cases.id, caseId));
+    const updateData = { ...input, updated_at: new Date() };
+    if (updateData.claimed_ctc !== undefined) {
+      updateData.claimed_ctc = String(updateData.claimed_ctc) as any;
+    }
+    await trx.update(schema.cases).set(updateData).where(eq(schema.cases.id, caseId));
   },
   updateCaseStatus: async (caseId: string, status: CaseStatus) => {
     await db.update(schema.cases).set({ status }).where(eq(schema.cases.id, caseId));
