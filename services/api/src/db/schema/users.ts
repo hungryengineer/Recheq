@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, text } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 
 // ─── Users ──────────────────────────────────────────────────────
@@ -11,6 +11,7 @@ export const users = pgTable('users', {
   password_hash: varchar('password_hash', { length: 255 }), // Nullable for SSO users
   name: varchar('name', { length: 500 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('verifier'),
+  avatar: text('avatar'),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

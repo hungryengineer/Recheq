@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
   // traced paths like "/node_modules/.pnpm/..." which then fail ENOENT
   // during output collection.
   outputFileTracingRoot: path.join(import.meta.dirname, '..', '..'),
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
+  },
   // Removed rewrites to Prism API mock as backend is now implemented natively
 };
 

@@ -17,13 +17,18 @@ export class ApiError extends Error {
   }
 }
 
+import { cookies } from 'next/headers';
+
 export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const baseUrl =
     process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const url = `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+
   const headers: Record<string, string> = {
-    Authorization: 'Bearer mock-token',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...((options.headers as Record<string, string>) || {}),
   };
 

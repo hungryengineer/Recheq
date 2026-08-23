@@ -15,11 +15,17 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export function UserProvider({ children }: { children: ReactNode }) {
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [name, setName] = useState<string>('Arun Kumar');
-  const [email, setEmail] = useState<string>('admin@recheq.com');
-  const [companyName, setCompanyName] = useState<string>('Acme Technologies Pvt Ltd');
+export function UserProvider({
+  children,
+  initialUser,
+}: {
+  children: ReactNode;
+  initialUser?: { name: string; email: string; companyName: string; avatar: string | null };
+}) {
+  const [avatar, setAvatar] = useState<string | null>(initialUser?.avatar || null);
+  const [name, setName] = useState<string>(initialUser?.name || '');
+  const [email, setEmail] = useState<string>(initialUser?.email || '');
+  const [companyName, setCompanyName] = useState<string>(initialUser?.companyName || '');
 
   return (
     <UserContext.Provider
