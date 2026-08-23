@@ -13,9 +13,10 @@ export function ProfileTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Local state for the form so it doesn't update the nav bar until you click Save
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ name: string; email: string; avatar?: string }>({
     name: name,
     email: email,
+    avatar: avatar || undefined,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -26,9 +27,14 @@ export function ProfileTab() {
         toast.error('Image must be less than 2MB');
         return;
       }
-      const objectUrl = URL.createObjectURL(file);
-      setAvatar(objectUrl);
-      toast.success("Avatar updated! Don't forget to save changes.");
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setFormData((prev) => ({ ...prev, avatar: base64 }));
+        setAvatar(base64);
+        toast.success("Avatar preview ready! Don't forget to save changes.");
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -79,7 +85,11 @@ export function ProfileTab() {
           </div>
           <div className="w-full md:w-2/3 flex items-center gap-4">
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xl font-semibold text-white shadow-sm overflow-hidden border border-[var(--color-border)]">
-              {avatar ? <Image src={avatar} alt="Avatar" fill className="object-cover" /> : 'AK'}
+              {avatar ? (
+                <Image src={avatar} alt="Avatar" fill className="object-cover" />
+              ) : (
+                name?.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || '?'
+              )}
             </div>
             <input
               type="file"

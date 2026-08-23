@@ -3,10 +3,38 @@ import React from 'react';
 import { ProfileDropdown } from '@/components/dashboard/ProfileDropdown';
 import { HelpWidget } from '@/components/dashboard/HelpWidget';
 import { UserProvider } from '@/contexts/UserContext';
+import { cookies } from 'next/headers';
+import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { getDb } from '@/lib/server/db';
+import { schema } from '@tieout/api/src/db/client.js';
+import { eq } from 'drizzle-orm';export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+  
+  let initialUser = undefined;
+  
+  if (token) {
+    const payload = await verifyToken(token);
+    if (payload?.userId) {
+      const db = getDb();
+      const userRes = await db.select().from(schema.users).where(eq(schema.users.id, payload.userId)).limit(1);
+      if (userRes.length > 0) {
+        const user = userRes[0];
+        const orgRes = await db.select().from(schema.organizations).where(eq(schema.organizations.id, user.org_id)).limit(1);
+        const org = orgRes[0];
+        
+        initialUser = {
+          name: user.name,
+          email: user.email,
+          companyName: org?.name || 'Unknown Company',
+          avatar: user.avatar,
+        };
+      }
+    }
+  }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <UserProvider>
+    <UserProvider initialUser={initialUser}>
       <div className="min-h-screen bg-[var(--color-page)] text-[var(--color-fg)] relative">
         <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">

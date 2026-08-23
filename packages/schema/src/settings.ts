@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const ProfileUpdateInputSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long'),
   email: z.string().email('Please enter a valid email address'),
+  avatar: z.string().optional(),
 });
 
 export type ProfileUpdateInput = z.infer<typeof ProfileUpdateInputSchema>;
