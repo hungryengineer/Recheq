@@ -89,6 +89,29 @@ export const repository = {
     const [result] = await db.select().from(schema.cases).where(eq(schema.cases.id, caseId));
     return result || null;
   },
+  updateCaseDetails: async (
+    tx: unknown,
+    caseId: string,
+    input: Partial<
+      Omit<
+        CaseRecord,
+        | 'id'
+        | 'org_id'
+        | 'created_by'
+        | 'created_at'
+        | 'updated_at'
+        | 'status'
+        | 'verdict'
+        | 'risk_score'
+      >
+    >,
+  ) => {
+    const trx = tx ? (tx as any) : db;
+    await trx
+      .update(schema.cases)
+      .set({ ...input, updated_at: new Date() })
+      .where(eq(schema.cases.id, caseId));
+  },
   updateCaseStatus: async (caseId: string, status: CaseStatus) => {
     await db.update(schema.cases).set({ status }).where(eq(schema.cases.id, caseId));
   },
