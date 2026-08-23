@@ -4,7 +4,6 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from '../llm-document-extractor.js';
-import { ExtractionFailureType } from '../llm-document-extractor.js';
 
 export class RegexDocumentExtractor implements LlmDocumentExtractor {
   readonly provider = 'regex-fast-parser';
@@ -86,7 +85,7 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
     }
   }
 
-  async extractForm16(request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
+  async extractForm16(_request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
     // Regex extractor currently only supports Payslips
     return {
       status: 'failure',
