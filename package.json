@@ -12,7 +12,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm --filter \"@tieout/*\" build && tsc --noEmit",
     "test": "pnpm --filter \"@tieout/*\" build && vitest run",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "pnpm --filter \"@tieout/*\" build && tsc -p tsconfig.build.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "evaluate": "tsx scripts/evaluate-extraction.ts",
