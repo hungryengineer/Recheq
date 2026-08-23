@@ -20,8 +20,11 @@ export class ApiError extends Error {
 import { cookies } from 'next/headers';
 
 export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
   const baseUrl =
-    process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    process.env.APP_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000');
   const url = `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   const cookieStore = await cookies();
