@@ -37,6 +37,7 @@
   "net_salary": 38400,
   "uan": "100000000042",
   "pf_account_number": "MH/BAN/12345/000/0001042",
+  "pan": null,
   "extraction_notes": null,
   "schema_version": "payslip-v1",
   "_forensics": {

@@ -1,15 +1,27 @@
 {
   "_fixture": "payslip-doctored-02",
-  "_description": "Doctored payslip — PF deduction is below the statutory minimum (12% of basic). Basic salary inflated post-printing; PF figure left unchanged from original lower salary.",
+  "_description": "Doctored payslip \u2014 PF deduction is below the statutory minimum (12% of basic). Basic salary inflated post-printing; PF figure left unchanged from original lower salary.",
   "employee_name": "Sneha Pillai",
   "employee_id": "SP-0310",
   "employer_name": "FinServe Solutions Ltd",
   "month": "March",
   "year": 2024,
-  "basic": { "raw_label": "Basic", "amount": 120000 },
-  "hra": { "raw_label": "HRA", "amount": 48000 },
-  "da": { "raw_label": null, "amount": null },
-  "special_allowance": { "raw_label": "Spl. Allowance", "amount": 25000 },
+  "basic": {
+    "raw_label": "Basic",
+    "amount": 120000
+  },
+  "hra": {
+    "raw_label": "HRA",
+    "amount": 48000
+  },
+  "da": {
+    "raw_label": null,
+    "amount": null
+  },
+  "special_allowance": {
+    "raw_label": "Spl. Allowance",
+    "amount": 25000
+  },
   "other_allowances": [],
   "gross_salary": 193000,
   "pf_deduction": 6000,
@@ -20,6 +32,7 @@
   "net_salary": 158800,
   "uan": "100000000310",
   "pf_account_number": "KA/BLR/56789/000/0000310",
+  "pan": null,
   "extraction_notes": null,
   "schema_version": "payslip-v1"
 }

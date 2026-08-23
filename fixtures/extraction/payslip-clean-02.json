@@ -1,18 +1,36 @@
 {
   "_fixture": "payslip-clean-02",
-  "_description": "Clean payslip — different label conventions (abbreviated), no DA printed.",
+  "_description": "Clean payslip \u2014 different label conventions (abbreviated), no DA printed.",
   "employee_name": "Arjun Mehta",
   "employee_id": "AM-0891",
   "employer_name": "FinServe Solutions Ltd",
   "month": "March",
   "year": 2024,
-  "basic": { "raw_label": "Basic", "amount": 80000 },
-  "hra": { "raw_label": "HRA", "amount": 32000 },
-  "da": { "raw_label": null, "amount": null },
-  "special_allowance": { "raw_label": "Spl. Allowance", "amount": 18000 },
+  "basic": {
+    "raw_label": "Basic",
+    "amount": 80000
+  },
+  "hra": {
+    "raw_label": "HRA",
+    "amount": 32000
+  },
+  "da": {
+    "raw_label": null,
+    "amount": null
+  },
+  "special_allowance": {
+    "raw_label": "Spl. Allowance",
+    "amount": 18000
+  },
   "other_allowances": [
-    { "raw_label": "Medical Allowance", "amount": 1250 },
-    { "raw_label": "LTA", "amount": 5000 }
+    {
+      "raw_label": "Medical Allowance",
+      "amount": 1250
+    },
+    {
+      "raw_label": "LTA",
+      "amount": 5000
+    }
   ],
   "gross_salary": 136250,
   "pf_deduction": 9600,
@@ -23,6 +41,7 @@
   "net_salary": 107950,
   "uan": "100000000891",
   "pf_account_number": "KA/BLR/56789/000/0000891",
+  "pan": null,
   "extraction_notes": "DA column not present on this payslip template.",
   "schema_version": "payslip-v1"
 }

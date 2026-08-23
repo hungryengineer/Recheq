@@ -64,6 +64,8 @@ export const PayslipExtraction = z.object({
   uan: z.string().nullable(),
   /** PF account number */
   pf_account_number: z.string().nullable(),
+  /** Employee Permanent Account Number (PAN) */
+  pan: z.string().nullable(),
 
   // ── Metadata ─────────────────────────────────────────────────
   /**

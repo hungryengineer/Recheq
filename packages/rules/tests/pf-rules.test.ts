@@ -35,6 +35,7 @@ const cleanPayslip = {
   pf_account_number: 'MH/MUM/12345/000/2847',
   extraction_notes: null,
   schema_version: 'payslip-v1' as const,
+  pan: null,
 };
 
 const doctoredPayslip = {
