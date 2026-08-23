@@ -15,6 +15,7 @@ export function CreateCaseForm() {
 
   const [copied, setCopied] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,6 +24,7 @@ export function CreateCaseForm() {
     setGeneralError(null);
     setSuccessLink(null);
     setCopied(false);
+    setIsDuplicateModalOpen(false);
 
     const formData = new FormData(e.currentTarget);
     const input = {
@@ -67,6 +69,8 @@ export function CreateCaseForm() {
             errors[field.path] = field.message;
           }
           setFieldErrors(errors);
+        } else if (error.code === 'CONFLICT') {
+          setIsDuplicateModalOpen(true);
         } else {
           setGeneralError(error.message ?? 'Failed to create case');
         }
@@ -321,6 +325,40 @@ export function CreateCaseForm() {
               className="rounded-[var(--radius-control)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-fg)] border border-[var(--color-border)] hover:bg-[var(--color-page)] transition-colors flex items-center gap-1.5"
             >
               <QrCode className="w-4 h-4" /> QR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Modal */}
+      {isDuplicateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 inset-x-0 h-1 bg-red-500"></div>
+
+            <button
+              onClick={() => setIsDuplicateModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6 mt-2">
+              <h3 className="text-xl font-bold text-[var(--color-fg)] mb-2">Duplicate Found</h3>
+              <p className="text-sm text-[var(--color-fg-muted)]">
+                This user already exists in the system with an active case for this employer. Please
+                check the Cases list.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsDuplicateModalOpen(false)}
+              className="w-full bg-[var(--color-fg)] hover:opacity-90 text-[var(--color-surface)] font-medium py-2.5 rounded-[var(--radius-control)] transition-colors text-sm"
+            >
+              Close
             </button>
           </div>
         </div>

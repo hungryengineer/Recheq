@@ -12,7 +12,7 @@ import {
 
 export function OrganizationTab() {
   const [isUpdating, setIsUpdating] = useState(false);
-  const { companyName, setCompanyName, name, email } = useUser();
+  const { companyName, setCompanyName } = useUser();
   const [localCompanyName, setLocalCompanyName] = useState(companyName);
   const [errors, setErrors] = useState<Record<string, string>>({});
 

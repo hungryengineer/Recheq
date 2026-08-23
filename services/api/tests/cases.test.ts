@@ -17,6 +17,7 @@ describe('Case Service', () => {
   const mockDeps: CaseServiceDeps = {
     db: {
       createCase: vi.fn(),
+      findExistingCase: vi.fn(),
       updateCaseDetails: vi.fn(),
       listCasesByOrg: vi.fn(),
       getCaseByIdAndOrg: vi.fn(),
