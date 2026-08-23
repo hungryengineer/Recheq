@@ -66,10 +66,33 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
+      # The dashboard project has an empty Root Directory and a custom root
+      # Build Command (`pnpm run build`). With that shape vercel builds the
+      # workspace from the monorepo root but then collects Next.js output
+      # from <root>/.next instead of apps/web/.next and falls back to a
+      # static "public/" deployment ("No Output Directory named public").
+      # We cannot edit team settings from CI, so patch the PULLED local
+      # settings instead: point rootDirectory at apps/web and use the
+      # workspace-aware filter build. The build then runs tokenless so the
+      # CLI cannot re-fetch and clobber these overrides.
+      - name: '🩹 Point pulled settings at apps/web'
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = '.vercel/project.json';
+            const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+            j.settings.rootDirectory = 'apps/web';
+            j.settings.buildCommand =
+              'pnpm --filter @tieout/web... --workspace-concurrency=1 build';
+            fs.writeFileSync(p, JSON.stringify(j));
+            console.log('settings:', JSON.stringify(j.settings));
+          "
+
+      # NOTE: VERCEL_TOKEN is intentionally NOT available here — its mere
+      # presence makes the CLI re-fetch project settings from the API,
+      # discarding the local overrides above.
       - name: 🏗️ Build with Vercel
-        run: npx vercel@50 build --prod --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel@50 build --prod
 
       - name: 🚀 Deploy prebuilt output
         run: npx vercel@50 deploy --prebuilt --prod --token="$VERCEL_TOKEN" --meta githubCommitSha="${{ github.sha }}"
