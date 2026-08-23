@@ -64,7 +64,7 @@ try {
   assertEqual(fetched.candidate_name, 'Dummy Candidate', 'candidate_name');
   assertEqual(fetched.claimed_ctc, 1200000, 'claimed_ctc');
   assertEqual(fetched.uan, '123456789012', 'uan');
-  assertEqual(fetched.status, 'draft', 'status');
+  assertEqual(fetched.status, 'awaiting_consent', 'status');
   console.log('✅ getCase returned persisted values');
 
   const listed = await listCases(DEV_ORG_ID, deps);
