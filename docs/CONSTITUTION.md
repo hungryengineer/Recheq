@@ -1,4 +1,4 @@
-# Tieout (Recheq) Project Constitution
+# Recheq.bvg Project Constitution
 
 Welcome to the Recheq codebase. This document is the ultimate source of truth for our engineering philosophy, standards, and architecture. If there is ambiguity in PR reviews, or if questions arise regarding tech stack, rules, or boundaries, refer to this constitution. **The written spec—not chat history—is the source of truth.**
 
