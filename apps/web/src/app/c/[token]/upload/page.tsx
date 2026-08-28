@@ -126,7 +126,8 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       if (!res.ok) {
         if (res.status === 413) throw new Error('File too large. Max 10MB.');
         if (res.status === 415) throw new Error('Unsupported file type. Use PDF or image.');
-        throw new Error('Upload failed. Please try again.');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.message || 'Upload failed. Please try again.');
       }
 
       setState('uploaded');
