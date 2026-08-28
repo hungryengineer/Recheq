@@ -15,10 +15,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const formData = await request.formData();
     const fileEntry = formData.get('file');
 
-    // In Next.js App Router, formData.get() returns an object that implements File/Blob but might fail `instanceof File`.
-    // The safest cross-runtime check is looking for a string name and arrayBuffer method.
-    if (fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in fileEntry) {
-      file = fileEntry as File;
+    const isFileLike = (val: unknown): val is File => {
+      return (
+        val !== null &&
+        typeof val === 'object' &&
+        'name' in val &&
+        typeof (val as any).name === 'string' &&
+        'size' in val &&
+        typeof (val as any).size === 'number' &&
+        'arrayBuffer' in val &&
+        typeof (val as any).arrayBuffer === 'function'
+      );
+    };
+
+    if (isFileLike(fileEntry)) {
+      file = fileEntry;
     }
 
     kind = formData.get('kind') ?? null;

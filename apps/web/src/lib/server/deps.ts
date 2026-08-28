@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
+import type { TokenVerifier } from '@tieout/api/src/routes/public/token-auth.js';
+
+export type WebAppDeps = CaseProcessingDeps & { tokenVerifier: TokenVerifier };
 
 declare global {
-  var __deps: CaseProcessingDeps | undefined;
+  var __deps: WebAppDeps | undefined;
 }
 
 const globalForDeps = globalThis as {
-  __deps: CaseProcessingDeps | undefined;
+  __deps: WebAppDeps | undefined;
 };
 
 import { repository } from './repository';
@@ -18,7 +21,7 @@ import { RegexDocumentExtractor } from '@tieout/api/src/extraction/providers/reg
 
 import { createTokenVerifier } from '@tieout/api/src/db/token-deps.js';
 
-export function buildDeps(): CaseProcessingDeps {
+export function buildDeps(): WebAppDeps {
   if (!globalForDeps.__deps) {
     const auditService = new AuditService(new DbAuditRepository(db));
     const tokenVerifier = createTokenVerifier(db);
@@ -29,7 +32,7 @@ export function buildDeps(): CaseProcessingDeps {
       epfoProvider: new FixtureEpfoProvider(),
       extractor: new RegexDocumentExtractor(),
       tokenVerifier,
-    } as any;
+    } as unknown as WebAppDeps;
   }
-  return globalForDeps.__deps as any;
+  return globalForDeps.__deps;
 }

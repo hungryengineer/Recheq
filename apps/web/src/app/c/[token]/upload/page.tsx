@@ -16,6 +16,9 @@ type CaseData = {
   consent_status?: string;
 };
 
+const FULL_CONSENT_TEXT =
+  'I hereby authorize Recheq and this employer to verify my employment history, including fetching records from EPFO using my UAN if provided. I understand my data will be retained for 180 days.';
+
 export default function CandidateUploadPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
   const token = resolvedParams.token;
@@ -206,26 +209,37 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
     }
   };
 
+  const [isConsenting, setIsConsenting] = useState(false);
+
   const handleStep1Continue = async () => {
     if (caseData?.consent_status !== 'granted') {
+      if (isConsenting) return;
+      setIsConsenting(true);
+      setFormError('');
       try {
         const res = await fetch(`/api/public/${token}/consent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            consent_text: 'I consent to employment verification and data processing.',
+            consent_text: FULL_CONSENT_TEXT,
             consent_version: 'v1.0',
           }),
         });
 
-        if (!res.ok) {
+        if (!res.ok && res.status !== 409) {
           throw new Error('Failed to record consent');
+        }
+
+        if (caseData) {
+          caseData.consent_status = 'granted';
         }
       } catch (err) {
         console.error(err);
         setFormError('Failed to record consent. Please try again.');
+        setIsConsenting(false);
         return;
       }
+      setIsConsenting(false);
     }
     nextStep();
   };
@@ -540,12 +554,17 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                     <span className="text-white font-medium block mb-1">
                       Declaration of Consent
                     </span>
-                    I hereby authorize Recheq and this employer to verify my employment history,
-                    including fetching records from EPFO using my UAN if provided. I understand my
-                    data will be retained for 180 days.
+                    {FULL_CONSENT_TEXT}
                   </div>
                 </label>
               </div>
+
+              {formError && (
+                <div className="mb-6 text-sm text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 flex items-start gap-3">
+                  <span className="shrink-0">⚠️</span>
+                  <span>{formError}</span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center border-t border-[#1E293B] pt-6">
                 <button

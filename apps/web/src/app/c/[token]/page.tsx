@@ -40,15 +40,11 @@ export default async function CandidateConsentPage({
 
   const context = await res.json();
 
-  if (
-    context.status === 'processing' ||
-    context.status === 'complete' ||
-    context.status === 'withdrawn'
-  ) {
+  if (context.status === 'awaiting_consent' || context.status === 'awaiting_documents') {
+    // Consent is now handled inline on step 1 of the upload flow
+    redirect(`/c/${token}/upload`);
+  } else {
+    // Catch-all for awaiting_employer, processing, complete, withdrawn, etc.
     redirect(`/c/${token}/status`);
   }
-
-  // Redirect awaiting_consent and awaiting_documents directly to the upload page
-  // Consent is now handled inline on step 1 of the upload flow
-  redirect(`/c/${token}/upload`);
 }
