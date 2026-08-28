@@ -280,11 +280,22 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
   return (
     <div className="min-h-screen bg-[#050914] text-white p-4 font-sans flex flex-col items-center">
       <div className="w-full max-w-7xl animate-fade-in">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/20 shrink-0">
-            R
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/20 shrink-0">
+              R
+            </div>
+            <span className="font-semibold text-xl tracking-tight">Recheq</span>
           </div>
-          <span className="font-semibold text-xl tracking-tight">Recheq</span>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-[#94A3B8] hidden sm:block">
+              {caseData.candidateName || 'Candidate'}
+            </span>
+            <div className="w-10 h-10 rounded-full bg-[#1E293B] border border-[#334155] flex items-center justify-center font-medium text-[15px] shadow-inner text-white transition-colors hover:bg-[#334155] cursor-pointer">
+              {caseData.candidateName ? caseData.candidateName.charAt(0).toUpperCase() : 'C'}
+            </div>
+          </div>
         </div>
 
         <div className="mb-8">
@@ -418,38 +429,6 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                     All fields marked with <span className="text-red-500 mx-0.5">*</span> are
                     mandatory
                   </span>
-                </div>
-              </div>
-
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 shrink-0">
-                    👤
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-medium mb-1 tracking-tight">Your profile</h2>
-                    <p className="text-sm text-[#94A3B8]">
-                      You are completing this verification request
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center justify-between bg-[#0B0F19] rounded-2xl p-5 border border-[#1E293B] gap-4">
-                  <div className="flex items-center gap-4 flex-[1_1_200px] min-w-0">
-                    <div className="w-12 h-12 rounded-full bg-[#1E293B] border border-[#334155] flex items-center justify-center font-medium text-xl shadow-inner shrink-0">
-                      {caseData.candidateName
-                        ? caseData.candidateName.charAt(0).toUpperCase()
-                        : 'C'}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-[15px] mb-0.5 truncate">
-                        {caseData.candidateName || 'Candidate'}
-                      </div>
-                      <div className="text-sm text-[#64748B] truncate">Completing verification</div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-2 rounded-xl bg-[#1E293B] border border-[#334155] text-sm font-medium text-[#94A3B8] text-center flex-[0_0_auto]">
-                    Candidate View
-                  </div>
                 </div>
               </div>
             </div>
