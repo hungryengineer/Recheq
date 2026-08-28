@@ -376,7 +376,7 @@ function buildContext(
   if (forensics) origins.push('forensics');
 
   return {
-    claimed_ctc: 1200000,
+    claimed_ctc: payslip?.gross_salary ? payslip.gross_salary * 12 : 1200000,
     assembly: {
       // Synthetic case id — this is an offline measurement, not a real case.
       case_id: '00000000-0000-4000-8000-00000000c0de',
