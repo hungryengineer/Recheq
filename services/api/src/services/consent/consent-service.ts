@@ -19,6 +19,10 @@ export interface CandidateSafeView {
   candidate_name: string;
   candidate_email: string;
   title: string;
+  claimed_ctc: number | null;
+  employment_start: string | null;
+  employment_end: string | null;
+  uan: string | null;
   status: CaseStatus;
   consent_status: 'pending' | 'granted' | 'withdrawn' | null;
 }
@@ -84,6 +88,10 @@ export async function getCandidateView(
     candidate_name: caseRecord.candidate_name,
     candidate_email: caseRecord.candidate_email,
     title: caseRecord.title,
+    claimed_ctc: caseRecord.claimed_ctc,
+    employment_start: caseRecord.employment_start,
+    employment_end: caseRecord.employment_end,
+    uan: caseRecord.uan,
     status: caseRecord.status,
     consent_status: consent?.status ?? null,
   };

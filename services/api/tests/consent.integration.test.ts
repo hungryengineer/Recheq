@@ -105,6 +105,10 @@ describe('getCandidateView', () => {
       candidate_name: 'Jane Doe',
       candidate_email: 'jane@example.com',
       title: 'Senior Engineer BGV',
+      claimed_ctc: 1800000,
+      employment_start: '2021-01-01',
+      employment_end: '2023-12-31',
+      uan: null,
       status: 'awaiting_consent',
       consent_status: null,
     });
