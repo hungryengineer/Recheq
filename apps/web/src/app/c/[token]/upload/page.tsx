@@ -2,6 +2,7 @@
 
 import React, { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function CandidateUploadPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
@@ -39,7 +40,6 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       formData.append('file', file);
       formData.append('kind', kind);
 
-      // Hit Prism mock directly for now
       const res = await fetch(`/api/public/${token}/documents`, {
         method: 'POST',
         body: formData,
@@ -51,7 +51,6 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
         throw new Error('Upload failed. Please try again.');
       }
 
-      // 200 response (duplicate sha256) is success
       setState('uploaded');
     } catch (err: unknown) {
       const error = err as Error;
@@ -68,7 +67,6 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
     if (file) {
       handleUpload(kind, file);
     }
-    // reset input so the same file can be selected again if it failed
     e.target.value = '';
   };
 
@@ -87,7 +85,6 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       }
 
       await fetch(`/api/public/${token}/submit`, { method: 'POST' });
-
       router.push(`/c/${token}/status`);
     } catch (err) {
       console.error(err);
@@ -106,13 +103,11 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
     if (state === 'empty') {
       return (
-        <div className="border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius-card)] p-5 text-center transition-colors hover:border-[var(--color-fg-subtle)] bg-[var(--color-surface)]">
+        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-6 text-center transition-all hover:border-[#334155]">
           <label htmlFor={id} className="cursor-pointer flex flex-col items-center">
-            <span className="text-[15px] font-medium text-[var(--color-fg)] mb-1">{title}</span>
-            <span className="text-sm text-[var(--color-accent)] hover:underline mb-1">
-              Choose a file
-            </span>
-            <span className="text-xs text-[var(--color-fg-subtle)]">PDF or image, max 10MB</span>
+            <span className="text-sm font-medium text-white mb-2">{title}</span>
+            <span className="text-[13px] text-blue-400 mb-1.5">Choose a file</span>
+            <span className="text-[11px] text-[#64748B]">PDF or image, max 10MB</span>
             <input
               type="file"
               id={id}
@@ -126,99 +121,90 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
     if (state === 'uploading') {
       return (
-        <div className="border border-[var(--color-border)] rounded-[var(--radius-card)] p-5 bg-[var(--color-surface)] flex flex-col justify-center">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-[15px] font-medium text-[var(--color-fg)]">{title}</span>
-            <span className="text-sm font-mono text-[var(--color-fg-muted)] truncate max-w-[150px]">
-              {name}
-            </span>
+        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-6 flex flex-col justify-center text-center">
+          <div className="text-sm font-medium text-white mb-2">{title}</div>
+          <div className="flex items-center justify-center gap-2 text-[13px] text-blue-400">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
           </div>
-          <div className="w-full bg-[var(--color-border)] h-1.5 rounded-full overflow-hidden">
-            <div className="bg-[var(--color-accent)] h-1.5 rounded-full w-1/2 animate-[pulse_1.5s_ease-in-out_infinite]" />
-          </div>
-          <div className="text-xs text-[var(--color-fg-subtle)] mt-2 text-right">Uploading...</div>
+          <div className="text-[11px] text-[#64748B] mt-1.5 truncate max-w-full px-4">{name}</div>
         </div>
       );
     }
 
     if (state === 'uploaded') {
       return (
-        <div className="border border-[var(--color-ok)] rounded-[var(--radius-card)] p-5 bg-[var(--color-ok-bg)] flex flex-col justify-center">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <span className="text-[15px] font-medium text-[var(--color-fg)] block mb-1">
-                {title}
-              </span>
-              <span className="text-[13px] font-mono text-[var(--color-fg-muted)]">{name}</span>
-            </div>
-            <div className="w-6 h-6 rounded-full bg-[var(--color-ok)] flex items-center justify-center text-white text-xs">
+        <div className="bg-[#0F1C1B] border border-[#14432A] rounded-xl p-6 flex flex-col items-center justify-center text-center">
+          <div className="text-sm font-medium text-white mb-2">{title}</div>
+          <div className="text-[13px] text-emerald-400 flex items-center justify-center gap-1.5">
+            <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
               ✓
             </div>
+            Uploaded
           </div>
-          <div className="text-sm font-medium text-[var(--color-ok)] mt-1">Uploaded</div>
+          <div className="text-[11px] text-emerald-500/70 mt-1.5 truncate max-w-full px-4">
+            {name}
+          </div>
         </div>
       );
     }
 
     if (state === 'failed') {
       return (
-        <div className="border border-[var(--color-high)] rounded-[var(--radius-card)] p-5 bg-[var(--color-high-bg)]">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[15px] font-medium text-[var(--color-fg)]">{title}</span>
-            <label
-              htmlFor={id}
-              className="text-sm font-medium text-[var(--color-high)] hover:underline cursor-pointer"
-            >
-              Retry
-            </label>
+        <div className="bg-[#1C1215] border border-[#43141F] rounded-xl p-6 text-center">
+          <label htmlFor={id} className="cursor-pointer flex flex-col items-center">
+            <span className="text-sm font-medium text-white mb-2">{title}</span>
+            <span className="text-[13px] text-red-400 hover:underline mb-1.5">Retry Upload</span>
+            <span className="text-[11px] text-red-500/70 truncate px-4">{errorMsg}</span>
             <input
               type="file"
               id={id}
               className="sr-only"
               onChange={(e) => handleFileChange(kind, e)}
             />
-          </div>
-          <div className="text-sm text-[var(--color-high)]">{errorMsg}</div>
+          </label>
         </div>
       );
     }
   };
 
   return (
-    <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold text-[var(--color-fg)] mb-6">Recheq</h1>
-      <h2 className="text-lg font-medium text-[var(--color-fg)] mb-6">Upload two documents</h2>
+    <div className="min-h-screen bg-[#050914] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[#B4B8C0] rounded-xl p-8 shadow-2xl animate-fade-in relative overflow-hidden">
+        <h1 className="text-white text-lg font-semibold mb-6">Recheq</h1>
+        <h2 className="text-white text-sm mb-6">Upload two documents</h2>
 
-      <div className="space-y-4 mb-8">
-        {renderCard('Payslip', payslipState, payslipName, payslipError, 'payslip')}
-        {renderCard('Form 16', form16State, form16Name, form16Error, 'form_16')}
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-[var(--color-fg-muted)] mb-2">
-            UAN (optional)
-          </label>
-          <input
-            type="text"
-            value={uan}
-            onChange={(e) => setUan(e.target.value)}
-            className="w-full rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-3 text-[var(--color-fg)] bg-[var(--color-surface)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:border-[var(--color-accent)]"
-            placeholder="100123456789"
-          />
+        <div className="space-y-4 mb-6">
+          {renderCard('Payslip', payslipState, payslipName, payslipError, 'payslip')}
+          {renderCard('Form 16', form16State, form16Name, form16Error, 'form_16')}
         </div>
 
-        <button
-          type="submit"
-          disabled={!bothUploaded || isSubmitting}
-          className="w-full mb-2 flex justify-center py-3 px-4 border border-transparent rounded-[var(--radius-control)] shadow-sm text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] hover:opacity-90 disabled:opacity-50 disabled:bg-[var(--color-border)] disabled:text-[var(--color-fg-muted)] transition-colors"
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit'}
-        </button>
-        {!bothUploaded && (
-          <p className="text-center text-sm text-[var(--color-fg-subtle)]">Both documents needed</p>
-        )}
-      </form>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-6">
+            <label className="block text-[13px] text-[#74889E] mb-2 font-medium">
+              UAN (optional)
+            </label>
+            <input
+              type="text"
+              value={uan}
+              onChange={(e) => setUan(e.target.value)}
+              className="w-full rounded-lg border-none px-4 py-3 text-white bg-[#121826] placeholder:text-[#334155] focus:outline-none focus:ring-1 focus:ring-blue-500/50 text-sm"
+              placeholder="100123456789"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={!bothUploaded || isSubmitting}
+            className="w-full mb-3 flex justify-center items-center py-3 px-4 rounded-lg text-sm font-medium text-[#E2E8F0] bg-[#64748B] hover:bg-[#475569] disabled:bg-[#8391A2] disabled:opacity-80 transition-colors"
+          >
+            {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </button>
+          {!bothUploaded && (
+            <p className="text-center text-xs text-[#5C6A7B]">Both documents needed</p>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
