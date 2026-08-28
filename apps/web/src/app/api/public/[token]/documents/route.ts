@@ -16,15 +16,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const fileEntry = formData.get('file');
 
     const isFileLike = (val: unknown): val is File => {
+      if (val === null || typeof val !== 'object') return false;
+      const record = val as Record<string, unknown>;
       return (
-        val !== null &&
-        typeof val === 'object' &&
-        'name' in val &&
-        typeof (val as any).name === 'string' &&
-        'size' in val &&
-        typeof (val as any).size === 'number' &&
-        'arrayBuffer' in val &&
-        typeof (val as any).arrayBuffer === 'function'
+        'name' in record &&
+        typeof record.name === 'string' &&
+        'size' in record &&
+        typeof record.size === 'number' &&
+        'arrayBuffer' in record &&
+        typeof record.arrayBuffer === 'function'
       );
     };
 

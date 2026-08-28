@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
 import type { TokenVerifier } from '@tieout/api/src/routes/public/token-auth.js';
 
