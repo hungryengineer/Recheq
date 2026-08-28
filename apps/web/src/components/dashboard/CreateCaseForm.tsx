@@ -79,8 +79,7 @@ export function CreateCaseForm() {
           setGeneralError(error.message ?? 'Failed to create case');
         }
       } else {
-        setSuccessLink(result.candidate_link ?? null);
-        setIsSuccessModalOpen(true);
+        router.push('/cases');
         router.refresh();
       }
     } catch (err: unknown) {
