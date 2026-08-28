@@ -113,7 +113,20 @@ export default async function CandidateConsentPage({
               'use server';
               // Mocking the POST action for now until FE-6 rewrites it properly via client
               const api = process.env.API_BASE_URL || 'http://localhost:4010';
-              await fetch(`${api}/api/public/${token}/consent`, { method: 'POST' });
+              const res = await fetch(`${api}/api/public/${token}/consent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  consent_text: 'I consent to employment verification and data processing as outlined.',
+                  consent_version: 'v1.0',
+                }),
+              });
+              
+              if (!res.ok) {
+                console.error('Consent request failed:', await res.text());
+                throw new Error('Failed to record consent');
+              }
+              
               redirect(`/c/${token}/upload`);
             }}
           >
