@@ -2,7 +2,7 @@
 
 import React, { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Upload, FileText } from 'lucide-react';
+import { Loader2, Upload, FileText, Check } from 'lucide-react';
 import { CaseUpdateInput } from '@tieout/schema';
 
 type CaseData = {
@@ -21,6 +21,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
   const [caseData, setCaseData] = useState<CaseData>({
     candidateName: '',
     employerName: '',
@@ -53,6 +54,13 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
   const [formError, setFormError] = useState('');
 
   const bothUploaded = payslipState === 'uploaded' && form16State === 'uploaded';
+  const isStep1Valid =
+    formData.candidate_name &&
+    formData.employer_name &&
+    formData.title &&
+    formData.employment_start &&
+    formData.employment_end &&
+    formData.claimed_ctc;
 
   useEffect(() => {
     fetch(`/api/public/${token}/candidate`)
@@ -123,8 +131,8 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
     e.target.value = '';
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!bothUploaded) return;
 
     setFormError('');
@@ -140,13 +148,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       if (formData.claimed_ctc) payload.claimed_ctc = Number(formData.claimed_ctc);
       if (formData.uan) payload.uan = formData.uan;
 
-      if (
-        !payload.candidate_name ||
-        !payload.employer_name ||
-        !payload.employment_start ||
-        !payload.employment_end ||
-        !payload.claimed_ctc
-      ) {
+      if (!isStep1Valid) {
         throw new Error('Please fill all mandatory fields in Verification details.');
       }
 
@@ -177,7 +179,10 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
     }
   };
 
-  const renderCard = (
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
+  const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+
+  const renderUploadCard = (
     title: string,
     subtitle: string,
     state: 'empty' | 'uploading' | 'uploaded' | 'failed',
@@ -189,14 +194,14 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
     if (state === 'empty') {
       return (
-        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4 transition-colors hover:border-[#334155]">
+        <div className="bg-[#0B0F19] border border-[#1E293B] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4 transition-colors hover:border-[#334155]">
           <div className="flex-[1_1_200px] min-w-0">
             <div className="text-sm font-medium text-white mb-1">{title}</div>
             <div className="text-xs text-[#64748B]">{subtitle}</div>
           </div>
           <label
             htmlFor={id}
-            className="cursor-pointer border border-[#1E293B] bg-[#0F172A] hover:bg-[#1E293B] text-[#94A3B8] text-sm px-5 py-2.5 rounded-lg transition-colors text-center whitespace-nowrap flex-[1_0_auto] max-w-fit"
+            className="cursor-pointer border border-[#1E293B] bg-[#121826] hover:bg-[#1E293B] text-[#94A3B8] text-sm px-5 py-2.5 rounded-lg transition-colors text-center whitespace-nowrap flex-[1_0_auto] max-w-fit"
           >
             Choose file
             <input
@@ -212,7 +217,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
     if (state === 'uploading') {
       return (
-        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-[#0B0F19] border border-[#1E293B] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex-[1_1_150px] min-w-0">
             <div className="text-sm font-medium text-white mb-1">{title}</div>
             <div className="text-xs text-blue-400 flex items-center gap-2">
@@ -233,7 +238,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
             <div className="text-sm font-medium text-white mb-1">{title}</div>
             <div className="text-xs text-emerald-400 flex items-center gap-1.5">
               <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] shrink-0">
-                ✓
+                <Check className="w-2.5 h-2.5" />
               </div>
               <span>Uploaded successfully</span>
             </div>
@@ -278,9 +283,10 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
   }
 
   return (
-    <div className="min-h-screen bg-[#050914] text-white p-4 font-sans flex flex-col items-center">
-      <div className="w-full max-w-7xl animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-[#050914] text-white p-4 sm:p-6 md:p-8 font-sans flex flex-col items-center">
+      <div className="w-full max-w-6xl animate-fade-in">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/20 shrink-0">
               R
@@ -298,240 +304,335 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
           </div>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold mb-3 tracking-tight">New verification</h1>
-          <p className="text-[#94A3B8] text-[15px] max-w-2xl">
-            Fill in the details below to initiate a new verification request.
-          </p>
+        {/* Title & Stepper */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+          <div>
+            <h1 className="text-3xl font-semibold mb-3 tracking-tight">New verification</h1>
+            <p className="text-[#94A3B8] text-[15px]">
+              Fill in the details below to initiate a new verification request.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-sm flex-wrap max-w-lg w-full md:w-auto">
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${currentStep >= 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-[#1E293B] text-[#64748B]'}`}
+              >
+                1
+              </div>
+              <span
+                className={`text-xs ${currentStep >= 1 ? 'text-white font-medium' : 'text-[#64748B]'}`}
+              >
+                Verification details
+              </span>
+            </div>
+            <div
+              className={`h-[2px] flex-1 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-[#1E293B]'} transition-colors mt-[-24px]`}
+            ></div>
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${currentStep >= 2 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-[#1E293B] text-[#64748B]'}`}
+              >
+                2
+              </div>
+              <span
+                className={`text-xs ${currentStep >= 2 ? 'text-white font-medium' : 'text-[#64748B]'}`}
+              >
+                Upload documents
+              </span>
+            </div>
+            <div
+              className={`h-[2px] flex-1 ${currentStep >= 3 ? 'bg-blue-600' : 'bg-[#1E293B]'} transition-colors mt-[-24px]`}
+            ></div>
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${currentStep >= 3 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-[#1E293B] text-[#64748B]'}`}
+              >
+                3
+              </div>
+              <span
+                className={`text-xs ${currentStep >= 3 ? 'text-white font-medium' : 'text-[#64748B]'}`}
+              >
+                Candidate summary
+              </span>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-wrap gap-8 items-start">
-            <div className="flex-[2_1_500px] min-w-0 space-y-8">
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
-                <div className="flex items-start gap-4 mb-8">
-                  <div className="w-10 h-10 rounded-xl bg-[#1E293B] flex items-center justify-center shrink-0">
-                    <FileText className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-medium mb-1 tracking-tight">
-                      Verification details
-                    </h2>
-                    <p className="text-sm text-[#94A3B8]">
-                      Please provide the candidate and employment details.
-                    </p>
-                  </div>
+        {/* Form Container */}
+        <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/50">
+          {/* Step 1 */}
+          {currentStep === 1 && (
+            <div className="animate-fade-in">
+              <div className="flex items-start gap-4 mb-8 bg-[#0B0F19] border border-[#1E293B] rounded-2xl p-5">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium mb-1 tracking-tight text-white">
+                    Verification details
+                  </h2>
+                  <p className="text-sm text-[#94A3B8]">
+                    Please provide the candidate and employment details.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 mb-8">
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    Candidate name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="candidate_name"
+                    value={formData.candidate_name}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#334155]"
+                    placeholder="Enter full name"
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    Claimed employer <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="employer_name"
+                    value={formData.employer_name}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#334155]"
+                    placeholder="Enter employer name"
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    UAN (optional)
+                  </label>
+                  <input
+                    type="text"
+                    name="uan"
+                    value={formData.uan}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#334155]"
+                    placeholder="Enter UAN (12 digits)"
+                  />
                 </div>
 
-                <div className="flex flex-wrap gap-6 mb-6">
-                  <div className="flex-[1_1_200px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      Candidate name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="candidate_name"
-                      value={formData.candidate_name}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#475569]"
-                      placeholder="Enter full name"
-                    />
-                  </div>
-                  <div className="flex-[1_1_200px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      Claimed employer <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="employer_name"
-                      value={formData.employer_name}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#475569]"
-                      placeholder="Enter employer name"
-                    />
-                  </div>
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    Title / Designation <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#334155]"
+                    placeholder="Enter job title"
+                  />
                 </div>
-
-                <div className="flex flex-wrap gap-6 mb-6">
-                  <div className="flex-[1_1_200px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      Title / Designation <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#475569]"
-                      placeholder="Enter job title"
-                    />
-                  </div>
-                  <div className="flex-[1_1_200px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      UAN (optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="uan"
-                      value={formData.uan}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#475569]"
-                      placeholder="Enter UAN (12 digits)"
-                    />
-                  </div>
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    Start date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="employment_start"
+                    value={formData.employment_start}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white"
+                  />
                 </div>
-
-                <div className="flex flex-wrap gap-6 mb-8">
-                  <div className="flex-[1_1_150px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      Start date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="employment_start"
-                      value={formData.employment_start}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white"
-                    />
-                  </div>
-                  <div className="flex-[1_1_150px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      End date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="employment_end"
-                      value={formData.employment_end}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white"
-                    />
-                  </div>
-                  <div className="flex-[1_1_150px] min-w-0">
-                    <label className="block text-sm font-medium text-[#94A3B8] mb-2">
-                      Claimed CTC (annual) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="claimed_ctc"
-                      value={formData.claimed_ctc}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#475569]"
-                      placeholder="Enter amount"
-                    />
-                  </div>
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    End date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="employment_end"
+                    value={formData.employment_end}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white"
+                  />
                 </div>
+              </div>
 
-                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 flex items-center gap-3 text-sm text-[#94A3B8]">
-                  <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
-                    ⓘ
-                  </div>
-                  <span>
-                    All fields marked with <span className="text-red-500 mx-0.5">*</span> are
-                    mandatory
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 mb-10">
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-[#94A3B8] mb-2">
+                    Claimed CTC (annual) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="claimed_ctc"
+                    value={formData.claimed_ctc}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-[#334155]"
+                    placeholder="Enter fixed CTC"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center border-t border-[#1E293B] pt-6">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="px-6 py-3 rounded-xl border border-[#334155] bg-transparent text-white hover:bg-[#1E293B] transition-colors text-[15px] font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!isStep1Valid}
+                  className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:shadow-none text-[15px] font-medium flex items-center gap-2"
+                >
+                  Continue <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2 */}
+          {currentStep === 2 && (
+            <div className="animate-fade-in max-w-2xl mx-auto">
+              <div className="flex items-start gap-4 mb-8 bg-[#0B0F19] border border-[#1E293B] rounded-2xl p-5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <Upload className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium mb-1 tracking-tight text-white">
+                    Upload documents
+                  </h2>
+                  <p className="text-sm text-[#94A3B8]">Upload both of the following documents.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-10">
+                {renderUploadCard(
+                  'Payslip',
+                  'Upload recent payslip',
+                  payslipState,
+                  payslipName,
+                  payslipError,
+                  'payslip',
+                )}
+                {renderUploadCard(
+                  'Form 16',
+                  'Upload Form 16 document',
+                  form16State,
+                  form16Name,
+                  form16Error,
+                  'form_16',
+                )}
+              </div>
+
+              {!bothUploaded && (
+                <div className="flex items-center justify-center gap-2 text-sm text-[#94A3B8] mb-6">
+                  <span>🔒</span> Both documents are required to proceed
+                </div>
+              )}
+
+              <div className="flex justify-between items-center border-t border-[#1E293B] pt-6">
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="px-6 py-3 rounded-xl border border-[#334155] bg-transparent text-white hover:bg-[#1E293B] transition-colors text-[15px] font-medium"
+                >
+                  &larr; Back
+                </button>
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!bothUploaded}
+                  className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:shadow-none text-[15px] font-medium flex items-center gap-2"
+                >
+                  Continue <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3 */}
+          {currentStep === 3 && (
+            <div className="animate-fade-in max-w-2xl mx-auto">
+              <div className="flex items-start gap-4 mb-8 bg-[#0B0F19] border border-[#1E293B] rounded-2xl p-5">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <div className="w-4 h-4 rounded-full border-2 border-blue-400 opacity-80" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium mb-1 tracking-tight text-white">
+                    Candidate summary
+                  </h2>
+                  <p className="text-sm text-[#94A3B8]">
+                    Review candidate information before submitting
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-[#0B0F19] border border-[#1E293B] rounded-2xl p-6 mb-10 space-y-5">
+                <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
+                  <span className="text-[#94A3B8]">Candidate name</span>
+                  <span className="font-medium text-white truncate max-w-full text-right">
+                    {formData.candidate_name || '—'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
+                  <span className="text-[#94A3B8]">Employer</span>
+                  <span className="font-medium text-white truncate max-w-full text-right">
+                    {formData.employer_name || '—'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
+                  <span className="text-[#94A3B8]">Designation</span>
+                  <span className="font-medium text-white truncate max-w-full text-right">
+                    {formData.title || '—'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap justify-between pb-1 gap-2">
+                  <span className="text-[#94A3B8]">CTC (annual)</span>
+                  <span className="font-medium text-white">
+                    {formData.claimed_ctc
+                      ? `₹${Number(formData.claimed_ctc).toLocaleString('en-IN')}`
+                      : '—'}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <div className="flex-[1_1_350px] min-w-0 space-y-8">
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
-                <div className="flex items-start gap-4 mb-8">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <Upload className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-medium mb-1 tracking-tight">Upload documents</h2>
-                    <p className="text-sm text-[#94A3B8]">
-                      Upload both of the following documents.
-                    </p>
-                  </div>
+              {formError && (
+                <div className="mb-6 text-sm text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 flex items-start gap-3">
+                  <span className="shrink-0">⚠️</span>
+                  <span>{formError}</span>
                 </div>
+              )}
 
-                <div className="space-y-4 mb-8">
-                  {renderCard(
-                    'Payslip',
-                    'Upload recent payslip',
-                    payslipState,
-                    payslipName,
-                    payslipError,
-                    'payslip',
-                  )}
-                  {renderCard(
-                    'Form 16',
-                    'Upload Form 16 document',
-                    form16State,
-                    form16Name,
-                    form16Error,
-                    'form_16',
-                  )}
-                </div>
-
-                {formError && (
-                  <div className="mb-6 text-sm text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 flex items-start gap-3">
-                    <span className="shrink-0">⚠️</span>
-                    <span>{formError}</span>
-                  </div>
-                )}
-
+              <div className="flex justify-between items-center border-t border-[#1E293B] pt-6">
                 <button
-                  type="submit"
-                  disabled={!bothUploaded || isSubmitting}
-                  className="w-full py-4 rounded-xl text-[15px] font-medium transition-all shadow-lg mb-4 flex items-center justify-center disabled:opacity-50
-                    bg-[#4F46E5] hover:bg-[#4338CA] hover:shadow-indigo-500/25 text-white disabled:bg-[#1E293B] disabled:text-[#64748B] disabled:shadow-none"
+                  type="button"
+                  onClick={prevStep}
+                  disabled={isSubmitting}
+                  className="px-6 py-3 rounded-xl border border-[#334155] bg-transparent text-white hover:bg-[#1E293B] transition-colors text-[15px] font-medium disabled:opacity-50"
                 >
-                  {isSubmitting ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : null}
+                  &larr; Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-8 py-3 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:shadow-none text-[15px] font-medium flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Check className="w-5 h-5" />
+                  )}
                   Submit verification
                 </button>
-                {!bothUploaded && (
-                  <div className="text-center text-sm text-[#64748B] flex items-center justify-center gap-2">
-                    <span>🔒</span> Both documents are required to submit
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
-                <div className="flex items-start gap-4 mb-8">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                    <div className="w-4 h-4 rounded-full border-2 border-blue-400 opacity-80" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-medium mb-1 tracking-tight">Candidate summary</h2>
-                    <p className="text-sm text-[#94A3B8]">Review candidate information</p>
-                  </div>
-                </div>
-
-                <div className="space-y-5 text-[15px]">
-                  <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
-                    <span className="text-[#94A3B8]">Candidate name</span>
-                    <span className="font-medium text-white truncate max-w-full text-right">
-                      {formData.candidate_name || '—'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
-                    <span className="text-[#94A3B8]">Employer</span>
-                    <span className="font-medium text-white truncate max-w-full text-right">
-                      {formData.employer_name || '—'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
-                    <span className="text-[#94A3B8]">Designation</span>
-                    <span className="font-medium text-white truncate max-w-full text-right">
-                      {formData.title || '—'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap justify-between pb-1 gap-2">
-                    <span className="text-[#94A3B8]">CTC (annual)</span>
-                    <span className="font-medium text-white">
-                      {formData.claimed_ctc
-                        ? `₹${Number(formData.claimed_ctc).toLocaleString('en-IN')}`
-                        : '—'}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
-          </div>
-        </form>
+          )}
+        </div>
       </div>
     </div>
   );
