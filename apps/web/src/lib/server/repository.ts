@@ -6,6 +6,7 @@ import type { CaseStatus } from '@tieout/schema';
 import type { CaseRecord, DocumentRecord } from '@tieout/schema';
 import type { EpfoHistory, ScorableFinding } from '@tieout/rules';
 import { createDocumentStorageFromEnv } from '@tieout/api/src/storage/document-storage.js';
+import type { TransactionHandle } from '@tieout/api/src/db/case-deps.js';
 
 let _storage: ReturnType<typeof createDocumentStorageFromEnv>;
 function getStorage() {
@@ -273,6 +274,13 @@ export const repository = {
   getCompletedForensics: async (_caseId: string) => {
     // Currently no forensics table, return empty array for now as per schema
     return [];
+  },
+  createToken: async (
+    tx: TransactionHandle,
+    data: { hash: string; case_id: string; purpose: string; expires_at: Date },
+  ) => {
+    const trx = tx || db;
+    await trx.insert(schema.tokens).values(data);
   },
   transaction: async (cb: Parameters<typeof db.transaction>[0]) => {
     return await db.transaction(cb);

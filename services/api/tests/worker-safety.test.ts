@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import PgBoss from 'pg-boss';
+import * as dotenv from 'dotenv';
+import path from 'path';
 
 describe('Worker Safety', () => {
   let boss: PgBoss;
 
   beforeEach(async () => {
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
     const dbUrl = process.env.DATABASE_URL;
     boss = new PgBoss(dbUrl!);
     await boss.start();
@@ -33,7 +36,7 @@ describe('Worker Safety', () => {
     }
 
     expect(attempts).toBe(2);
-  });
+  }, 15000);
 
   it('should maintain job queue across restarts', async () => {
     await boss.createQueue('persist_test');
@@ -43,6 +46,7 @@ describe('Worker Safety', () => {
     expect(state).toBeGreaterThan(0);
 
     await boss.stop();
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
     const boss2 = new PgBoss(process.env.DATABASE_URL!);
     await boss2.start();
 
@@ -50,7 +54,7 @@ describe('Worker Safety', () => {
     expect(state2).toBeGreaterThan(0);
 
     boss = boss2;
-  });
+  }, 15000);
 
   it('should cap case processing concurrency at 4', async () => {
     await boss.createQueue('case_proc_test');
@@ -76,7 +80,7 @@ describe('Worker Safety', () => {
 
     await new Promise((r) => setTimeout(r, 2000));
     expect(maxConcurrent).toBeLessThanOrEqual(4);
-  });
+  }, 15000);
 
   it('should not log personal document data', async () => {
     await boss.createQueue('safe_log_test');

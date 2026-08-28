@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "@types/bcryptjs": "^3.0.0",
-    "bcryptjs": "^3.0.3"
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2"
   }
 }

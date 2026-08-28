@@ -24,6 +24,7 @@
     "drizzle-orm": "^0.45.2",
     "fast-json-stable-stringify": "^2.1.0",
     "jose": "^6.2.9",
+    "nodemailer": "^9.0.5",
     "pdf-parse": "^1.1.1",
     "pg-boss": "^10.3.0",
     "postgres": "^3.4.9",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
     "@types/fast-json-stable-stringify": "^2.1.2",
+    "@types/nodemailer": "^8.0.1",
     "drizzle-kit": "^0.31.10"
   }
 }
