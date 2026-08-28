@@ -3,7 +3,7 @@
 import React, { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Upload, FileText, Check } from 'lucide-react';
-import { CaseUpdateInput } from '@tieout/schema';
+import type { CaseUpdateInput } from '@tieout/schema';
 
 type CaseData = {
   candidateName: string;
@@ -191,9 +191,10 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       }
 
       router.push(`/c/${token}/status`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setFormError(err.message || 'An unexpected error occurred');
+      const error = err as Error;
+      setFormError(error.message || 'An unexpected error occurred');
       setIsSubmitting(false);
     }
   };
