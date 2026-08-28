@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { webcrypto } from 'node:crypto';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if (!globalThis.crypto) globalThis.crypto = webcrypto as any;
 import { NextRequest } from 'next/server';
 import { SignJWT } from 'jose';
 

@@ -16,10 +16,11 @@ describe('checkCtcPlausible', () => {
     expect(findings[0]?.status).toBe('not_assessed');
   });
 
-  it('returns no findings if basic is within plausible range', () => {
+  it('returns no findings if annualized gross matches claimed CTC within tolerance', () => {
     const ctx = {
+      claimed_ctc: 1200000,
       assembly: { has_payslip: true },
-      payslip: { basic: { amount: 50000 }, gross_salary: 100000 }, // 50%
+      payslip: { gross_salary: 100000 }, // 100k * 12 = 1.2M
       form16: null,
       epfoHistory: null,
     } as unknown as CheckContext;
@@ -28,10 +29,11 @@ describe('checkCtcPlausible', () => {
     expect(findings).toHaveLength(0);
   });
 
-  it('returns findings if basic is implausibly low', () => {
+  it('returns findings if annualized gross is implausible relative to claimed CTC', () => {
     const ctx = {
+      claimed_ctc: 1200000,
       assembly: { has_payslip: true },
-      payslip: { basic: { amount: 10000 }, gross_salary: 100000 }, // 10%
+      payslip: { gross_salary: 50000 }, // 50k * 12 = 600k
       form16: null,
       epfoHistory: null,
     } as unknown as CheckContext;
@@ -39,5 +41,6 @@ describe('checkCtcPlausible', () => {
     const findings = checkCtcPlausible(ctx);
     expect(findings).toHaveLength(1);
     expect(findings[0]?.rule_id).toBe('ctc-plausible');
+    expect(findings[0]?.status).toBe('open');
   });
 });

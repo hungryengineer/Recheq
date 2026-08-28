@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { webcrypto } from 'node:crypto';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if (!globalThis.crypto) globalThis.crypto = webcrypto as any;
 import { generateToken } from '../src/tokens/generate-token.js';
 import type { TokenRecord } from '../src/tokens/verify-token.js';
 import {

@@ -103,6 +103,7 @@ const dualEpfo = {
 describe('pf-implies-basic', () => {
   it('fires on doctored payslip (basic=52000, pf=3600 → implied=30000)', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: doctoredPayslip,
       form16: null,
@@ -120,6 +121,7 @@ describe('pf-implies-basic', () => {
 
   it('does not fire on clean payslip (basic=30000, pf=3600 → 12% exact)', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: cleanPayslip,
       form16: null,
@@ -131,6 +133,7 @@ describe('pf-implies-basic', () => {
 
   it('tolerance: basic=10002, pf=1200 → diff=0.24 < 1, does not fire', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: {
         ...cleanPayslip,
@@ -146,6 +149,7 @@ describe('pf-implies-basic', () => {
 
   it('PF cap: basic=25000, pf=1800 → does not fire (capped at wage ceiling)', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: {
         ...cleanPayslip,
@@ -161,6 +165,7 @@ describe('pf-implies-basic', () => {
 
   it('not_assessed when no payslip', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: { ...baseAssembly, has_payslip: false },
       payslip: null,
       form16: null,
@@ -177,6 +182,7 @@ describe('pf-implies-basic', () => {
 describe('pf-matches-epfo', () => {
   it('fires on doctored: pf=3600, EPFO employee_share=1800 for March 2026', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: doctoredPayslip,
       form16: null,
@@ -194,6 +200,7 @@ describe('pf-matches-epfo', () => {
 
   it('does not fire on clean: pf=3600, EPFO employee_share=3600', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: cleanPayslip,
       form16: null,
@@ -205,6 +212,7 @@ describe('pf-matches-epfo', () => {
 
   it('not_assessed when employer name does not match any EPFO period', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: { ...cleanPayslip, employer_name: 'Unknown Corp' },
       form16: null,
@@ -217,6 +225,7 @@ describe('pf-matches-epfo', () => {
 
   it('not_assessed when employer name is null (empty employer must not match every period)', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: { ...cleanPayslip, employer_name: null },
       form16: null,
@@ -232,6 +241,7 @@ describe('pf-matches-epfo', () => {
     'unsupported month %s is not coerced to January (compares latest contribution instead)',
     (month) => {
       const ctx: CheckContext = {
+        claimed_ctc: 1200000,
         assembly: baseAssembly,
         payslip: { ...cleanPayslip, month },
         form16: null,
@@ -248,6 +258,7 @@ describe('pf-matches-epfo', () => {
 
   it('not_assessed when multiple EPFO periods match same employer (dual establishment)', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: baseAssembly,
       payslip: cleanPayslip,
       form16: null,
@@ -260,6 +271,7 @@ describe('pf-matches-epfo', () => {
 
   it('not_assessed when no epfo data', () => {
     const ctx: CheckContext = {
+      claimed_ctc: 1200000,
       assembly: { ...baseAssembly, has_epfo: false },
       payslip: cleanPayslip,
       form16: null,

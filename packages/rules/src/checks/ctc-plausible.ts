@@ -24,31 +24,25 @@ export const checkCtcPlausible: RuleFunction = (ctx) => {
     return [];
   }
 
-  // Very rudimentary plausibility check: assuming Monthly CTC = Gross Salary + PF.
-  // We compare if there's any huge spike compared to typical thresholds or if the variance is wildly off.
-  // Actually, the tolerance is a percentage (e.g. 0.1 for 10%). We might assume candidate's declared CTC vs calculated is within 10%.
-  // Without candidate's declared CTC in CheckContext, let's just make a dummy or standard check or assume basic is at least 30% of CTC.
-  // A standard rule is that Basic Salary should be between 30% and 60% of gross salary.
+  // Exact Plausibility Check: Compare claimed CTC against the extracted gross salary.
+  // We assume monthly gross salary * 12 should be close to claimed CTC (within 10% tolerance).
+  const claimedCtc = ctx.claimed_ctc;
+  const annualizedGross = p.gross_salary * 12;
 
   const findings: FindingInput[] = [];
 
-  if (p.basic.amount !== null && p.gross_salary > 0) {
-    const basicRatio = p.basic.amount / p.gross_salary;
-    if (
-      basicRatio < 0.3 - CTC_PLAUSIBILITY_TOLERANCE ||
-      basicRatio > 0.6 + CTC_PLAUSIBILITY_TOLERANCE
-    ) {
-      findings.push({
-        rule_id: 'ctc-plausible',
-        severity: 'low',
-        status: 'open',
-        title: 'Unusual Salary Structuring',
-        explanation: 'Basic salary component is outside the typical 30-60% of gross salary bounds.',
-        expected: '30% - 60%',
-        observed: `${(basicRatio * 100).toFixed(2)}%`,
-        source_document_ids: [],
-      });
-    }
+  const ratio = annualizedGross / claimedCtc;
+  if (ratio < 1 - CTC_PLAUSIBILITY_TOLERANCE || ratio > 1 + CTC_PLAUSIBILITY_TOLERANCE) {
+    findings.push({
+      rule_id: 'ctc-plausible',
+      severity: 'high',
+      status: 'open',
+      title: 'CTC Mismatch',
+      explanation: `Annualized gross salary from payslip does not match the candidate's claimed CTC.`,
+      expected: `~ ₹${claimedCtc.toLocaleString()}`,
+      observed: `₹${annualizedGross.toLocaleString()}`,
+      source_document_ids: [],
+    });
   }
 
   return findings;

@@ -64,7 +64,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "unrs-resolver"
+      "unrs-resolver",
+      "esbuild"
     ]
   },
   "dependencies": {
