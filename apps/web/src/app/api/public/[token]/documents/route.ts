@@ -14,13 +14,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   try {
     const formData = await request.formData();
     const fileEntry = formData.get('file');
-    
+
     // In Next.js App Router, formData.get() returns an object that implements File/Blob but might fail `instanceof File`.
     // The safest cross-runtime check is looking for a string name and arrayBuffer method.
     if (fileEntry && typeof fileEntry === 'object' && 'arrayBuffer' in fileEntry) {
       file = fileEntry as File;
     }
-    
+
     kind = formData.get('kind') ?? null;
   } catch {
     return NextResponse.json({ success: false, message: 'Invalid request body' }, { status: 400 });
