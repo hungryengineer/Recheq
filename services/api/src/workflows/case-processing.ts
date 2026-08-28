@@ -14,9 +14,7 @@ import type { EpfoHistory, ScorableFinding } from '@tieout/rules';
 export interface CaseProcessingDeps extends EvidenceServiceDeps {
   db: Database &
     EvidenceServiceDeps['db'] & {
-      getCaseById: (
-        caseId: string,
-      ) => Promise<{
+      getCaseById: (caseId: string) => Promise<{
         id: string;
         uan: string | null;
         status: CaseStatus;
