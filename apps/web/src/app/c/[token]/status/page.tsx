@@ -135,17 +135,23 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
   if (terminalStatus && data) {
     if (terminalStatus === 'withdrawn') {
       return (
-        <div className="animate-fade-in text-center py-12">
-          <div className="mx-auto w-16 h-16 flex items-center justify-center mb-6">
-            <span className="text-4xl text-[var(--color-fg-muted)]">—</span>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-[500px] rounded-[var(--radius-card)] p-8 shadow-sm">
+            <div className="animate-fade-in text-center py-12">
+              <div className="mx-auto w-16 h-16 flex items-center justify-center mb-6">
+                <span className="text-4xl text-[var(--color-fg-muted)]">—</span>
+              </div>
+              <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
+                Verification withdrawn
+              </h1>
+              <p className="text-[var(--color-fg-muted)] mb-6">
+                Your background verification has been withdrawn.
+              </p>
+              <p className="text-sm text-[var(--color-fg-subtle)]">
+                You can safely close this page.
+              </p>
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
-            Verification withdrawn
-          </h1>
-          <p className="text-[var(--color-fg-muted)] mb-6">
-            Your background verification has been withdrawn.
-          </p>
-          <p className="text-sm text-[var(--color-fg-subtle)]">You can safely close this page.</p>
         </div>
       );
     }
@@ -157,75 +163,93 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
 
     if (allNotAssessed) {
       return (
-        <div className="animate-fade-in text-center py-12">
-          <div className="mx-auto w-16 h-16 flex items-center justify-center mb-6">
-            <span className="text-4xl text-[var(--color-fg-muted)]">—</span>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-[500px] rounded-[var(--radius-card)] p-8 shadow-sm">
+            <div className="animate-fade-in text-center py-12">
+              <div className="mx-auto w-16 h-16 flex items-center justify-center mb-6">
+                <span className="text-4xl text-[var(--color-fg-muted)]">—</span>
+              </div>
+              <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
+                Verification limited
+              </h1>
+              <p className="text-[var(--color-fg-muted)] mb-6">
+                We could not verify enough information from the provided documents.
+              </p>
+              <p className="text-sm text-[var(--color-fg-subtle)]">
+                You can safely close this page.
+              </p>
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
-            Verification limited
-          </h1>
-          <p className="text-[var(--color-fg-muted)] mb-6">
-            We could not verify enough information from the provided documents.
-          </p>
-          <p className="text-sm text-[var(--color-fg-subtle)]">You can safely close this page.</p>
         </div>
       );
     }
 
     return (
-      <div className="animate-fade-in text-center py-12">
-        <div className="mx-auto w-16 h-16 rounded-full bg-[var(--color-ok-bg)] flex items-center justify-center mb-6">
-          <span className="text-3xl text-[var(--color-ok)]">✓</span>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="glass-panel w-full max-w-[500px] rounded-[var(--radius-card)] p-8 shadow-sm">
+          <div className="animate-fade-in text-center py-12">
+            <div className="mx-auto w-16 h-16 rounded-full bg-[var(--color-ok-bg)] flex items-center justify-center mb-6">
+              <span className="text-3xl text-[var(--color-ok)]">✓</span>
+            </div>
+            <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">
+              Submission complete
+            </h1>
+            <p className="text-[var(--color-fg-muted)] mb-6">
+              Thank you. Your background verification documents have been securely submitted.
+            </p>
+
+            {hasAwaitingExternal && (
+              <div className="text-sm bg-[var(--color-medium-bg)] border border-transparent rounded p-4 text-[var(--color-medium)] inline-block text-left mb-6">
+                <span className="font-semibold block mb-1">Waiting on your previous employer</span>
+                The interim verdict is already usable.
+              </div>
+            )}
+
+            {data.error && (
+              <div className="text-sm bg-gray-50 border border-gray-200 rounded p-4 text-gray-600 inline-block text-left mb-6">
+                <span className="font-semibold block mb-1">Note:</span>
+                {data.error.message}
+              </div>
+            )}
+
+            <p className="text-sm text-[var(--color-fg-subtle)]">You can safely close this page.</p>
+          </div>
         </div>
-        <h1 className="text-2xl font-semibold text-[var(--color-fg)] mb-2">Submission complete</h1>
-        <p className="text-[var(--color-fg-muted)] mb-6">
-          Thank you. Your background verification documents have been securely submitted.
-        </p>
-
-        {hasAwaitingExternal && (
-          <div className="text-sm bg-[var(--color-medium-bg)] border border-transparent rounded p-4 text-[var(--color-medium)] inline-block text-left mb-6">
-            <span className="font-semibold block mb-1">Waiting on your previous employer</span>
-            The interim verdict is already usable.
-          </div>
-        )}
-
-        {data.error && (
-          <div className="text-sm bg-gray-50 border border-gray-200 rounded p-4 text-gray-600 inline-block text-left mb-6">
-            <span className="font-semibold block mb-1">Note:</span>
-            {data.error.message}
-          </div>
-        )}
-
-        <p className="text-sm text-[var(--color-fg-subtle)]">You can safely close this page.</p>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold text-[var(--color-fg)] mb-6">Recheq</h1>
-      <h2 className="text-lg font-medium text-[var(--color-fg)] mb-8">Checking your documents</h2>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="glass-panel w-full max-w-[500px] rounded-[var(--radius-card)] p-8 shadow-sm">
+        <div className="animate-fade-in">
+          <h1 className="text-xl font-semibold text-[var(--color-fg)] mb-6">Recheq</h1>
+          <h2 className="text-lg font-medium text-[var(--color-fg)] mb-8">
+            Checking your documents
+          </h2>
 
-      <div className="space-y-6 mb-12 ml-2">
-        {data ? (
-          data.steps?.map((step, index) => (
-            <div key={step.id ? `${step.id}-${index}` : index} className="flex items-center">
-              <div className="mr-4 flex-shrink-0">{renderStepIcon(step.state)}</div>
-              <span className={`text-[15px] font-medium ${getStepTextColor(step.state)}`}>
-                {step.label}
-              </span>
-            </div>
-          ))
-        ) : (
-          <div className="text-sm text-[var(--color-fg-muted)]">Connecting...</div>
-        )}
-      </div>
+          <div className="space-y-6 mb-12 ml-2">
+            {data ? (
+              data.steps?.map((step, index) => (
+                <div key={step.id ? `${step.id}-${index}` : index} className="flex items-center">
+                  <div className="mr-4 flex-shrink-0">{renderStepIcon(step.state)}</div>
+                  <span className={`text-[15px] font-medium ${getStepTextColor(step.state)}`}>
+                    {step.label}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-[var(--color-fg-muted)]">Connecting...</div>
+            )}
+          </div>
 
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-5 shadow-sm">
-        <p className="text-[14px] text-[var(--color-fg)] mb-1 font-medium">
-          Usually under 90 seconds.
-        </p>
-        <p className="text-[14px] text-[var(--color-fg-muted)]">Keep this page open.</p>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-card)] p-5 shadow-sm">
+            <p className="text-[14px] text-[var(--color-fg)] mb-1 font-medium">
+              Usually under 90 seconds.
+            </p>
+            <p className="text-[14px] text-[var(--color-fg-muted)]">Keep this page open.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
