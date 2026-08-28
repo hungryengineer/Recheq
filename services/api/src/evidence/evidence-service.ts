@@ -9,7 +9,7 @@ import type { EpfoHistory } from '../epfo/epfo-provider.js';
 
 export interface EvidenceServiceDeps {
   db: {
-    getCaseById: (caseId: string) => Promise<{ claimed_ctc: string; id: string; uan: string | null; status: any } | null>;
+    getCaseById: (caseId: string) => Promise<{ claimed_ctc: string; id: string; uan: string | null; status: unknown } | null>;
     getDocumentsForCase: (
       caseId: string,
     ) => Promise<Array<{ id: string; kind: string; created_at: Date }>>;

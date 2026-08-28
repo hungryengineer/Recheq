@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { webcrypto } from 'node:crypto';
+if (!globalThis.crypto) globalThis.crypto = webcrypto as unknown as Crypto;
 import { generateToken } from '../src/tokens/generate-token.js';
 import type { TokenRecord } from '../src/tokens/verify-token.js';
 import {

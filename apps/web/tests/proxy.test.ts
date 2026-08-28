@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { webcrypto } from 'node:crypto';
+if (!globalThis.crypto) globalThis.crypto = webcrypto as unknown as Crypto;
 import { NextRequest } from 'next/server';
 import { SignJWT } from 'jose';
 

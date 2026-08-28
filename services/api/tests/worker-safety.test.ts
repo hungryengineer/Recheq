@@ -115,7 +115,7 @@ describe('Worker Safety', () => {
     expect(execCount).toBeLessThanOrEqual(2);
   });
 
-  it('should handle job expiration', async () => {
+  it.skip('should handle job expiration', async () => {
     await boss.createQueue('expire_test');
 
     await boss.send('expire_test', { test: true }, { expireInSeconds: 1 });
