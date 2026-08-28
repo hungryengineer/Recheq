@@ -64,7 +64,12 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
   useEffect(() => {
     fetch(`/api/public/${token}/candidate`)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load candidate data');
+        }
+        return res.json();
+      })
       .then((data) => {
         setCaseData(data);
         setFormData({
@@ -76,6 +81,16 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
           claimed_ctc: data.claimed_ctc ? String(data.claimed_ctc) : '',
           uan: data.uan || '',
         });
+
+        if (data.documentsProvided?.includes('payslip')) {
+          setPayslipState('uploaded');
+          setPayslipName('payslip');
+        }
+        if (data.documentsProvided?.includes('form_16')) {
+          setForm16State('uploaded');
+          setForm16Name('form_16');
+        }
+
         setIsLoading(false);
       })
       .catch((err) => {
@@ -153,11 +168,15 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       }
 
       if (formData.uan) {
-        await fetch(`/api/public/${token}/uan`, {
+        const uanRes = await fetch(`/api/public/${token}/uan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uan: formData.uan }),
         });
+        if (!uanRes.ok) {
+          const errorData = await uanRes.json().catch(() => ({}));
+          throw new Error(errorData.error?.message || 'Failed to submit UAN');
+        }
       }
 
       const res = await fetch(`/api/public/${token}/submit`, {

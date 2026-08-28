@@ -35,7 +35,13 @@ export async function submitUanHandler(req: SubmitUanRequest, deps: SubmitUanDep
     }
 
     // Trigger sync in the background or await it
-    await syncEpfoHistory(deps, caseId, consent.id, body.uan);
+    const result = await syncEpfoHistory(deps, caseId, consent.id, body.uan);
+    if (!result.ok) {
+      return {
+        status: 422,
+        body: { error: { message: 'Failed to sync EPFO history' } },
+      };
+    }
 
     return {
       status: 200,

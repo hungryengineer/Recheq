@@ -40,14 +40,19 @@ export async function submitCaseHandler(req: SubmitRouteRequest, deps: SubmitRou
     if (req.body && Object.keys(req.body).length > 0) {
       const parsedBody = CaseUpdateInputSchema.safeParse(req.body);
       if (!parsedBody.success) {
-        throw new AppError(400, 'VALIDATION_ERROR', 'Invalid request body', parsedBody.error.flatten());
+        throw new AppError(
+          400,
+          'VALIDATION_ERROR',
+          'Invalid request body',
+          parsedBody.error.flatten(),
+        );
       }
-      
+
       // Remove undefined fields
       const cleanData = Object.fromEntries(
         Object.entries(parsedBody.data).filter(([_, v]) => v !== undefined),
       );
-      
+
       if (Object.keys(cleanData).length > 0) {
         await deps.db.transaction(async (tx) => {
           await deps.db.updateCaseDetails(tx, caseId, cleanData);
