@@ -90,13 +90,18 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
     const startTime = Date.now();
 
     try {
-      const panMatch = text.match(/PAN\s*([A-Z]{5}\d{4}[A-Z])/i) || text.match(/([A-Z]{5}\d{4}[A-Z])/);
+      const panMatch =
+        text.match(/PAN\s*([A-Z]{5}\d{4}[A-Z])/i) || text.match(/([A-Z]{5}\d{4}[A-Z])/);
       const pan = panMatch?.[1] ?? null;
 
-      const grossMatch = text.match(/Gross Salary[^\d]*([\d,]+\.\d{2})/i) || text.match(/Total Salary[^\d]*([\d,]+\.\d{2})/i);
+      const grossMatch =
+        text.match(/Gross Salary[^\d]*([\d,]+\.\d{2})/i) ||
+        text.match(/Total Salary[^\d]*([\d,]+\.\d{2})/i);
       const gross = grossMatch ? parseFloat(grossMatch[1]!.replace(/,/g, '')) : null;
 
-      const taxMatch = text.match(/Tax Payable[^\d]*([\d,]+\.\d{2})/i) || text.match(/Tax Deducted[^\d]*([\d,]+\.\d{2})/i);
+      const taxMatch =
+        text.match(/Tax Payable[^\d]*([\d,]+\.\d{2})/i) ||
+        text.match(/Tax Deducted[^\d]*([\d,]+\.\d{2})/i);
       const tax = taxMatch ? parseFloat(taxMatch[1]!.replace(/,/g, '')) : null;
 
       const data: Form16Extraction = {

@@ -16,7 +16,12 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
     EvidenceServiceDeps['db'] & {
       getCaseById: (
         caseId: string,
-      ) => Promise<{ id: string; uan: string | null; status: CaseStatus; claimed_ctc: string } | null>;
+      ) => Promise<{
+        id: string;
+        uan: string | null;
+        status: CaseStatus;
+        claimed_ctc: string;
+      } | null>;
       getConsentByCaseId: (caseId: string) => Promise<{ id: string } | null>;
       updateCaseStatusAndVerdict: (
         tx: unknown,

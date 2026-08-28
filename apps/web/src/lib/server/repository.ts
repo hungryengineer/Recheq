@@ -277,7 +277,7 @@ export const repository = {
       .from(schema.forensics)
       .innerJoin(schema.documents, eq(schema.forensics.document_id, schema.documents.id))
       .where(and(eq(schema.documents.case_id, caseId), eq(schema.forensics.status, 'completed')));
-      
+
     return rows.map((r) => ({
       producer: r.forensics.producer,
       creator: r.forensics.creator,

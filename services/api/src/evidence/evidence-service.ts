@@ -10,7 +10,9 @@ import type { EpfoHistory } from '../epfo/epfo-provider.js';
 export interface EvidenceServiceDeps {
   db: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getCaseById: (caseId: string) => Promise<{ claimed_ctc: string; id: string; uan: string | null; status: any } | null>;
+    getCaseById: (
+      caseId: string,
+    ) => Promise<{ claimed_ctc: string; id: string; uan: string | null; status: any } | null>;
     getDocumentsForCase: (
       caseId: string,
     ) => Promise<Array<{ id: string; kind: string; created_at: Date }>>;
