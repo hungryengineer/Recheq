@@ -10,7 +10,7 @@ export default async function CandidateConsentPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const apiUrl = process.env.API_BASE_URL || 'http://localhost:4010';
+  const apiUrl = process.env.API_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000';
 
   const res = await fetch(`${apiUrl}/api/public/${token}`, { cache: 'no-store' });
 
@@ -112,7 +112,7 @@ export default async function CandidateConsentPage({
             action={async () => {
               'use server';
               // Mocking the POST action for now until FE-6 rewrites it properly via client
-              const api = process.env.API_BASE_URL || 'http://localhost:4010';
+              const api = process.env.API_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000';
               const res = await fetch(`${api}/api/public/${token}/consent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -142,7 +142,7 @@ export default async function CandidateConsentPage({
             action={async () => {
               'use server';
               // Mocking the DELETE action
-              const api = process.env.API_BASE_URL || 'http://localhost:4010';
+              const api = process.env.API_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000';
               await fetch(`${api}/api/public/${token}/consent`, { method: 'DELETE' });
               redirect(`/c/${token}/status`);
             }}
