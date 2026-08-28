@@ -70,21 +70,24 @@ describe('Case Service', () => {
       const result = await createCase(validCreateInput, userId, orgId, mockDeps);
 
       expect(result).toEqual(mockResult);
-      expect(mockDeps.db.createCase).toHaveBeenCalledWith({
-        org_id: orgId,
-        created_by: userId,
-        employer_name: validCreateInput.employer_name,
-        candidate_name: validCreateInput.candidate_name,
-        candidate_email: validCreateInput.candidate_email,
-        title: validCreateInput.title,
-        claimed_ctc: validCreateInput.claimed_ctc,
-        employment_start: validCreateInput.employment_start,
-        employment_end: validCreateInput.employment_end,
-        uan: null,
-        status: 'awaiting_consent',
-        verdict: null,
-        risk_score: null,
-      });
+      expect(mockDeps.db.createCase).toHaveBeenCalledWith(
+        {
+          org_id: orgId,
+          created_by: userId,
+          employer_name: validCreateInput.employer_name,
+          candidate_name: validCreateInput.candidate_name,
+          candidate_email: validCreateInput.candidate_email,
+          title: validCreateInput.title,
+          claimed_ctc: validCreateInput.claimed_ctc,
+          employment_start: validCreateInput.employment_start,
+          employment_end: validCreateInput.employment_end,
+          uan: null,
+          status: 'awaiting_consent',
+          verdict: null,
+          risk_score: null,
+        },
+        'mock-tx'
+      );
     });
 
     it('rejects end date before start date', async () => {
