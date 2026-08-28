@@ -8,6 +8,7 @@ describe('Evidence Assembly Service with Dependencies', () => {
 
   it('assembles context with all data missing', async () => {
     const dbMock = {
+      getCaseById: vi.fn().mockResolvedValue({ claimed_ctc: '1200000' }),
       getDocumentsForCase: vi.fn().mockResolvedValue([]),
       getSuccessfulExtractions: vi.fn().mockResolvedValue([]),
       getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
@@ -32,6 +33,7 @@ describe('Evidence Assembly Service with Dependencies', () => {
     const newDate = new Date('2023-02-01');
 
     const dbMock = {
+      getCaseById: vi.fn().mockResolvedValue({ claimed_ctc: '1200000' }),
       getDocumentsForCase: vi.fn().mockResolvedValue([
         { id: 'doc-old-payslip', kind: 'payslip', created_at: oldDate },
         { id: 'doc-new-payslip', kind: 'payslip', created_at: newDate },
@@ -65,6 +67,7 @@ describe('Evidence Assembly Service with Dependencies', () => {
     const newDate = new Date('2023-02-01');
 
     const dbMock = {
+      getCaseById: vi.fn().mockResolvedValue({ claimed_ctc: '1200000' }),
       getDocumentsForCase: vi.fn().mockResolvedValue([
         { id: 'doc-old-payslip', kind: 'payslip', created_at: oldDate },
         { id: 'doc-new-payslip', kind: 'payslip', created_at: newDate },

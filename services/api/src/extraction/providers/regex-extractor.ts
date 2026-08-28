@@ -85,17 +85,52 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
     }
   }
 
-  async extractForm16(_request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
-    // Regex extractor currently only supports Payslips
-    return {
-      status: 'failure',
-      error: 'Form16 regex extraction not implemented',
-      rawOutput: '',
-      modelId: 'regex',
-      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-      extractionDurationMs: 0,
-      retryCount: 0,
-    };
+  async extractForm16(request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
+    const text = request.documentContent;
+    const startTime = Date.now();
+
+    try {
+      const panMatch = text.match(/PAN\s*([A-Z]{5}\d{4}[A-Z])/i) || text.match(/([A-Z]{5}\d{4}[A-Z])/);
+      const pan = panMatch?.[1] ?? null;
+
+      const grossMatch = text.match(/Gross Salary[^\d]*([\d,]+\.\d{2})/i) || text.match(/Total Salary[^\d]*([\d,]+\.\d{2})/i);
+      const gross = grossMatch ? parseFloat(grossMatch[1]!.replace(/,/g, '')) : null;
+
+      const taxMatch = text.match(/Tax Payable[^\d]*([\d,]+\.\d{2})/i) || text.match(/Tax Deducted[^\d]*([\d,]+\.\d{2})/i);
+      const tax = taxMatch ? parseFloat(taxMatch[1]!.replace(/,/g, '')) : null;
+
+      const data: Form16Extraction = {
+        employer_name: null,
+        employee_name: null,
+        pan,
+        assessment_year: null,
+        gross_salary: gross,
+        total_deductions: null,
+        net_tax_payable: tax,
+        extraction_notes: 'Extracted using regex fast-path',
+        schema_version: 'form16-v1',
+      };
+
+      return {
+        status: 'success',
+        data,
+        rawOutput: 'Regex fast-path execution',
+        modelId: 'regex',
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        extractionDurationMs: Date.now() - startTime,
+        retryCount: 0,
+      };
+    } catch (e) {
+      return {
+        status: 'failure',
+        error: String(e),
+        rawOutput: '',
+        modelId: 'regex',
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        extractionDurationMs: Date.now() - startTime,
+        retryCount: 0,
+      };
+    }
   }
 
   getMetadata() {

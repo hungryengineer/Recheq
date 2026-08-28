@@ -271,9 +271,21 @@ export const repository = {
       .from(schema.epfoRecords)
       .where(and(eq(schema.epfoRecords.case_id, caseId), eq(schema.epfoRecords.status, 'success')));
   },
-  getCompletedForensics: async (_caseId: string) => {
-    // Currently no forensics table, return empty array for now as per schema
-    return [];
+  getCompletedForensics: async (caseId: string) => {
+    const rows = await db
+      .select()
+      .from(schema.forensics)
+      .innerJoin(schema.documents, eq(schema.forensics.document_id, schema.documents.id))
+      .where(and(eq(schema.documents.case_id, caseId), eq(schema.forensics.status, 'completed')));
+      
+    return rows.map((r) => ({
+      producer: r.forensics.producer,
+      creator: r.forensics.creator,
+      creation_date: r.forensics.creation_date,
+      modification_date: r.forensics.modification_date,
+      font_runs: r.forensics.font_runs,
+      monetary_anomalies: r.forensics.monetary_anomalies,
+    }));
   },
   createToken: async (
     tx: TransactionHandle,

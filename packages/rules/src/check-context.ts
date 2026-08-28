@@ -49,6 +49,9 @@ export interface EpfoHistory {
  * suitable for pure rule engine evaluation.
  */
 export interface CheckContext {
+  /** Candidate's claimed CTC for verification matching */
+  claimed_ctc: number;
+
   /** Metadata about what evidence is present and what is missing */
   assembly: EvidenceAssembly;
 

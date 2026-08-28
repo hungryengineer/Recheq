@@ -9,6 +9,7 @@ import type { EpfoHistory } from '../epfo/epfo-provider.js';
 
 export interface EvidenceServiceDeps {
   db: {
+    getCaseById: (caseId: string) => Promise<{ claimed_ctc: string } | null>;
     getDocumentsForCase: (
       caseId: string,
     ) => Promise<Array<{ id: string; kind: string; created_at: Date }>>;
@@ -24,6 +25,9 @@ export async function assembleEvidence(
   deps: EvidenceServiceDeps,
   caseId: string,
 ): Promise<CheckContext> {
+  const caseRecord = await deps.db.getCaseById(caseId);
+  if (!caseRecord) throw new Error(`Case ${caseId} not found`);
+
   // 1. Fetch all documents for the case
   const docs = await deps.db.getDocumentsForCase(caseId);
 
@@ -83,6 +87,7 @@ export async function assembleEvidence(
   };
 
   return {
+    claimed_ctc: Number(caseRecord.claimed_ctc),
     assembly,
     payslip,
     form16,
