@@ -189,14 +189,14 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
     if (state === 'empty') {
       return (
-        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:border-[#334155]">
-          <div>
+        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4 transition-colors hover:border-[#334155]">
+          <div className="flex-[1_1_200px] min-w-0">
             <div className="text-sm font-medium text-white mb-1">{title}</div>
             <div className="text-xs text-[#64748B]">{subtitle}</div>
           </div>
           <label
             htmlFor={id}
-            className="cursor-pointer border border-[#1E293B] bg-[#0F172A] hover:bg-[#1E293B] text-[#94A3B8] text-sm px-5 py-2.5 rounded-lg transition-colors text-center whitespace-nowrap"
+            className="cursor-pointer border border-[#1E293B] bg-[#0F172A] hover:bg-[#1E293B] text-[#94A3B8] text-sm px-5 py-2.5 rounded-lg transition-colors text-center whitespace-nowrap flex-[1_0_auto] max-w-fit"
           >
             Choose file
             <input
@@ -212,45 +212,49 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
     if (state === 'uploading') {
       return (
-        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <div className="bg-[#121826] border border-[#1E293B] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex-[1_1_150px] min-w-0">
             <div className="text-sm font-medium text-white mb-1">{title}</div>
             <div className="text-xs text-blue-400 flex items-center gap-2">
               <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
             </div>
           </div>
-          <div className="text-xs text-[#64748B] truncate max-w-[200px]">{name}</div>
+          <div className="text-xs text-[#64748B] truncate flex-[1_1_150px] min-w-0 text-left md:text-right">
+            {name}
+          </div>
         </div>
       );
     }
 
     if (state === 'uploaded') {
       return (
-        <div className="bg-[#0F1C1B] border border-[#14432A] rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <div className="bg-[#0F1C1B] border border-[#14432A] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex-[1_1_150px] min-w-0">
             <div className="text-sm font-medium text-white mb-1">{title}</div>
             <div className="text-xs text-emerald-400 flex items-center gap-1.5">
-              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">
+              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] shrink-0">
                 ✓
               </div>
-              Uploaded successfully
+              <span>Uploaded successfully</span>
             </div>
           </div>
-          <div className="text-xs text-emerald-500/70 truncate max-w-[200px]">{name}</div>
+          <div className="text-xs text-emerald-500/70 truncate flex-[1_1_150px] min-w-0 text-left md:text-right">
+            {name}
+          </div>
         </div>
       );
     }
 
     if (state === 'failed') {
       return (
-        <div className="bg-[#1C1215] border border-[#43141F] rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <div className="bg-[#1C1215] border border-[#43141F] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex-[1_1_200px] min-w-0">
             <div className="text-sm font-medium text-white mb-1">{title}</div>
-            <div className="text-xs text-red-400">{errorMsg}</div>
+            <div className="text-xs text-red-400 break-words">{errorMsg}</div>
           </div>
           <label
             htmlFor={id}
-            className="cursor-pointer border border-[#43141F] bg-[#2A0F15] hover:bg-[#43141F] text-red-300 text-sm px-5 py-2.5 rounded-lg transition-colors text-center whitespace-nowrap"
+            className="cursor-pointer border border-[#43141F] bg-[#2A0F15] hover:bg-[#43141F] text-red-300 text-sm px-5 py-2.5 rounded-lg transition-colors text-center whitespace-nowrap flex-[1_0_auto] max-w-fit"
           >
             Retry
             <input
@@ -274,10 +278,10 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
   }
 
   return (
-    <div className="min-h-screen bg-[#050914] text-white p-4 sm:p-6 md:p-10 font-sans">
-      <div className="max-w-7xl mx-auto animate-fade-in">
-        <div className="flex items-center gap-3 mb-8 sm:mb-10">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/20">
+    <div className="min-h-screen bg-[#050914] text-white p-4 font-sans flex flex-col items-center">
+      <div className="w-full max-w-7xl animate-fade-in">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/20 shrink-0">
             R
           </div>
           <span className="font-semibold text-xl tracking-tight">Recheq</span>
@@ -285,15 +289,15 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
         <div className="mb-8">
           <h1 className="text-3xl font-semibold mb-3 tracking-tight">New verification</h1>
-          <p className="text-[#94A3B8] text-sm sm:text-base max-w-2xl">
+          <p className="text-[#94A3B8] text-[15px] max-w-2xl">
             Fill in the details below to initiate a new verification request.
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2 space-y-8">
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/40">
+          <div className="flex flex-wrap gap-8 items-start">
+            <div className="flex-[2_1_500px] min-w-0 space-y-8">
+              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
                 <div className="flex items-start gap-4 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-[#1E293B] flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5 text-blue-400" />
@@ -308,8 +312,8 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                  <div>
+                <div className="flex flex-wrap gap-6 mb-6">
+                  <div className="flex-[1_1_200px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       Candidate name <span className="text-red-500">*</span>
                     </label>
@@ -322,7 +326,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                       placeholder="Enter full name"
                     />
                   </div>
-                  <div>
+                  <div className="flex-[1_1_200px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       Claimed employer <span className="text-red-500">*</span>
                     </label>
@@ -337,8 +341,8 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                  <div>
+                <div className="flex flex-wrap gap-6 mb-6">
+                  <div className="flex-[1_1_200px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       Title / Designation <span className="text-red-500">*</span>
                     </label>
@@ -351,7 +355,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                       placeholder="Enter job title"
                     />
                   </div>
-                  <div>
+                  <div className="flex-[1_1_200px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       UAN (optional)
                     </label>
@@ -366,8 +370,8 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                  <div>
+                <div className="flex flex-wrap gap-6 mb-8">
+                  <div className="flex-[1_1_150px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       Start date <span className="text-red-500">*</span>
                     </label>
@@ -379,7 +383,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                       className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white"
                     />
                   </div>
-                  <div>
+                  <div className="flex-[1_1_150px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       End date <span className="text-red-500">*</span>
                     </label>
@@ -391,7 +395,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                       className="w-full bg-[#0B0F19] border border-[#1E293B] rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white"
                     />
                   </div>
-                  <div>
+                  <div className="flex-[1_1_150px] min-w-0">
                     <label className="block text-sm font-medium text-[#94A3B8] mb-2">
                       Claimed CTC (annual) <span className="text-red-500">*</span>
                     </label>
@@ -417,7 +421,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                 </div>
               </div>
 
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/40">
+              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 shrink-0">
                     👤
@@ -429,29 +433,29 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#0B0F19] rounded-2xl p-5 border border-[#1E293B] gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#1E293B] border border-[#334155] flex items-center justify-center font-medium text-xl shadow-inner">
+                <div className="flex flex-wrap items-center justify-between bg-[#0B0F19] rounded-2xl p-5 border border-[#1E293B] gap-4">
+                  <div className="flex items-center gap-4 flex-[1_1_200px] min-w-0">
+                    <div className="w-12 h-12 rounded-full bg-[#1E293B] border border-[#334155] flex items-center justify-center font-medium text-xl shadow-inner shrink-0">
                       {caseData.candidateName
                         ? caseData.candidateName.charAt(0).toUpperCase()
                         : 'C'}
                     </div>
-                    <div>
-                      <div className="font-medium text-[15px] mb-0.5">
+                    <div className="min-w-0">
+                      <div className="font-medium text-[15px] mb-0.5 truncate">
                         {caseData.candidateName || 'Candidate'}
                       </div>
-                      <div className="text-sm text-[#64748B]">Completing verification</div>
+                      <div className="text-sm text-[#64748B] truncate">Completing verification</div>
                     </div>
                   </div>
-                  <div className="px-4 py-2 rounded-xl bg-[#1E293B] border border-[#334155] text-sm font-medium text-[#94A3B8] text-center">
+                  <div className="px-4 py-2 rounded-xl bg-[#1E293B] border border-[#334155] text-sm font-medium text-[#94A3B8] text-center flex-[0_0_auto]">
                     Candidate View
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-8">
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/40">
+            <div className="flex-[1_1_350px] min-w-0 space-y-8">
+              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
                 <div className="flex items-start gap-4 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
                     <Upload className="w-5 h-5 text-emerald-400" />
@@ -506,7 +510,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                 )}
               </div>
 
-              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/40">
+              <div className="bg-[#121826] border border-[#1E293B] rounded-3xl p-6 shadow-xl shadow-black/40">
                 <div className="flex items-start gap-4 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
                     <div className="w-4 h-4 rounded-full border-2 border-blue-400 opacity-80" />
@@ -518,25 +522,25 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                 </div>
 
                 <div className="space-y-5 text-[15px]">
-                  <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#1E293B] pb-4 gap-1">
+                  <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
                     <span className="text-[#94A3B8]">Candidate name</span>
-                    <span className="font-medium text-white truncate max-w-[200px]">
+                    <span className="font-medium text-white truncate max-w-full text-right">
                       {formData.candidate_name || '—'}
                     </span>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#1E293B] pb-4 gap-1">
+                  <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
                     <span className="text-[#94A3B8]">Employer</span>
-                    <span className="font-medium text-white truncate max-w-[200px]">
+                    <span className="font-medium text-white truncate max-w-full text-right">
                       {formData.employer_name || '—'}
                     </span>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#1E293B] pb-4 gap-1">
+                  <div className="flex flex-wrap justify-between border-b border-[#1E293B] pb-4 gap-2">
                     <span className="text-[#94A3B8]">Designation</span>
-                    <span className="font-medium text-white truncate max-w-[200px]">
+                    <span className="font-medium text-white truncate max-w-full text-right">
                       {formData.title || '—'}
                     </span>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between pb-1 gap-1">
+                  <div className="flex flex-wrap justify-between pb-1 gap-2">
                     <span className="text-[#94A3B8]">CTC (annual)</span>
                     <span className="font-medium text-white">
                       {formData.claimed_ctc
