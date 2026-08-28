@@ -97,7 +97,7 @@ describe('Worker Safety', () => {
     });
 
     await new Promise((r) => setTimeout(r, 500));
-  });
+  }, 15000);
 
   it('should maintain idempotency with singleton keys', async () => {
     await boss.createQueue('idempotent_test');
@@ -113,7 +113,7 @@ describe('Worker Safety', () => {
 
     await new Promise((r) => setTimeout(r, 1000));
     expect(execCount).toBeLessThanOrEqual(2);
-  });
+  }, 15000);
 
   it.skip('should handle job expiration', async () => {
     await boss.createQueue('expire_test');

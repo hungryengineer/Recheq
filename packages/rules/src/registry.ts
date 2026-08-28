@@ -11,6 +11,7 @@ import { checkIdentityConsistent } from './checks/identity-consistent.js';
 import { checkCtcPlausible } from './checks/ctc-plausible.js';
 import { checkForensicsMetadata } from './checks/forensics-metadata.js';
 import { checkEpfoGapAnalysis } from './checks/epfo-gap-analysis.js';
+import { checkDocumentConfidence } from './checks/document-confidence.js';
 
 /**
  * The Rule Registry.
@@ -35,4 +36,5 @@ export const RULE_REGISTRY: Record<string, RuleFunction> = {
   'ctc-plausible': checkCtcPlausible,
   'forensics-metadata': checkForensicsMetadata,
   'epfo-gap-analysis': checkEpfoGapAnalysis,
+  'document-confidence': checkDocumentConfidence,
 };

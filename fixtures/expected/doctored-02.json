@@ -1,7 +1,17 @@
 {
-  "score": 40,
+  "score": 55,
   "verdict": "needs_review",
   "findings": [
+    {
+      "rule_id": "payslip-arithmetic-net",
+      "severity": "high",
+      "status": "open",
+      "title": "Net Salary Mismatch",
+      "explanation": "Gross salary minus deductions does not equal stated net salary.",
+      "expected": "46000",
+      "observed": "58000",
+      "source_document_ids": []
+    },
     {
       "rule_id": "forensics-metadata",
       "severity": "high",
@@ -13,13 +23,13 @@
       "source_document_ids": []
     },
     {
-      "rule_id": "payslip-arithmetic-net",
-      "severity": "high",
+      "rule_id": "document-confidence",
+      "severity": "medium",
       "status": "open",
-      "title": "Net Salary Mismatch",
-      "explanation": "Gross salary minus deductions does not equal stated net salary.",
-      "expected": "46000",
-      "observed": "58000",
+      "title": "Payslip Confidence Low",
+      "explanation": "Payslip confidence score is 60%. Penalties: Missing PAN, Internal math mismatch (Gross - Deductions != Net).",
+      "expected": "Confidence >= 90%",
+      "observed": "60%",
       "source_document_ids": []
     }
   ]
