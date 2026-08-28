@@ -4,15 +4,20 @@ import type {
   EvidenceAssembly,
   PayslipExtraction,
   Form16Extraction,
+  CaseStatus,
 } from '@tieout/schema';
 import type { EpfoHistory } from '../epfo/epfo-provider.js';
 
 export interface EvidenceServiceDeps {
   db: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getCaseById: (
       caseId: string,
-    ) => Promise<{ claimed_ctc: string; id: string; uan: string | null; status: any } | null>;
+    ) => Promise<{
+      claimed_ctc: string;
+      id: string;
+      uan: string | null;
+      status: CaseStatus;
+    } | null>;
     getDocumentsForCase: (
       caseId: string,
     ) => Promise<Array<{ id: string; kind: string; created_at: Date }>>;
