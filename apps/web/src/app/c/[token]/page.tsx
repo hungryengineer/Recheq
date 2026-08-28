@@ -39,8 +39,9 @@ export default async function CandidateConsentPage({
   }
 
   const context = await res.json();
+  const status = context.data?.status;
 
-  if (context.status === 'awaiting_consent' || context.status === 'awaiting_documents') {
+  if (status === 'awaiting_consent' || status === 'awaiting_documents') {
     // Consent is now handled inline on step 1 of the upload flow
     redirect(`/c/${token}/upload`);
   } else {

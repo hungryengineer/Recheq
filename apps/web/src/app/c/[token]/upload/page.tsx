@@ -231,7 +231,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
         }
 
         if (caseData) {
-          caseData.consent_status = 'granted';
+          setCaseData((prev) => ({ ...prev, consent_status: 'granted' }));
         }
       } catch (err) {
         console.error(err);
