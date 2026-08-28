@@ -325,9 +325,12 @@ describe('candidate view does not expose risk_score, verdict, findings, or org d
     expect(view).not.toHaveProperty('verdict');
     expect(view).not.toHaveProperty('org_id');
     expect(view).not.toHaveProperty('created_by');
-    expect(view).not.toHaveProperty('claimed_ctc');
     expect(view).toHaveProperty('employer_name');
     expect(view).toHaveProperty('candidate_name');
+    expect(view).toHaveProperty('claimed_ctc');
+    expect(view).toHaveProperty('employment_start');
+    expect(view).toHaveProperty('employment_end');
+    expect(view).toHaveProperty('uan');
     expect(view).toHaveProperty('status');
     expect(view).toHaveProperty('consent_status');
   });
