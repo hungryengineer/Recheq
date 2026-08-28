@@ -86,7 +86,7 @@ describe('Case Service', () => {
           verdict: null,
           risk_score: null,
         },
-        'mock-tx'
+        'mock-tx',
       );
     });
 
