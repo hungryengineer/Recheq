@@ -376,12 +376,16 @@ export function CreateCaseForm() {
           <div
             className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="success-modal-title"
           >
             <div className="absolute top-0 inset-x-0 h-1 bg-green-500"></div>
 
             <button
               onClick={() => setIsSuccessModalOpen(false)}
               className="absolute top-4 right-4 p-1.5 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-page)] rounded-full transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -403,10 +407,14 @@ export function CreateCaseForm() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-[var(--color-fg)] mb-2">Success!</h3>
+              <h3
+                id="success-modal-title"
+                className="text-xl font-bold text-[var(--color-fg)] mb-2"
+              >
+                Success!
+              </h3>
               <p className="text-sm text-[var(--color-fg-muted)]">
-                The new case was created successfully, and an invitation email has been sent to the
-                candidate.
+                The new case was created successfully, and the invitation is queued.
               </p>
             </div>
 

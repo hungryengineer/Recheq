@@ -41,49 +41,66 @@ const JOB_CONFIGS: Record<string, JobConfig> = {
 };
 
 let boss: PgBoss | null = null;
+let initPromise: Promise<PgBoss> | null = null;
 
 export async function initPgBoss(): Promise<PgBoss> {
   if (boss) return boss;
+  if (initPromise) return initPromise;
 
-  // Attempt to load .env.local from the web workspace root just in case
-  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+  initPromise = (async () => {
+    // Attempt to load .env.local from the web workspace root just in case
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-  const connectionString = process.env.DATABASE_URL;
+    const connectionString = process.env.DATABASE_URL;
 
-  if (!connectionString) {
-    throw new Error('DATABASE_URL not set');
-  }
+    if (!connectionString) {
+      throw new Error('DATABASE_URL not set');
+    }
 
-  boss = new PgBoss(connectionString);
+    const newBoss = new PgBoss(connectionString);
 
-  boss.on('error', (error) => {
-    console.error('pg-boss error', { error: error.message });
+    newBoss.on('error', (error) => {
+      console.error('pg-boss error', { error: error.message });
+    });
+
+    try {
+      await newBoss.start();
+      console.log('pg-boss initialized');
+    } catch (error) {
+      console.error('failed to initialize pg-boss', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+
+    try {
+      // Run sequentially to minimize deadlock chances in Neon Serverless/HMR
+      await newBoss.createQueue('employer_workflow');
+      await newBoss.createQueue('retention_cleanup');
+      await newBoss.createQueue('webhook_delivery');
+      await newBoss.createQueue('email_delivery');
+    } catch (error: unknown) {
+      // Ignore PostgreSQL deadlock errors (40P01) or duplicate table errors that happen
+      // when Next.js HMR concurrently boots multiple instrumentation routines.
+      if (error && typeof error === 'object' && 'code' in error) {
+        const err = error as { code: string };
+        if (err.code !== '40P01' && err.code !== '42P07') {
+          console.warn('Non-fatal error creating pg-boss queues:', error);
+        }
+      } else {
+        console.warn('Non-fatal error creating pg-boss queues:', error);
+      }
+    }
+
+    boss = newBoss;
+    return newBoss;
+  })().catch((err) => {
+    boss = null;
+    initPromise = null;
+    throw err;
   });
 
-  try {
-    await boss.start();
-    console.log('pg-boss initialized');
-  } catch (error) {
-    console.error('failed to initialize pg-boss', { error: (error as Error).message });
-    throw error;
-  }
-
-  try {
-    // Run sequentially to minimize deadlock chances in Neon Serverless/HMR
-    await boss.createQueue('employer_workflow');
-    await boss.createQueue('retention_cleanup');
-    await boss.createQueue('webhook_delivery');
-    await boss.createQueue('email_delivery');
-  } catch (error: unknown) {
-    // Ignore PostgreSQL deadlock errors (40P01) or duplicate table errors that happen
-    // when Next.js HMR concurrently boots multiple instrumentation routines.
-    const err = error as { code?: string };
-    if (err.code !== '40P01' && err.code !== '42P07') {
-      console.warn('Non-fatal error creating pg-boss queues:', error);
-    }
-  }
-
-  return boss;
+  return initPromise;
 }
 
 export async function getPgBoss(): Promise<PgBoss> {
@@ -141,7 +158,7 @@ export async function publishJob(
   }
 
   const targetQueue = queue.toLowerCase();
-  const jobId = await pgBoss.send(targetQueue, data as object, publishOptions);
+  const jobId = await pgBoss.send(targetQueue, data, publishOptions);
   console.log('job published', { queue: targetQueue, jobId, caseId: data.case_id });
   return String(jobId || '');
 }

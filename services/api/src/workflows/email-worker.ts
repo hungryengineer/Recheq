@@ -11,7 +11,9 @@ const EmailDeliveryPayload = z.object({
 
 type EmailDeliveryJob = z.infer<typeof EmailDeliveryPayload>;
 
-export async function processEmailDelivery(jobsParam: PgBoss.Job<EmailDeliveryJob> | PgBoss.Job<EmailDeliveryJob>[]): Promise<void> {
+export async function processEmailDelivery(
+  jobsParam: PgBoss.Job<EmailDeliveryJob> | PgBoss.Job<EmailDeliveryJob>[],
+): Promise<void> {
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   for (const job of jobs) {
     const parsed = EmailDeliveryPayload.safeParse(job.data);
@@ -28,14 +30,24 @@ export async function processEmailDelivery(jobsParam: PgBoss.Job<EmailDeliveryJo
 
     const user = process.env['GMAIL_USER'];
     const pass = process.env['GMAIL_APP_PASSWORD'];
-    
+
     if (!user || !pass) {
       throw new Error('GMAIL_USER or GMAIL_APP_PASSWORD is not configured');
     }
 
-    // Construct the document upload link
+    const escapeHtml = (unsafe: string) =>
+      unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
     const appUrl = process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000';
-    const uploadLink = `${appUrl}/c/${upload_token}/upload`;
+    const rawLink = `${appUrl}/c/${encodeURIComponent(upload_token)}/upload`;
+    const uploadLink = escapeHtml(rawLink);
+    const safeCandidateName = escapeHtml(candidate_name);
+    const safeEmployerName = escapeHtml(employer_name);
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -60,10 +72,10 @@ export async function processEmailDelivery(jobsParam: PgBoss.Job<EmailDeliveryJo
           <tr>
             <td style="padding: 40px;">
               <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px; color: #3f3f46;">
-                Hello <strong>${candidate_name}</strong>,
+                Hello <strong>${safeCandidateName}</strong>,
               </p>
               <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px; color: #3f3f46;">
-                You have been requested to upload the required documents for your background check with <strong>${employer_name}</strong>.
+                You have been requested to upload the required documents for your background check with <strong>${safeEmployerName}</strong>.
               </p>
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
@@ -97,7 +109,7 @@ export async function processEmailDelivery(jobsParam: PgBoss.Job<EmailDeliveryJo
 
     try {
       console.log(`[Email Worker] 🚀 Attempting to send Gmail to: ${to_email}`);
-      
+
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -113,9 +125,14 @@ export async function processEmailDelivery(jobsParam: PgBoss.Job<EmailDeliveryJo
         html: htmlContent,
       });
 
-      console.log(`[Email Worker] ✅ Successfully sent Gmail to: ${to_email} (MessageId: ${info.messageId})`);
+      console.log(
+        `[Email Worker] ✅ Successfully sent Gmail to: ${to_email} (MessageId: ${info.messageId})`,
+      );
     } catch (error) {
-      console.error(`[Email Worker] ❌ Gmail SMTP Error for ${to_email}:`, error instanceof Error ? error.message : error);
+      console.error(
+        `[Email Worker] ❌ Gmail SMTP Error for ${to_email}:`,
+        error instanceof Error ? error.message : error,
+      );
       throw error;
     }
   }

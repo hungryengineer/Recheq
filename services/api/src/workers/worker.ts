@@ -32,10 +32,10 @@ export async function startWorkers(): Promise<void> {
   try {
     const boss = await initPgBoss();
 
-    const startQueue = (
+    const startQueue = <T extends object>(
       queue: string,
       concurrency: number,
-      handler: (jobs: PgBoss.Job[]) => Promise<void>,
+      handler: (jobs: PgBoss.Job<T>[]) => Promise<void>,
     ) =>
       Promise.all(
         Array.from({ length: Math.max(1, concurrency) }).map(() => boss.work(queue, handler)),
@@ -45,8 +45,7 @@ export async function startWorkers(): Promise<void> {
       startQueue('employer_workflow', 2, processEmployerJob),
       startQueue('retention_cleanup', 1, retentionJob),
       startQueue('webhook_delivery', 3, webhookJob),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      startQueue('email_delivery', 2, processEmailDelivery as any),
+      startQueue('email_delivery', 2, processEmailDelivery),
     ]);
 
     console.log('workers started');

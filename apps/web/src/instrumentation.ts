@@ -5,7 +5,11 @@ export async function register() {
   _initSecretKey();
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { startWorkers } = await import('@tieout/api/src/workers/worker.js');
-    await startWorkers().catch(err => console.error('Failed to start workers', err));
+    try {
+      const { startWorkers } = await import('@tieout/api/src/workers/worker.js');
+      await startWorkers();
+    } catch (err) {
+      console.error('Failed to start workers', err);
+    }
   }
 }
