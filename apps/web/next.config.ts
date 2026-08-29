@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     ? path.join(import.meta.dirname, '..', '..')
     : undefined,
   experimental: {
+    after: true,
     serverActions: {
       bodySizeLimit: '5mb',
     },
