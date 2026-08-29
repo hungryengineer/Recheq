@@ -113,6 +113,33 @@ describe('RegexFallbackExtractor', () => {
     const extractor = new RegexFallbackExtractor(primary);
     expect(extractor.provider).toBe('gemini');
   });
+
+  it('routes rejected primary extraction through the regex fallback', async () => {
+    const primary: LlmDocumentExtractor = {
+      provider: 'openai-compatible',
+      supportsStreaming: true,
+      extractPayslip: vi.fn(async () => {
+        throw new Error('connection reset');
+      }) as unknown as LlmDocumentExtractor['extractPayslip'],
+      extractForm16: vi.fn(async () => {
+        throw new Error('connection reset');
+      }) as unknown as LlmDocumentExtractor['extractForm16'],
+      getMetadata: () => ({
+        maxContentSize: 1024,
+        supportsImages: true,
+        supportsPdfText: true,
+        costPer1kTokens: 0.001,
+      }),
+      isAvailable: async () => true,
+    };
+
+    const extractor = new RegexFallbackExtractor(primary);
+    const result = await extractor.extractPayslip(makeRequest());
+    expect(result.status).toBe('success');
+    if (result.status === 'success') {
+      expect(result.modelId).toContain('regex-fallback:');
+    }
+  });
 });
 
 describe('createProductionExtractor', () => {

@@ -15,6 +15,18 @@ import type {
 import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
 import { RegexDocumentExtractor } from './regex-extractor.js';
 
+function failureResult<T>(error: string): ExtractionResult<T> {
+  return {
+    status: 'failure',
+    error,
+    rawOutput: '',
+    modelId: 'regex-fallback:primary-error',
+    usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+    extractionDurationMs: 0,
+    retryCount: 1,
+  };
+}
+
 export class RegexFallbackExtractor implements LlmDocumentExtractor {
   readonly provider: string;
   readonly supportsStreaming: boolean;
@@ -28,11 +40,19 @@ export class RegexFallbackExtractor implements LlmDocumentExtractor {
   }
 
   async extractPayslip(request: ExtractionRequest): Promise<ExtractionResult<PayslipExtraction>> {
-    return this.withFallback(request, 'payslip', () => this.primary.extractPayslip(request));
+    return this.withFallback(
+      request,
+      () => this.primary.extractPayslip(request),
+      (req) => this.regex.extractPayslip(req),
+    );
   }
 
   async extractForm16(request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
-    return this.withFallback(request, 'form16', () => this.primary.extractForm16(request));
+    return this.withFallback(
+      request,
+      () => this.primary.extractForm16(request),
+      (req) => this.regex.extractForm16(req),
+    );
   }
 
   getMetadata() {
@@ -45,10 +65,17 @@ export class RegexFallbackExtractor implements LlmDocumentExtractor {
 
   private async withFallback<T>(
     request: ExtractionRequest,
-    kind: 'payslip' | 'form16',
-    primary: () => Promise<ExtractionResult<T>>,
+    primary: (req: ExtractionRequest) => Promise<ExtractionResult<T>>,
+    regex: (req: ExtractionRequest) => Promise<ExtractionResult<T>>,
   ): Promise<ExtractionResult<T>> {
-    const result = await primary();
+    // The primary (LLM + schema retry) never throws by contract, but a
+    // rejected promise would otherwise bypass the failure branch below.
+    let result: ExtractionResult<T>;
+    try {
+      result = await primary(request);
+    } catch (err) {
+      result = failureResult(err instanceof Error ? err.message : String(err));
+    }
 
     if (result.status === 'success') {
       return result;
@@ -56,18 +83,12 @@ export class RegexFallbackExtractor implements LlmDocumentExtractor {
 
     const fallbackModelId = `regex-fallback:${result.modelId}`;
     console.warn(
-      `[RegexFallbackExtractor] FALLBACK ACTIVATED for ${kind} document ${request.documentId}. ` +
+      `[RegexFallbackExtractor] FALLBACK ACTIVATED for document ${request.documentId} (${request.documentKind}). ` +
         `Primary extractor failed: ${result.error ?? 'unknown'}. ` +
         `Serving regex extraction. model_id will be recorded as "${fallbackModelId}".`,
     );
 
-    let fallbackResult: ExtractionResult<T>;
-    if (kind === 'payslip') {
-      fallbackResult = (await this.regex.extractPayslip(request)) as unknown as ExtractionResult<T>;
-    } else {
-      fallbackResult = (await this.regex.extractForm16(request)) as unknown as ExtractionResult<T>;
-    }
-
+    const fallbackResult = await regex(request);
     if (fallbackResult.status !== 'success') {
       return {
         ...result,

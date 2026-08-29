@@ -34,6 +34,42 @@ describe('checkForm16Arithmetic', () => {
     expect(findings).toHaveLength(0);
   });
 
+  it('returns no findings when the mismatch is at the 50 INR tolerance boundary', () => {
+    const ctx = {
+      assembly: { has_form16: true },
+      form16: {
+        gross_total_income: 547200,
+        exempt_allowances: 38400,
+        standard_deduction: 50000,
+        professional_tax: 2400,
+        net_taxable_salary: 456450, // diff exactly 50
+      },
+      payslip: null,
+      epfoHistory: null,
+    } as unknown as CheckContext;
+
+    const findings = checkForm16Arithmetic(ctx);
+    expect(findings).toHaveLength(0);
+  });
+
+  it('returns a high finding when the mismatch exceeds the 50 INR tolerance', () => {
+    const ctx = {
+      assembly: { has_form16: true },
+      form16: {
+        gross_total_income: 547200,
+        exempt_allowances: 38400,
+        standard_deduction: 50000,
+        professional_tax: 2400,
+        net_taxable_salary: 456451, // diff exactly 51
+      },
+      payslip: null,
+      epfoHistory: null,
+    } as unknown as CheckContext;
+
+    const findings = checkForm16Arithmetic(ctx);
+    expect(findings).toHaveLength(1);
+  });
+
   it('returns a high finding when net taxable salary is inconsistent', () => {
     const ctx = {
       assembly: { has_form16: true },
