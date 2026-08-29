@@ -10,7 +10,15 @@ export default async function CandidateConsentPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const apiUrl = process.env.API_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000';
+  const apiUrl =
+    process.env.API_BASE_URL ||
+    process.env.APP_BASE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000');
 
   const res = await fetch(`${apiUrl}/api/public/${token}`, { cache: 'no-store' });
 
