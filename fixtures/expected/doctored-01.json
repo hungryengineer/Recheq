@@ -13,6 +13,26 @@
       "source_document_ids": []
     },
     {
+      "rule_id": "form16-arithmetic",
+      "severity": "high",
+      "status": "not_assessed",
+      "title": "Form-16 Arithmetic Unverified",
+      "explanation": "Form-16 extraction data is missing.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    },
+    {
+      "rule_id": "form16-identifier-format",
+      "severity": "medium",
+      "status": "not_assessed",
+      "title": "Form-16 Identifier Format Unverified",
+      "explanation": "Form-16 extraction data is missing.",
+      "expected": null,
+      "observed": null,
+      "source_document_ids": []
+    },
+    {
       "rule_id": "form16-reconciles-payslip",
       "severity": "high",
       "status": "not_assessed",

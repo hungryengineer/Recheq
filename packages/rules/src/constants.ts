@@ -28,3 +28,6 @@ export const CTC_PLAUSIBILITY_TOLERANCE = 0.1;
 
 /** Form 16 vs payslip reconciliation tolerance (absolute, INR) */
 export const FORM16_RECONCILIATION_TOLERANCE = 500;
+
+/** Form 16 Part B arithmetic tolerance (absolute, INR) */
+export const FORM16_ARITHMETIC_TOLERANCE = 50;
