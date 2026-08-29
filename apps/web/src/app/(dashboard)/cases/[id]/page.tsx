@@ -47,6 +47,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
   let caseRecord: CaseRecord | null = null;
   let findings: FindingRecord[] = [];
   let notAssessed: string[] = [];
+  let origins: string[] = [];
 
   try {
     const data = await getCaseDetails(id);
@@ -56,6 +57,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
     caseRecord = data.caseRecord;
     findings = data.findings;
     notAssessed = data.notAssessed;
+    origins = data.origins;
   } catch {
     return (
       <div className="py-20 text-center animate-fade-in">
@@ -77,8 +79,6 @@ export default async function CaseDetailsPage({ params }: PageProps) {
       </div>
     );
   }
-
-  const origins: string[] = [];
 
   const highCount = findings.filter((f) => f.severity === 'high').length;
   const mediumCount = findings.filter((f) => f.severity === 'medium').length;
@@ -123,7 +123,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
             </span>
             {caseRecord.risk_score !== null && (
               <span className="text-[10px] font-mono text-[var(--color-fg-subtle)]">
-                40x{highCount} high + 15x{mediumCount} med
+                {caseRecord.risk_score === 100 && findings.length === 0
+                  ? 'Unverified Default'
+                  : `40x${highCount} high + 15x${mediumCount} med`}
               </span>
             )}
           </div>

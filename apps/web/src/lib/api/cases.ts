@@ -1,6 +1,9 @@
 import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
 import { getCase, listCases, getFindingsByCase } from '@tieout/api/web';
 import { getCaseDeps, getDevOrgId, getDb } from './db';
+import { listDocumentKindsByCase } from '@tieout/api/web';
+import { schema } from '@tieout/api/src/db/client.js';
+import { eq } from 'drizzle-orm';
 
 import { cookies } from 'next/headers';
 import { verifyToken } from '@tieout/api/src/security/jwt.js';
@@ -24,7 +27,13 @@ export async function getCases(): Promise<CaseSummary[]> {
 }
 
 export type CaseDetailsResult =
-  | { found: true; caseRecord: CaseRecord; findings: FindingRecord[]; notAssessed: string[] }
+  | {
+      found: true;
+      caseRecord: CaseRecord;
+      findings: FindingRecord[];
+      notAssessed: string[];
+      origins: string[];
+    }
   | { found: false };
 
 export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
@@ -34,17 +43,32 @@ export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
 
     // Load findings from the findings table so the discrepancy ledger is
     // populated for seeded demo cases (BE-15).
-    const allFindings = await getFindingsByCase(getDb(), id);
+    const db = getDb();
+    const allFindings = await getFindingsByCase(db, id);
     const findings = allFindings.filter((f) => f.status !== 'not_assessed');
     const notAssessed = allFindings
       .filter((f) => f.status === 'not_assessed')
       .map((f) => f.rule_id);
+
+    const originsSet = new Set<string>();
+    const docKinds = await listDocumentKindsByCase(db, id);
+    docKinds.forEach((k) => originsSet.add(k === 'form_16' ? 'form16' : k));
+
+    const epfoRecords = await db
+      .select({ id: schema.epfoRecords.id })
+      .from(schema.epfoRecords)
+      .where(eq(schema.epfoRecords.case_id, id))
+      .limit(1);
+    if (epfoRecords.length > 0) {
+      originsSet.add('epfo');
+    }
 
     return {
       found: true,
       caseRecord,
       findings,
       notAssessed,
+      origins: Array.from(originsSet),
     };
   } catch (err: unknown) {
     // Map not-found / foreign-org errors to a clean not-found result.
