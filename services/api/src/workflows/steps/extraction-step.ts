@@ -3,11 +3,7 @@
 import { type VerificationStep, type StepResult, RecoverableWorkflowError } from '@tieout/workflow';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 
-import {
-  createExtraction,
-  updateExtractionSuccess,
-  updateExtractionFailure,
-} from '../../extraction/extraction-service.js';
+
 import {
   ExtractionFailureType,
   ExtractionError,
@@ -84,7 +80,7 @@ export class ExtractionStep implements VerificationStep<
             const kind = doc.kind;
 
             // Create pending extraction
-            extId = await createExtraction(deps.db, doc.id, {
+            extId = await deps.db.createExtraction(doc.id, {
               modelId: 'default',
               schemaVersion: kind === 'payslip' ? 'payslip-v1' : 'form16-v1',
             });
@@ -120,10 +116,10 @@ export class ExtractionStep implements VerificationStep<
                 : await deps.extractor.extractForm16(req);
 
             if (result.status === 'success') {
-              await updateExtractionSuccess(deps.db, extId, result.data, result.usage);
+              await deps.db.updateExtractionSuccess(extId, result.data, result.usage);
               extractedCount++;
             } else {
-              await updateExtractionFailure(deps.db, extId, result.error);
+              await deps.db.updateExtractionFailure(extId, result.error);
               failedCount++;
             }
           } catch (err) {
@@ -135,7 +131,7 @@ export class ExtractionStep implements VerificationStep<
             ) {
               if (extId) {
                 try {
-                  await updateExtractionFailure(deps.db, extId, msg);
+                  await deps.db.updateExtractionFailure(extId, msg);
                 } catch (dbErr) {
                   console.error(
                     `Failed to record transient extraction failure for doc ${doc.id}:`,
@@ -153,7 +149,7 @@ export class ExtractionStep implements VerificationStep<
             failedCount++;
             if (extId) {
               try {
-                await updateExtractionFailure(deps.db, extId, msg);
+                await deps.db.updateExtractionFailure(extId, msg);
               } catch (dbErr) {
                 console.error(`Failed to record extraction failure for doc ${doc.id}:`, dbErr);
               }

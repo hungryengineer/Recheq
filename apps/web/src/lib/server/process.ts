@@ -17,15 +17,14 @@ export async function startProcessing(caseId: string) {
     service: 'async-worker',
   });
 
-  processCase(caseId, false, deps)
-    .then(() => {
-      console.log(`[Worker] Case ${caseId} processed successfully`);
-    })
-    .catch((err) => {
-      // Catastrophic failure outside the engine's own transactional fallback
-      // (e.g. dependency construction or DB unavailable). Never mark the case
-      // `withdrawn` here — withdrawal is a candidate action, not an error
-      // state; the case stays `processing` so a verifier can reprocess it.
-      console.error(`[Worker] Case ${caseId} processing failed:`, err);
-    });
+  try {
+    await processCase(caseId, false, deps);
+    console.log(`[Worker] Case ${caseId} processed successfully`);
+  } catch (err) {
+    // Catastrophic failure outside the engine's own transactional fallback
+    // (e.g. dependency construction or DB unavailable). Never mark the case
+    // `withdrawn` here — withdrawal is a candidate action, not an error
+    // state; the case stays `processing` so a verifier can reprocess it.
+    console.error(`[Worker] Case ${caseId} processing failed:`, err);
+  }
 }
