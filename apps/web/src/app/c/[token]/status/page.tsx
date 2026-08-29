@@ -1,15 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-import {
-  Loader2,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  ShieldCheck,
-  ShieldAlert,
-  ShieldQuestion,
-} from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 
 type StatusData = {
   status: string;
@@ -23,53 +15,6 @@ type StatusData = {
     completed_at?: string;
   }>;
 };
-
-function VerdictIcon({ verdict }: { verdict: string }) {
-  switch (verdict) {
-    case 'verified':
-    case 'verified_with_notes':
-      return <ShieldCheck className="w-12 h-12 text-emerald-400" />;
-    case 'needs_review':
-      return <ShieldQuestion className="w-12 h-12 text-amber-400" />;
-    case 'insufficient_evidence':
-      return <ShieldAlert className="w-12 h-12 text-red-400" />;
-    default:
-      return <ShieldQuestion className="w-12 h-12 text-blue-400" />;
-  }
-}
-
-function verdictLabel(verdict: string): string {
-  return verdict.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function verdictDescription(verdict: string): string {
-  switch (verdict) {
-    case 'verified':
-      return 'Your employment details have been successfully verified. No discrepancies were found.';
-    case 'verified_with_notes':
-      return 'Your employment details have been verified with minor observations noted.';
-    case 'needs_review':
-      return 'Your submission requires additional review by the HR team.';
-    case 'insufficient_evidence':
-      return 'We could not fully verify your details with the documents provided. HR may follow up for additional information.';
-    default:
-      return 'Your verification is being reviewed.';
-  }
-}
-
-function verdictColor(verdict: string): string {
-  switch (verdict) {
-    case 'verified':
-    case 'verified_with_notes':
-      return 'emerald';
-    case 'needs_review':
-      return 'amber';
-    case 'insufficient_evidence':
-      return 'red';
-    default:
-      return 'blue';
-  }
-}
 
 export default function CandidateStatusPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
@@ -142,8 +87,6 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
   const isProcessing = data.status === 'processing';
   const isComplete = data.status === 'complete';
 
-  // Determine verdict from steps or status
-  const triangulateStep = data.steps?.find((s) => s.id === 'rules.triangulate');
   // The status endpoint returns status at top level; verdict is derived from the case record
   // We read the entire response to detect if verdict data is available
 
