@@ -14,9 +14,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   try {
     const formData = await request.formData();
     const fileEntry = formData.get('file');
-    if (fileEntry instanceof File) {
+
+    const isFileLike = (val: unknown): val is File => {
+      if (val === null || typeof val !== 'object') return false;
+      const record = val as Record<string, unknown>;
+      return (
+        'name' in record &&
+        typeof record.name === 'string' &&
+        'size' in record &&
+        typeof record.size === 'number' &&
+        'arrayBuffer' in record &&
+        typeof record.arrayBuffer === 'function'
+      );
+    };
+
+    if (isFileLike(fileEntry)) {
       file = fileEntry;
     }
+
     kind = formData.get('kind') ?? null;
   } catch {
     return NextResponse.json({ success: false, message: 'Invalid request body' }, { status: 400 });

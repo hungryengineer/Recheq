@@ -49,9 +49,8 @@ export function createTokenVerifier(db: Database): TokenVerifier {
   return {
     verifyAndGetCaseId: async (rawToken, purpose) => {
       if (
-        rawToken === 'test-token' ||
-        rawToken.startsWith('tie_') ||
-        rawToken.startsWith('test-')
+        process.env.NODE_ENV !== 'production' &&
+        (rawToken === 'test-token' || rawToken.startsWith('tie_') || rawToken.startsWith('test-'))
       ) {
         // Mock token verification for E2E testing
         if (rawToken.startsWith('test-')) {

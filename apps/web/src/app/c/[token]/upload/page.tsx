@@ -13,7 +13,11 @@ type CaseData = {
   employment_start?: string;
   employment_end?: string;
   uan?: string;
+  consent_status?: string;
 };
+
+const FULL_CONSENT_TEXT =
+  'I hereby authorize Recheq and this employer to verify my employment history, including fetching records from EPFO using my UAN if provided. I understand my data will be retained for 180 days.';
 
 export default function CandidateUploadPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
@@ -52,9 +56,11 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [hasConsented, setHasConsented] = useState(false);
 
   const bothUploaded = payslipState === 'uploaded' && form16State === 'uploaded';
   const isStep1Valid =
+    hasConsented &&
     formData.candidate_name &&
     formData.employer_name &&
     formData.title &&
@@ -72,6 +78,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       })
       .then((data) => {
         setCaseData(data);
+        setHasConsented(data.consent_status === 'granted');
         setFormData({
           candidate_name: data.candidateName || '',
           employer_name: data.employerName || '',
@@ -126,7 +133,10 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       if (!res.ok) {
         if (res.status === 413) throw new Error('File too large. Max 10MB.');
         if (res.status === 415) throw new Error('Unsupported file type. Use PDF or image.');
-        throw new Error('Upload failed. Please try again.');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.error?.message || errorData.message || 'Upload failed. Please try again.',
+        );
       }
 
       setState('uploaded');
@@ -197,6 +207,41 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       setFormError(error.message || 'An unexpected error occurred');
       setIsSubmitting(false);
     }
+  };
+
+  const [isConsenting, setIsConsenting] = useState(false);
+
+  const handleStep1Continue = async () => {
+    if (caseData?.consent_status !== 'granted') {
+      if (isConsenting) return;
+      setIsConsenting(true);
+      setFormError('');
+      try {
+        const res = await fetch(`/api/public/${token}/consent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            consent_text: FULL_CONSENT_TEXT,
+            consent_version: 'v1.0',
+          }),
+        });
+
+        if (!res.ok && res.status !== 409) {
+          throw new Error('Failed to record consent');
+        }
+
+        if (caseData) {
+          setCaseData((prev) => ({ ...prev, consent_status: 'granted' }));
+        }
+      } catch (err) {
+        console.error(err);
+        setFormError('Failed to record consent. Please try again.');
+        setIsConsenting(false);
+        return;
+      }
+      setIsConsenting(false);
+    }
+    nextStep();
   };
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
@@ -494,6 +539,33 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                 </div>
               </div>
 
+              <div className="mb-8 p-5 rounded-xl border border-blue-500/30 bg-blue-500/5">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <div className="pt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={hasConsented}
+                      onChange={(e) => setHasConsented(e.target.checked)}
+                      disabled={caseData?.consent_status === 'granted'}
+                      className="w-5 h-5 rounded border-[#334155] bg-[#121826] text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="text-sm text-[#94A3B8]">
+                    <span className="text-white font-medium block mb-1">
+                      Declaration of Consent
+                    </span>
+                    {FULL_CONSENT_TEXT}
+                  </div>
+                </label>
+              </div>
+
+              {formError && (
+                <div className="mb-6 text-sm text-red-400 bg-red-400/10 p-4 rounded-xl border border-red-400/20 flex items-start gap-3">
+                  <span className="shrink-0">⚠️</span>
+                  <span>{formError}</span>
+                </div>
+              )}
+
               <div className="flex justify-between items-center border-t border-[#1E293B] pt-6">
                 <button
                   type="button"
@@ -504,7 +576,7 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
                 </button>
                 <button
                   type="button"
-                  onClick={nextStep}
+                  onClick={handleStep1Continue}
                   disabled={!isStep1Valid}
                   className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:shadow-none text-[15px] font-medium flex items-center gap-2"
                 >
