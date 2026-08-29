@@ -77,6 +77,11 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
         return res.json();
       })
       .then((data) => {
+        if (data.status !== 'awaiting_consent' && data.status !== 'awaiting_documents') {
+          router.replace(`/c/${token}/status`);
+          return;
+        }
+
         setCaseData(data);
         setHasConsented(data.consent_status === 'granted');
         setFormData({
