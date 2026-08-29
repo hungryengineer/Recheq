@@ -43,7 +43,14 @@ export async function processEmailDelivery(
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 
-    const appUrl = process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000';
+    const appUrl =
+      process.env['APP_BASE_URL'] ||
+      process.env['NEXT_PUBLIC_APP_URL'] ||
+      (process.env['VERCEL_PROJECT_PRODUCTION_URL']
+        ? `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`
+        : process.env['VERCEL_URL']
+          ? `https://${process.env['VERCEL_URL']}`
+          : 'http://localhost:3000');
     const rawLink = `${appUrl}/c/${encodeURIComponent(upload_token)}/upload`;
     const uploadLink = escapeHtml(rawLink);
     const safeCandidateName = escapeHtml(candidate_name);
