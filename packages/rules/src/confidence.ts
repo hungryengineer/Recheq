@@ -5,6 +5,19 @@ export interface DocumentConfidence {
   penalties: string[];
 }
 
+/**
+ * Coerce a raw extraction value into a finite number.
+ *
+ * Guards against NaN/Infinity leaking through from extractors/persistence
+ * (JSON turns NaN into null, but a malformed provider could still surface a
+ * non-finite number before the DB round-trip). Non-finite and missing values
+ * are treated identically: null.
+ */
+function num(value: number | null | undefined): number | null {
+  if (typeof value !== 'number') return null;
+  return Number.isFinite(value) ? value : null;
+}
+
 export function calculatePayslipConfidence(ctx: CheckContext): DocumentConfidence {
   let score = 100;
   const penalties: string[] = [];
@@ -13,6 +26,10 @@ export function calculatePayslipConfidence(ctx: CheckContext): DocumentConfidenc
   if (!payslip) {
     return { score: 0, penalties: ['Payslip extraction missing'] };
   }
+
+  const gross = num(payslip.gross_salary);
+  const net = num(payslip.net_salary);
+  const totalDeductions = num(payslip.total_deductions);
 
   // 1. Completeness Checks
   if (!payslip.pan) {
@@ -27,25 +44,31 @@ export function calculatePayslipConfidence(ctx: CheckContext): DocumentConfidenc
     score -= 10;
     penalties.push('Missing Employer Name');
   }
-  if (payslip.gross_salary === null) {
+  if (gross === null) {
     score -= 10;
     penalties.push('Missing Gross Salary');
   }
-  if (payslip.net_salary === null) {
+  if (net === null) {
     score -= 10;
     penalties.push('Missing Net Salary');
   }
 
-  // 2. Math Consistency Checks
+  // 2. Plausibility Checks
+  if (gross !== null && gross < 0) {
+    score -= 10;
+    penalties.push('Gross salary is negative');
+  }
+  if (net !== null && net < 0) {
+    score -= 10;
+    penalties.push('Net salary is negative');
+  }
+
+  // 3. Math Consistency Checks
   // Basic + HRA + Allowances (Gross) - Deductions = Net
-  if (
-    payslip.gross_salary !== null &&
-    payslip.total_deductions !== null &&
-    payslip.net_salary !== null
-  ) {
-    const mathDelta = Math.abs(
-      payslip.gross_salary - payslip.total_deductions - payslip.net_salary,
-    );
+  // Skipped when any involved amount is implausible (negative or non-finite);
+  // those are already penalized in the plausibility pass above.
+  if (gross !== null && gross >= 0 && totalDeductions !== null && net !== null && net >= 0) {
+    const mathDelta = Math.abs(gross - totalDeductions - net);
     if (mathDelta > 10) {
       // allow a small rounding threshold
       score -= 30;
@@ -53,7 +76,7 @@ export function calculatePayslipConfidence(ctx: CheckContext): DocumentConfidenc
     }
   }
 
-  // 3. Forensics Integrity Check
+  // 4. Forensics Integrity Check
   if (forensics && forensics.length > 0) {
     for (const f of forensics) {
       if (f.font_runs && f.font_runs.anomalous_characters > 0) {
@@ -79,6 +102,12 @@ export function calculateForm16Confidence(ctx: CheckContext): DocumentConfidence
     return { score: 0, penalties: ['Form-16 extraction missing'] };
   }
 
+  const exemptAllowances = num(form16.exempt_allowances);
+  const standardDeduction = num(form16.standard_deduction);
+  const professionalTax = num(form16.professional_tax);
+  const grossTotalIncome = num(form16.gross_total_income);
+  const netTaxableSalary = num(form16.net_taxable_salary);
+
   // 1. Completeness Checks
   if (!form16.employee_pan) {
     score -= 10;
@@ -88,30 +117,42 @@ export function calculateForm16Confidence(ctx: CheckContext): DocumentConfidence
     score -= 10;
     penalties.push('Missing Employer Name');
   }
-  if (form16.gross_total_income === null) {
+  if (grossTotalIncome === null) {
     score -= 20;
     penalties.push('Missing Gross Income');
   }
-  if (form16.net_taxable_salary === null) {
+  if (netTaxableSalary === null) {
     score -= 10;
     penalties.push('Missing Net Taxable Salary');
   }
 
-  // 2. Math Consistency
-  if (
-    form16.gross_total_income !== null &&
-    form16.exempt_allowances !== null &&
-    form16.standard_deduction !== null &&
-    form16.professional_tax !== null &&
-    form16.net_taxable_salary !== null
-  ) {
-    const calculatedNet =
-      form16.gross_total_income -
-      form16.exempt_allowances -
-      form16.standard_deduction -
-      form16.professional_tax;
+  // 2. Plausibility Checks
+  const shownComponents: Array<[number, string]> = [];
+  if (grossTotalIncome !== null) shownComponents.push([grossTotalIncome, 'Gross income']);
+  if (netTaxableSalary !== null) shownComponents.push([netTaxableSalary, 'Net taxable salary']);
+  for (const [amount, label] of shownComponents) {
+    if (amount < 0) {
+      score -= 10;
+      penalties.push(`${label} is negative`);
+    }
+  }
 
-    const delta = Math.abs(calculatedNet - form16.net_taxable_salary);
+  // 3. Math Consistency
+  if (
+    grossTotalIncome !== null &&
+    grossTotalIncome >= 0 &&
+    exemptAllowances !== null &&
+    exemptAllowances >= 0 &&
+    standardDeduction !== null &&
+    standardDeduction >= 0 &&
+    professionalTax !== null &&
+    professionalTax >= 0 &&
+    netTaxableSalary !== null &&
+    netTaxableSalary >= 0
+  ) {
+    const calculatedNet = grossTotalIncome - exemptAllowances - standardDeduction - professionalTax;
+
+    const delta = Math.abs(calculatedNet - netTaxableSalary);
     if (delta > 50) {
       // allow some threshold for rounding/other minor deductions
       score -= 30;
@@ -119,7 +160,7 @@ export function calculateForm16Confidence(ctx: CheckContext): DocumentConfidence
     }
   }
 
-  // 3. Forensics Integrity Check
+  // 4. Forensics Integrity Check
   if (forensics && forensics.length > 0) {
     for (const f of forensics) {
       if (f.font_runs && f.font_runs.anomalous_characters > 0) {

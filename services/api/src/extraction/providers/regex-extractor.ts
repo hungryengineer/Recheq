@@ -9,7 +9,31 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
   readonly provider = 'regex-fast-parser';
   readonly supportsStreaming = false;
 
+  private refuse<T>(error: string): ExtractionResult<T> {
+    const base = {
+      rawOutput: error,
+      modelId: 'regex',
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      extractionDurationMs: 0,
+      retryCount: 0,
+    };
+    return { status: 'failure', error, ...base };
+  }
+
+  private assertTextExtractable(request: ExtractionRequest): string | null {
+    if (request.mimeType.startsWith('image/')) {
+      return 'Regex extraction does not support image documents; requires a vision-capable extractor';
+    }
+    if (isBinaryContent(request.documentContent)) {
+      return 'Document content does not appear to be text and cannot be regex-extracted';
+    }
+    return null;
+  }
+
   async extractPayslip(request: ExtractionRequest): Promise<ExtractionResult<PayslipExtraction>> {
+    const refusal = this.assertTextExtractable(request);
+    if (refusal) return this.refuse(refusal);
+
     const text = request.documentContent;
     const startTime = Date.now();
 
@@ -86,6 +110,9 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
   }
 
   async extractForm16(request: ExtractionRequest): Promise<ExtractionResult<Form16Extraction>> {
+    const refusal = this.assertTextExtractable(request);
+    if (refusal) return this.refuse<Form16Extraction>(refusal);
+
     const text = request.documentContent;
     const startTime = Date.now();
 
@@ -159,4 +186,15 @@ export class RegexDocumentExtractor implements LlmDocumentExtractor {
   async isAvailable(): Promise<boolean> {
     return true;
   }
+}
+
+function isBinaryContent(text: string): boolean {
+  if (text.includes('\u0000')) return true;
+  const sampleLength = Math.min(text.length, 4096);
+  let controlChars = 0;
+  for (let i = 0; i < sampleLength; i++) {
+    const code = text.charCodeAt(i);
+    if (code === 0xfffd || code < 9 || (code > 13 && code < 32)) controlChars++;
+  }
+  return controlChars / sampleLength > 0.05;
 }

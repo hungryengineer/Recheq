@@ -36,7 +36,12 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
         docId: string,
         metadata: { modelId: string; schemaVersion: string },
       ) => Promise<string>;
-      updateExtractionSuccess: (id: string, data: unknown, usage?: unknown) => Promise<void>;
+      updateExtractionSuccess: (
+        id: string,
+        data: unknown,
+        usage?: unknown,
+        modelId?: string,
+      ) => Promise<void>;
       updateExtractionFailure: (id: string, error: string, usage?: unknown) => Promise<void>;
       getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
       transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;

@@ -37,8 +37,17 @@ export async function assembleEvidence(
   // 1. Fetch all documents for the case
   const docs = await deps.db.getDocumentsForCase(caseId);
 
+  const toSortTime = (t: Date | string | null | undefined): number => {
+    const ms = t instanceof Date ? t.getTime() : typeof t === 'string' ? Date.parse(t) : Number.NaN;
+    if (Number.isNaN(ms)) {
+      console.warn('[evidence] Document is missing uploaded_at; sorting it as oldest');
+      return 0;
+    }
+    return ms;
+  };
+
   // Sort descending by uploaded_at to get the newest document of each kind
-  docs.sort((a, b) => b.uploaded_at.getTime() - a.uploaded_at.getTime());
+  docs.sort((a, b) => toSortTime(b.uploaded_at) - toSortTime(a.uploaded_at));
 
   // Wait, if a document was uploaded but extraction failed, the newest might not have a successful extraction.
   // We should ideally fetch successful extractions for ALL documents of that case, and then match the newest document that HAS a successful extraction.
