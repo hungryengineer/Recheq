@@ -3,7 +3,6 @@
 import { type VerificationStep, type StepResult, RecoverableWorkflowError } from '@tieout/workflow';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 
-
 import {
   ExtractionFailureType,
   ExtractionError,

@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-import { Loader2, CheckCircle, AlertTriangle, Clock, ShieldCheck, ShieldAlert, ShieldQuestion } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
+} from 'lucide-react';
 
 type StatusData = {
   status: string;
@@ -254,9 +262,7 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
             <p className="text-[#94A3B8]">
               Your documents have been received and are queued for processing.
             </p>
-            <p className="text-xs text-[#64748B] mt-6">
-              This page refreshes automatically.
-            </p>
+            <p className="text-xs text-[#64748B] mt-6">This page refreshes automatically.</p>
           </div>
         )}
       </div>
