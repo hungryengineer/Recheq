@@ -47,7 +47,7 @@ export interface ConsentServiceDeps {
       status: 'granted';
       consent_text: string;
       consent_version: string;
-      granted_at: string;
+      granted_at: Date;
       ip_address: string | null;
       user_agent: string | null;
       withdrawn_at: null;
@@ -134,7 +134,7 @@ export async function grantConsent(
   // Validate state machine transition — throws INVALID_TRANSITION if not allowed
   const newStatus = transitionCaseStatus(caseRecord.status, 'consent_granted');
 
-  const grantedAt = new Date().toISOString();
+  const grantedAt = new Date();
 
   // Create consent record
   const consent = await deps.db.createConsent({
