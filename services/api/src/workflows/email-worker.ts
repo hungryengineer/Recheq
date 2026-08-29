@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type PgBoss from 'pg-boss';
 import nodemailer from 'nodemailer';
+import { resolveCanonicalAppUrl } from '@tieout/config';
 
 const EmailDeliveryPayload = z.object({
   to_email: z.string().email(),
@@ -43,14 +44,15 @@ export async function processEmailDelivery(
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 
-    const appUrl =
-      process.env['APP_BASE_URL'] ||
-      process.env['NEXT_PUBLIC_APP_URL'] ||
-      (process.env['VERCEL_PROJECT_PRODUCTION_URL']
-        ? `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`
-        : process.env['VERCEL_URL']
-          ? `https://${process.env['VERCEL_URL']}`
-          : 'http://localhost:3000');
+    const { url: appUrl, source, isLocalhost } = resolveCanonicalAppUrl(process.env);
+
+    if (isLocalhost) {
+      console.warn(
+        `[Email Worker] ⚠️ Building candidate link from a localhost base URL (source=${source}). ` +
+          'This link will not be reachable by candidates. Set CANDIDATE_PORTAL_URL or APP_BASE_URL to a public URL.',
+      );
+    }
+
     const rawLink = `${appUrl}/c/${encodeURIComponent(upload_token)}/upload`;
     const uploadLink = escapeHtml(rawLink);
     const safeCandidateName = escapeHtml(candidate_name);
