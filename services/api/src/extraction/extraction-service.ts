@@ -37,6 +37,7 @@ export async function updateExtractionSuccess<T>(
   extractionId: string,
   data: T,
   tokenUsage?: TokenUsage,
+  modelId?: string,
 ): Promise<void> {
   await db
     .update(extractions)
@@ -44,6 +45,7 @@ export async function updateExtractionSuccess<T>(
       status: 'completed',
       extracted_data: data,
       token_usage: tokenUsage,
+      ...(modelId ? { model_id: modelId } : {}),
       completed_at: new Date(),
     })
     .where(eq(extractions.id, extractionId));

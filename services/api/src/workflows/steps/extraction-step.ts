@@ -8,6 +8,7 @@ import {
   ExtractionError,
   ProviderUnavailableError,
 } from '../../extraction/llm-document-extractor.js';
+import { sanitizeExtractedData, sanitizeErrorMessage } from '../../extraction/payload-sanitize.js';
 
 import type { CaseStepContext } from '../case-processing.js';
 
@@ -85,20 +86,38 @@ export class ExtractionStep implements VerificationStep<
             });
 
             const docContent = await deps.db.getDocumentContent(doc.id);
+            const extractorMetadata = deps.extractor.getMetadata();
+
+            const isImage = docContent.mimeType.startsWith('image/');
+
+            if (isImage && !extractorMetadata.supportsImages) {
+              throw new Error(
+                'Image documents require a vision-capable extraction provider; the current extractor does not support images',
+              );
+            }
 
             let finalContent: string;
             let finalMime = docContent.mimeType;
 
-            if (deps.extractor.provider === 'gemini') {
+            if (isImage) {
               finalContent = docContent.content.toString('base64');
+            } else if (docContent.mimeType === 'application/pdf') {
+              const parsed = await pdfParse(docContent.content);
+              finalContent = parsed.text;
+              finalMime = 'text/plain';
             } else {
-              if (docContent.mimeType === 'application/pdf') {
-                const parsed = await pdfParse(docContent.content);
-                finalContent = parsed.text;
-                finalMime = 'text/plain';
-              } else {
-                finalContent = docContent.content.toString('utf8');
-              }
+              finalContent = docContent.content.toString('utf8');
+            }
+
+            if (finalContent.trim().length === 0) {
+              throw new Error('No readable text content could be extracted from the document');
+            }
+
+            if (finalContent.length > extractorMetadata.maxContentSize) {
+              throw new Error(
+                `Document content (${finalContent.length} characters) exceeds the provider's ` +
+                  `${extractorMetadata.maxContentSize} character inline limit`,
+              );
             }
 
             const req = {
@@ -115,14 +134,29 @@ export class ExtractionStep implements VerificationStep<
                 : await deps.extractor.extractForm16(req);
 
             if (result.status === 'success') {
-              await deps.db.updateExtractionSuccess(extId, result.data, result.usage);
+              try {
+                await deps.db.updateExtractionSuccess(
+                  extId,
+                  sanitizeExtractedData(result.data),
+                  result.usage,
+                  result.modelId,
+                );
+              } catch (err) {
+                const writeMsg = `Failed to persist extraction result: ${
+                  err instanceof Error ? err.message : String(err)
+                }`;
+                console.error(`Failed to persist extraction for doc ${doc.id}:`, err);
+                await deps.db.updateExtractionFailure(extId, sanitizeErrorMessage(writeMsg));
+                failedCount++;
+                return;
+              }
               extractedCount++;
             } else {
-              await deps.db.updateExtractionFailure(extId, result.error);
+              await deps.db.updateExtractionFailure(extId, sanitizeErrorMessage(result.error));
               failedCount++;
             }
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
             if (
               err instanceof ProviderUnavailableError ||
               (err instanceof ExtractionError &&

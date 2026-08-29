@@ -194,13 +194,14 @@ export const repository = {
       .returning({ id: schema.extractions.id });
     return result.id;
   },
-  updateExtractionSuccess: async (id: string, data: unknown, usage: unknown) => {
+  updateExtractionSuccess: async (id: string, data: unknown, usage: unknown, modelId?: string) => {
     await db
       .update(schema.extractions)
       .set({
         status: 'success',
         extracted_data: data,
         token_usage: usage,
+        ...(modelId ? { model_id: modelId } : {}),
       })
       .where(eq(schema.extractions.id, id));
   },
