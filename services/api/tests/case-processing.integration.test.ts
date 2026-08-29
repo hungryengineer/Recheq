@@ -40,6 +40,12 @@ describe('Case Processing Orchestration', () => {
       extractor: {
         extractPayslip: vi.fn().mockResolvedValue({ data: {}, usage: {} }),
         extractForm16: vi.fn().mockResolvedValue({ data: {}, usage: {} }),
+        getMetadata: vi.fn().mockReturnValue({
+          maxContentSize: 20 * 1024 * 1024,
+          supportsImages: false,
+          supportsPdfText: true,
+          costPer1kTokens: 0,
+        }),
       } as unknown as CaseProcessingDeps['extractor'],
     };
 
@@ -79,5 +85,57 @@ describe('Case Processing Orchestration', () => {
     await expect(processCase('case-1', false, deps)).rejects.toThrow(
       'Cannot process a withdrawn case.',
     );
+  });
+
+  it('records a clean failure when an image document hits a non-vision extractor', async () => {
+    const updateExtractionFailureMock = vi.fn().mockResolvedValue(undefined);
+    const deps: CaseProcessingDeps = {
+      db: {
+        getCaseById: vi.fn().mockResolvedValue({ id: 'case-1', uan: '1234', status: 'processing' }),
+        getConsentByCaseId: vi.fn().mockResolvedValue({ id: 'consent-1' }),
+        getDocumentsForCase: vi.fn().mockResolvedValue([{ id: 'doc-1', kind: 'form_16' }]),
+        getSuccessfulExtractions: vi.fn().mockResolvedValue([]),
+        getDocumentContent: vi.fn().mockResolvedValue({
+          content: Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+          mimeType: 'image/jpeg',
+        }),
+        createExtraction: vi.fn().mockResolvedValue('ext-1'),
+        updateExtractionSuccess: vi.fn().mockResolvedValue(undefined),
+        updateExtractionFailure: updateExtractionFailureMock,
+        getCompletedEpfoRecords: vi.fn().mockResolvedValue([]),
+        getCompletedForensics: vi.fn().mockResolvedValue([]),
+        createPendingRecord: vi.fn().mockResolvedValue('epfo-1'),
+        updateRecordSuccess: vi.fn().mockResolvedValue(undefined),
+        updateRecordFailure: vi.fn().mockResolvedValue(undefined),
+        replaceFindings: vi.fn().mockResolvedValue(undefined),
+        updateCaseStatusAndVerdict: vi.fn().mockResolvedValue(undefined),
+        transaction: vi.fn(async (cb) => cb({})),
+      } as unknown as CaseProcessingDeps['db'],
+      audit: {
+        appendEvent: vi.fn().mockResolvedValue({}),
+      } as unknown as CaseProcessingDeps['audit'],
+      epfoProvider: {
+        fetchEmploymentHistory: vi.fn().mockResolvedValue({}),
+      } as unknown as CaseProcessingDeps['epfoProvider'],
+      extractor: {
+        extractForm16: vi.fn().mockResolvedValue({ status: 'success', data: {} }),
+        getMetadata: vi.fn().mockReturnValue({
+          maxContentSize: 20 * 1024 * 1024,
+          supportsImages: false,
+          supportsPdfText: true,
+          costPer1kTokens: 0,
+        }),
+      } as unknown as CaseProcessingDeps['extractor'],
+    };
+
+    const processPromise = processCase('case-1', false, deps);
+    await expect(processPromise).resolves.toBeUndefined();
+
+    expect(updateExtractionFailureMock).toHaveBeenCalledWith(
+      'ext-1',
+      expect.stringContaining('does not support images'),
+    );
+    expect(deps.db.replaceFindings).toHaveBeenCalled();
+    expect(deps.db.updateCaseStatusAndVerdict).toHaveBeenCalled();
   });
 });
