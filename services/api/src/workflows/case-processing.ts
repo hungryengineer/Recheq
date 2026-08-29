@@ -32,6 +32,12 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
       createPendingRecord: (caseId: string, consentId: string, uan: string) => Promise<string>;
       updateRecordSuccess: (id: string, history: EpfoHistory) => Promise<void>;
       updateRecordFailure: (id: string, error: string) => Promise<void>;
+      createExtraction: (
+        docId: string,
+        metadata: { modelId: string; schemaVersion: string },
+      ) => Promise<string>;
+      updateExtractionSuccess: (id: string, data: unknown, usage?: unknown) => Promise<void>;
+      updateExtractionFailure: (id: string, error: string, usage?: unknown) => Promise<void>;
       getDocumentContent: (documentId: string) => Promise<{ content: string; mimeType: string }>;
       transaction: <T>(cb: (tx: unknown) => Promise<T>) => Promise<T>;
     };
