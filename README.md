@@ -1,4 +1,4 @@
-# 🔍 Recheq (formerly Tieout)
+# 🔍 Recheq
 
 > **Next-Generation, Deterministic Background Verification Platform**
 
