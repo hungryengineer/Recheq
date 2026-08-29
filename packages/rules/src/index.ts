@@ -10,6 +10,7 @@ export {
   PF_RATE_TOLERANCE,
   CTC_PLAUSIBILITY_TOLERANCE,
   FORM16_RECONCILIATION_TOLERANCE,
+  FORM16_ARITHMETIC_TOLERANCE,
 } from './constants.js';
 
 export { calculateRiskScore, getScoreBreakdown, type ScorableFinding } from './score.js';

@@ -16,7 +16,7 @@ import { db } from './db';
 import { AuditService } from '@tieout/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js';
 import { FixtureEpfoProvider } from '@tieout/api/src/epfo/fixture-epfo-provider.js';
-import { RegexDocumentExtractor } from '@tieout/api/src/extraction/providers/regex-extractor.js';
+import { createProductionExtractor } from '@tieout/api/src/extraction/extractor-factory.js';
 
 import { createTokenVerifier } from '@tieout/api/src/db/token-deps.js';
 
@@ -29,7 +29,7 @@ export function buildDeps(): WebAppDeps {
       db: repository,
       audit: auditService,
       epfoProvider: new FixtureEpfoProvider(),
-      extractor: new RegexDocumentExtractor(),
+      extractor: createProductionExtractor(process.env),
       tokenVerifier,
     } as unknown as WebAppDeps;
   }
