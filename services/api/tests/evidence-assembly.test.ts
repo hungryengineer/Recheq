@@ -35,9 +35,9 @@ describe('Evidence Assembly Service with Dependencies', () => {
     const dbMock = {
       getCaseById: vi.fn().mockResolvedValue({ claimed_ctc: '1200000' }),
       getDocumentsForCase: vi.fn().mockResolvedValue([
-        { id: 'doc-old-payslip', kind: 'payslip', created_at: oldDate },
-        { id: 'doc-new-payslip', kind: 'payslip', created_at: newDate },
-        { id: 'doc-form16', kind: 'form_16', created_at: newDate },
+        { id: 'doc-old-payslip', kind: 'payslip', uploaded_at: oldDate },
+        { id: 'doc-new-payslip', kind: 'payslip', uploaded_at: newDate },
+        { id: 'doc-form16', kind: 'form_16', uploaded_at: newDate },
       ]),
       getSuccessfulExtractions: vi.fn().mockResolvedValue([
         // Both payslips have extractions, but doc-new-payslip is newer
@@ -69,8 +69,8 @@ describe('Evidence Assembly Service with Dependencies', () => {
     const dbMock = {
       getCaseById: vi.fn().mockResolvedValue({ claimed_ctc: '1200000' }),
       getDocumentsForCase: vi.fn().mockResolvedValue([
-        { id: 'doc-old-payslip', kind: 'payslip', created_at: oldDate },
-        { id: 'doc-new-payslip', kind: 'payslip', created_at: newDate },
+        { id: 'doc-old-payslip', kind: 'payslip', uploaded_at: oldDate },
+        { id: 'doc-new-payslip', kind: 'payslip', uploaded_at: newDate },
       ]),
       getSuccessfulExtractions: vi.fn().mockResolvedValue([
         // Only the old payslip has a successful extraction
