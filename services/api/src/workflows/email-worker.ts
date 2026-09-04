@@ -8,6 +8,7 @@ const EmailDeliveryPayload = z.object({
   candidate_name: z.string(),
   employer_name: z.string(),
   upload_token: z.string(),
+  base_url: z.string().url().optional(),
 });
 
 type EmailDeliveryJob = z.infer<typeof EmailDeliveryPayload>;
@@ -27,7 +28,7 @@ export async function processEmailDelivery(
       throw new Error('Invalid email delivery payload');
     }
 
-    const { to_email, candidate_name, employer_name, upload_token } = parsed.data;
+    const { to_email, candidate_name, employer_name, upload_token, base_url } = parsed.data;
 
     const user = process.env['GMAIL_USER'];
     const pass = process.env['GMAIL_APP_PASSWORD'];
@@ -44,13 +45,20 @@ export async function processEmailDelivery(
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 
-    const { url: appUrl, source, isLocalhost } = resolveCanonicalAppUrl(process.env);
-
-    if (isLocalhost) {
-      console.warn(
-        `[Email Worker] ⚠️ Building candidate link from a localhost base URL (source=${source}). ` +
-          'This link will not be reachable by candidates. Set CANDIDATE_PORTAL_URL or APP_BASE_URL to a public URL.',
-      );
+    // Prefer the base_url baked into the job payload at creation time.
+    // Fall back to runtime resolution only for legacy jobs without base_url.
+    let appUrl: string;
+    if (base_url) {
+      appUrl = base_url.replace(/\/+$/, '');
+    } else {
+      const resolved = resolveCanonicalAppUrl(process.env);
+      appUrl = resolved.url;
+      if (resolved.isLocalhost) {
+        console.warn(
+          `[Email Worker] ⚠️ Building candidate link from a localhost base URL (source=${resolved.source}). ` +
+            'This link will not be reachable by candidates. Set CANDIDATE_PORTAL_URL or APP_BASE_URL to a public URL.',
+        );
+      }
     }
 
     const rawLink = `${appUrl}/c/${encodeURIComponent(upload_token)}/upload`;

@@ -8,6 +8,7 @@ import {
 import crypto from 'node:crypto';
 import { publishJob } from '../../workflows/pgboss.js';
 import { validationError, notFoundError, conflictError } from '../../http/errors.js';
+import { resolveCanonicalAppUrl } from '@tieout/config';
 import type { Database } from '../../db/client.js';
 
 function stripUndefined<T extends Record<string, unknown>>(
@@ -135,12 +136,14 @@ export async function createCase(
         expires_at: expiresAt,
       });
 
+      const { url: baseUrl } = resolveCanonicalAppUrl(process.env);
       outbox.push(async () => {
         await publishJob('EMAIL_DELIVERY', {
           to_email: record.candidate_email,
           candidate_name: record.candidate_name,
           employer_name: record.employer_name,
           upload_token: rawToken,
+          base_url: baseUrl,
         });
       });
     }
