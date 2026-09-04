@@ -92,6 +92,10 @@ export function resolveCanonicalAppUrl(env: Record<string, string | undefined>):
         : undefined,
     ],
     ['VERCEL_URL', env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined],
+    [
+      'PRODUCTION_FALLBACK',
+      env.NODE_ENV === 'production' ? 'https://recheq-web.vercel.app' : undefined,
+    ],
   ];
 
   for (const [source, raw] of candidates) {
