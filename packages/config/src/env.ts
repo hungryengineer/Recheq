@@ -94,7 +94,7 @@ export function resolveCanonicalAppUrl(env: Record<string, string | undefined>):
     ['VERCEL_URL', env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined],
     [
       'PRODUCTION_FALLBACK',
-      env.NODE_ENV === 'production' ? 'https://recheq-web.vercel.app' : undefined,
+      env.NODE_ENV !== 'development' ? 'https://recheq-web.vercel.app' : undefined,
     ],
   ];
 
@@ -104,6 +104,13 @@ export function resolveCanonicalAppUrl(env: Record<string, string | undefined>):
       const parsed = new URL(raw);
       const host = parsed.hostname.toLowerCase();
       const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+
+      // Prevent returning a localhost URL if we are in production
+      // This protects against copy-pasted .env files with localhost values
+      if (isLocalhost && env.NODE_ENV !== 'development') {
+        continue;
+      }
+
       return {
         url: parsed.toString().replace(/\/+$/, ''),
         source,
@@ -114,5 +121,9 @@ export function resolveCanonicalAppUrl(env: Record<string, string | undefined>):
     }
   }
 
-  return { url: 'http://localhost:3000', source: 'default', isLocalhost: true };
+  return {
+    url: env.NODE_ENV !== 'development' ? 'https://recheq-web.vercel.app' : 'http://localhost:3000',
+    source: 'default',
+    isLocalhost: env.NODE_ENV === 'development',
+  };
 }
