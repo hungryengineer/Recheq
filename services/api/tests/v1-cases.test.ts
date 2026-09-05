@@ -132,10 +132,10 @@ describe('createCaseV1Handler', () => {
     const result = await createCaseV1Handler(
       {
         body: {},
-        context: {} as any,
+        context: {} as unknown as never,
         auth: { orgId: 'org-1', apiKeyId: 'key-1', name: 'Test Key' },
       },
-      { db: db as never } as any,
+      { db: db as never } as unknown as never,
     );
 
     expect(result.status).toBe(500); // Because it throws an Error, which toErrorResponse catches as 500
@@ -144,14 +144,14 @@ describe('createCaseV1Handler', () => {
 
   it('delegates to createCase with found user ID and returns 201', async () => {
     // Mock user lookup
-    const db = mockQuery([{ id: 'user-1' } as any]);
-    
+    const db = mockQuery([{ id: 'user-1' } as unknown as never]);
+
     // Mock createCase
     const createCaseSpy = vi.spyOn(CaseService, 'createCase').mockResolvedValue({
       id: 'new-case-1',
       status: 'awaiting_consent',
       created_at: '2026-01-01T00:00:00Z',
-    } as any);
+    } as unknown as never);
 
     const body = {
       candidate_name: 'John',
@@ -160,16 +160,16 @@ describe('createCaseV1Handler', () => {
       title: 'Dev',
       claimed_ctc: 1000,
       employment_start: '2025-01-01',
-      employment_end: '2025-12-31'
+      employment_end: '2025-12-31',
     };
 
     const result = await createCaseV1Handler(
       {
         body,
-        context: {} as any,
+        context: {} as unknown as never,
         auth: { orgId: 'org-1', apiKeyId: 'key-1', name: 'Test Key' },
       },
-      { db: db as never } as any,
+      { db: db as never } as unknown as never,
     );
 
     expect(createCaseSpy).toHaveBeenCalledWith(body, 'user-1', 'org-1', expect.anything());
@@ -178,10 +178,9 @@ describe('createCaseV1Handler', () => {
       id: 'new-case-1',
       status: 'awaiting_consent',
       candidate_link: 'https://recheq.com/c/pending',
-      created_at: '2026-01-01T00:00:00Z'
+      created_at: '2026-01-01T00:00:00Z',
     });
-    
+
     createCaseSpy.mockRestore();
   });
 });
-

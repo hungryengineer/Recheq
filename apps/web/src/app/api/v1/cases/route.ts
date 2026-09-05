@@ -5,4 +5,5 @@ import { listCasesV1Handler } from '@recheq/api/src/routes/v1/cases/list.js';
 import { createCaseV1Handler } from '@recheq/api/src/routes/v1/cases/create.js';
 
 export const GET = toApiKeyHandler(listCasesV1Handler);
-export const POST = toApiKeyHandler(createCaseV1Handler);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const POST = toApiKeyHandler(createCaseV1Handler as any);

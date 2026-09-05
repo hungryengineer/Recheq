@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import {
   getCandidateView,
   resolveToken,
@@ -12,7 +11,7 @@ import { toPublicHandler } from '@/lib/server/adapter';
 
 const REQUIRED_DOCUMENTS = ['payslip', 'form_16'] as const;
 
-export const GET = toPublicHandler(async (req: { raw: Request, params: { token: string } }) => {
+export const GET = toPublicHandler(async (req: { raw: Request; params: { token: string } }) => {
   const token = req.params.token;
 
   try {
@@ -39,7 +38,7 @@ export const GET = toPublicHandler(async (req: { raw: Request, params: { token: 
         consent_status: view.consent_status,
         documentsRequired: [...REQUIRED_DOCUMENTS],
         documentsProvided,
-      }
+      },
     };
   } catch (error) {
     return toErrorResponse(error);

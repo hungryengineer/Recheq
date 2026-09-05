@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
 import { grantConsentHandler, toErrorResponse } from '@recheq/api/web';
 import { getConsentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
 import { toPublicHandler } from '@/lib/server/adapter';
 
-export const POST = toPublicHandler(async (req: { raw: Request, params: { token: string } }) => {
+export const POST = toPublicHandler(async (req: { raw: Request; params: { token: string } }) => {
   const token = req.params.token;
   const request = req.raw;
 

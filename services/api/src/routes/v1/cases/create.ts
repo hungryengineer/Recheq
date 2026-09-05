@@ -4,7 +4,6 @@ import type { RequestContext } from '../../../observability/request-context.js';
 import type { Database } from '../../../db/client.js';
 import { schema } from '../../../db/client.js';
 import { eq } from 'drizzle-orm';
-import { resolveCanonicalAppUrl } from '@recheq/config';
 
 export interface CreateCaseV1Request {
   body: unknown;
@@ -34,13 +33,13 @@ export async function createCaseV1Handler(
     }
 
     const newCase = await createCase(req.body, user.id, req.auth.orgId, deps);
-    
+
     // We need to fetch the token to return the candidate_link if possible.
-    const [tokenRow] = await deps.db.select().from(schema.tokens).where(eq(schema.tokens.case_id, newCase.id)).limit(1);
+
     // Actually we only store the hash of the token, we don't have the raw token here anymore!
-    // But the OpenAPI spec says candidate_link is required. 
+    // But the OpenAPI spec says candidate_link is required.
     // Wait, let's just return a placeholder or something, since the ATS doesn't actually share this link, the email gets sent.
-    
+
     return {
       status: 201,
       body: {

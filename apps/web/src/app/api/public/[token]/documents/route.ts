@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { uploadDocumentHandler, toErrorResponse } from '@recheq/api/web';
 import { getDocumentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
 import { toPublicHandler } from '@/lib/server/adapter';
@@ -6,7 +5,7 @@ import { toPublicHandler } from '@/lib/server/adapter';
 /** Must stay in sync with the service-layer MAX_UPLOAD_BYTES (10 MB). */
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
-export const POST = toPublicHandler(async (req: { raw: Request, params: { token: string } }) => {
+export const POST = toPublicHandler(async (req: { raw: Request; params: { token: string } }) => {
   const token = req.params.token;
   const request = req.raw;
   let file: File | null = null;
