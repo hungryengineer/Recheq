@@ -12,7 +12,7 @@ import { getDb } from '@/lib/server/db';
 import { users } from '@recheq/api/src/db/schema/users.js';
 import { organizations } from '@recheq/api/src/db/schema/organizations.js';
 import { eq } from 'drizzle-orm';
-import { verifySessionToken, revokeAllSessionsForUser } from '@recheq/api/src/security/session.js';
+import { verifySessionToken } from '@recheq/api/src/security/session.js';
 import { revalidatePath } from 'next/cache';
 
 export type ApiKey = {
@@ -115,7 +115,9 @@ export async function deleteApiKeyAction(
   }
 }
 
-export async function getWebhooksAction(): Promise<Webhook[]> {
+export async function getWebhooksAction(): Promise<
+  { success: true; data: Webhook[] } | { success: false; error: string }
+> {
   try {
     const baseUrl =
       process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -126,13 +128,13 @@ export async function getWebhooksAction(): Promise<Webhook[]> {
     });
 
     if (!response.ok) {
-      return [];
+      return { success: false, error: `Failed to load webhooks (${response.status})` };
     }
 
-    return await response.json();
+    return { success: true, data: await response.json() };
   } catch (error) {
     console.error('Failed to fetch webhooks:', error);
-    return [];
+    return { success: false, error: 'Could not reach the server' };
   }
 }
 
@@ -276,14 +278,14 @@ export async function updatePasswordAction(
     }
 
     const newHash = await bcrypt.hash(parsed.data.newPassword, 10);
+    // P1: Password change invalidates every previously issued JWT so sessions
+    // on other devices (which cannot know the new password) die. The hash and
+    // the revocation cutoff are written in ONE atomic UPDATE so a partial
+    // failure can never leave old tokens valid with a rotated password.
     await db
       .update(users)
-      .set({ password_hash: newHash, updated_at: new Date() })
+      .set({ password_hash: newHash, token_cutoff_at: new Date(), updated_at: new Date() })
       .where(eq(users.id, payload.userId));
-
-    // P1: Password change invalidates every previously issued JWT so
-    // sessions on other devices (which cannot know the new password) die.
-    await revokeAllSessionsForUser(db, payload.userId);
   } catch (error) {
     console.error('Failed to update password:', error);
     return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };

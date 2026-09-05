@@ -53,6 +53,7 @@ describe('listCasesV1Handler', () => {
     );
 
     expect(result.status).toBe(200);
+    if (result.status !== 200) return;
     expect(result.body.cases).toEqual([
       {
         id: 'case-1',
@@ -64,7 +65,33 @@ describe('listCasesV1Handler', () => {
         createdAt: '2026-01-01T00:00:00.000Z',
       },
     ]);
-    expect(result.body.nextCursor).toBe('2026-01-01T00:00:00.000Z');
+    expect(result.body.nextCursor).toBe('2026-01-01T00:00:00.000Z|case-1');
+  });
+
+  it('rejects a non-integer limit with 400', async () => {
+    const db = mockQuery([]);
+    const result = await listCasesV1Handler(
+      { auth: { orgId: 'org-1' }, query: { limit: 'abc' } },
+      { db: db as never },
+    );
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({ error: { code: 'INVALID_LIMIT' } });
+
+    const zero = await listCasesV1Handler(
+      { auth: { orgId: 'org-1' }, query: { limit: '0' } },
+      { db: db as never },
+    );
+    expect(zero.status).toBe(400);
+    expect(zero.body).toMatchObject({ error: { code: 'INVALID_LIMIT' } });
+  });
+
+  it('uses a stable (created_at, id) cursor for pagination', async () => {
+    const db = mockQuery([]);
+    await listCasesV1Handler(
+      { auth: { orgId: 'org-1' }, query: { cursor: '2026-01-01T00:00:00.000Z|case-3' } },
+      { db: db as never },
+    );
+    expect(db.where).toHaveBeenCalled();
   });
 
   it('clamps limit to 200', async () => {

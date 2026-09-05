@@ -1,4 +1,4 @@
-import { eq, desc, and, lt } from 'drizzle-orm';
+import { eq, desc, and, or, lt } from 'drizzle-orm';
 import { schema } from '../../../db/client.js';
 import type { Database } from '../../../db/client.js';
 
@@ -15,27 +15,67 @@ export interface V1ListCasesQuery {
   cursor?: string;
 }
 
+export type V1CasesListResult =
+  | { status: 200; body: { cases: V1CaseSummaryDto[]; nextCursor: string | null } }
+  | { status: 400; body: { error: { code: 'INVALID_CURSOR' | 'INVALID_LIMIT'; message: string } } };
+
+interface V1CaseSummaryDto {
+  id: string;
+  title: string;
+  candidateName: string;
+  status: string;
+  verdict: string | null;
+  riskScore: number | null;
+  createdAt: string;
+}
+
+const MAX_LIMIT = 200;
+
 export async function listCasesV1Handler(
   req: { auth: { orgId: string }; query?: Record<string, string | undefined> },
   deps: { db: Database },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<{ status: number; body: any }> {
+): Promise<V1CasesListResult> {
   const orgId = req.auth.orgId;
-  const limit = Math.min(Number(req.query?.limit ?? 50), 200);
+  const rawLimit = req.query?.limit;
+
+  let limit = 50;
+  if (rawLimit !== undefined) {
+    const parsedLimit = Number(rawLimit);
+    if (!Number.isInteger(parsedLimit) || parsedLimit < 1) {
+      return {
+        status: 400,
+        body: { error: { code: 'INVALID_LIMIT', message: 'limit must be a positive integer' } },
+      };
+    }
+    limit = Math.min(parsedLimit, MAX_LIMIT);
+  }
+
   const status = req.query?.status;
-  const cursor = req.query?.cursor;
 
   const conditions = [eq(schema.cases.org_id, orgId)];
   if (status) conditions.push(eq(schema.cases.status, status));
+
+  const cursor = req.query?.cursor;
+  // Stable pagination: advance by (created_at, id) so rows created in the same
+  // millisecond are never skipped or duplicated across pages.
   if (cursor) {
-    const cursorDate = new Date(cursor);
-    if (Number.isNaN(cursorDate.getTime())) {
+    const [cursorDate, cursorId] = cursor.split('|');
+    const parsedCursorDate = new Date(cursorDate ?? '');
+    if (Number.isNaN(parsedCursorDate.getTime())) {
       return {
         status: 400,
         body: { error: { code: 'INVALID_CURSOR', message: 'Invalid cursor' } },
       };
     }
-    conditions.push(lt(schema.cases.created_at, cursorDate));
+    if (cursorId) {
+      const cursorCondition = or(
+        lt(schema.cases.created_at, parsedCursorDate),
+        and(eq(schema.cases.created_at, parsedCursorDate), lt(schema.cases.id, cursorId)),
+      );
+      if (cursorCondition) conditions.push(cursorCondition);
+    } else {
+      conditions.push(lt(schema.cases.created_at, parsedCursorDate));
+    }
   }
 
   const rows = await deps.db
@@ -50,10 +90,10 @@ export async function listCasesV1Handler(
     })
     .from(schema.cases)
     .where(and(...conditions))
-    .orderBy(desc(schema.cases.created_at))
+    .orderBy(desc(schema.cases.created_at), desc(schema.cases.id))
     .limit(limit);
 
-  const cases = rows.map((r) => ({
+  const cases: V1CaseSummaryDto[] = rows.map((r) => ({
     id: r.id,
     title: r.title,
     candidateName: r.candidate_name,
@@ -68,7 +108,7 @@ export async function listCasesV1Handler(
     status: 200,
     body: {
       cases,
-      nextCursor: last ? last.createdAt : null,
+      nextCursor: last ? `${last.createdAt}|${last.id}` : null,
     },
   };
 }

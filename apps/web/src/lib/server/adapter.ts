@@ -5,7 +5,12 @@ import { createRequestContext } from '@recheq/api/src/observability/request-cont
 import { toErrorResponse } from '@recheq/api/src/http/errors.js';
 import { buildDeps } from './deps';
 
+import type { WebAppDeps } from './deps';
+
 import type { CaseProcessingDeps } from '@recheq/api/src/workflows/case-processing.js';
+
+/** Shape returned by route handlers in services/api. */
+type HandlerResult = { status: number; body: unknown };
 
 export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
   return async function (request: Request, context: any) {
@@ -107,7 +112,9 @@ export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<
   };
 }
 
-export function toApiKeyHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
+export function toApiKeyHandler<TReq = unknown>(
+  fn: (req: TReq, deps: WebAppDeps) => Promise<HandlerResult>,
+) {
   return async function (request: Request, context: any) {
     const requestId = crypto.randomUUID();
     try {
@@ -195,10 +202,11 @@ export function toApiKeyHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Pr
       };
 
       const deps = (await import('@/lib/server/deps')).buildDeps();
-      const result = (await fn(handlerReq as TReq, deps as any)) as any;
+      const result = await fn(handlerReq as TReq, deps);
 
-      if (result.status >= 400 && result.body && result.body.error) {
-        result.body.error.request_id = requestId;
+      const errorBody = result.body as { error?: Record<string, unknown> } | null;
+      if (result.status >= 400 && errorBody?.error) {
+        errorBody.error.request_id = requestId;
       }
 
       return NextResponse.json(result.body, { status: result.status });
@@ -242,9 +250,20 @@ export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Pr
         return blocked;
       }
     } catch (err) {
-      // Never fail-open silently: if the limiter itself errors, log loudly but
-      // continue so functional failures do not take public endpoints down.
-      console.error('Rate limiter error (continuing):', err);
+      // P0: never fail-open. If the limiter itself errors (e.g. the rate-limit
+      // store is unavailable) the public endpoint must not run unprotected —
+      // fail closed with 503 so abuse cannot slide through an infra outage.
+      console.error('Rate limiter error (failing closed):', err);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Rate limiting is temporarily unavailable. Please retry.',
+            request_id: requestId,
+          },
+        },
+        { status: 503 },
+      );
     }
 
     try {

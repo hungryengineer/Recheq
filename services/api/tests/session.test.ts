@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { webcrypto } from 'node:crypto';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-if (!globalThis.crypto) globalThis.crypto = webcrypto as any;
+if (!globalThis.crypto) {
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+}
 import {
   verifySessionToken,
   revokeSession,

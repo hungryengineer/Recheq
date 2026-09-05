@@ -9,14 +9,22 @@ import type { Webhook } from '@/lib/api/settings';
 export function WebhooksTab() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [url, setUrl] = useState('');
   const [newSecret, setNewSecret] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadWebhooks() {
-      const data = await getWebhooksAction();
-      setWebhooks(data);
+      setIsLoading(true);
+      setLoadError(null);
+      const result = await getWebhooksAction();
+      if (result.success) {
+        setWebhooks(result.data);
+      } else {
+        setWebhooks([]);
+        setLoadError(result.error);
+      }
       setIsLoading(false);
     }
     loadWebhooks();
@@ -141,6 +149,21 @@ export function WebhooksTab() {
                   Loading webhooks...
                 </td>
               </tr>
+            ) : loadError ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--color-high)]">
+                  {loadError}
+                </td>
+              </tr>
+            ) : webhooks.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-4 py-8 text-center text-sm text-[var(--color-fg-muted)]"
+                >
+                  No webhooks configured. Add one to receive case completion notifications.
+                </td>
+              </tr>
             ) : (
               webhooks.map((webhook) => (
                 <tr key={webhook.id} className="hover:bg-[var(--color-page)] transition-colors">
@@ -167,16 +190,6 @@ export function WebhooksTab() {
                   </td>
                 </tr>
               ))
-            )}
-            {!isLoading && webhooks.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-4 py-8 text-center text-sm text-[var(--color-fg-muted)]"
-                >
-                  No webhooks configured. Add one to receive case completion notifications.
-                </td>
-              </tr>
             )}
           </tbody>
         </table>
