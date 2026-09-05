@@ -47,7 +47,7 @@ export async function getReadiness(): Promise<HealthRouteResponse> {
 
 export async function checkPostgres(env: NodeJS.ProcessEnv = process.env): Promise<HealthCheck> {
   const startedAt = Date.now();
-  const url = new URL(env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/tieout');
+  const url = new URL(env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/recheq');
 
   try {
     await checkTcpConnection(url.hostname, Number(url.port || 5432), 2_000);

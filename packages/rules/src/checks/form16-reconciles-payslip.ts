@@ -1,4 +1,4 @@
-import type { FindingInput } from '@tieout/schema';
+import type { FindingInput } from '@recheq/schema';
 import type { RuleFunction } from '../check.js';
 import { FORM16_RECONCILIATION_TOLERANCE } from '../constants.js';
 

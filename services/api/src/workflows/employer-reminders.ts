@@ -4,7 +4,7 @@ import type { EmployerWorkflowJob } from './job-types.js';
 import { createDb } from '../db/client.js';
 import { employerRequests } from '../db/schema/employer-requests.js';
 import { publishJob } from './pgboss.js';
-import type { EventInput } from '@tieout/schema';
+import type { EventInput } from '@recheq/schema';
 
 export interface EmployerRemindersDeps {
   audit: {

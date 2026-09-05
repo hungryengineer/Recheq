@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { type VerificationStep, type StepResult, RecoverableWorkflowError } from '@tieout/workflow';
+import { type VerificationStep, type StepResult, RecoverableWorkflowError } from '@recheq/workflow';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 
 import {

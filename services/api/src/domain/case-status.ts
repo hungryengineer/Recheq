@@ -1,5 +1,5 @@
-import type { CaseStatus } from '@tieout/schema';
-import { transition, type TransitionEvent, type TransitionResult } from '@tieout/rules';
+import type { CaseStatus } from '@recheq/schema';
+import { transition, type TransitionEvent, type TransitionResult } from '@recheq/rules';
 
 /**
  * Transition a case's status through the state machine.

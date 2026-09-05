@@ -1,5 +1,5 @@
 import type { RuleFunction } from '../check.js';
-import type { FindingInput } from '@tieout/schema';
+import type { FindingInput } from '@recheq/schema';
 
 export const checkForensicsMetadata: RuleFunction = (ctx) => {
   if (!ctx.assembly.has_forensics || !ctx.forensics || ctx.forensics.length === 0) {

@@ -1,4 +1,4 @@
-import type { EvidenceAssembly, Form16Extraction, PayslipExtraction } from '@tieout/schema';
+import type { EvidenceAssembly, Form16Extraction, PayslipExtraction } from '@recheq/schema';
 
 // ─── Forensics Data ──────────────────────────────────────────────
 export interface FontRunAnalysis {

@@ -1,4 +1,4 @@
-// ─── @tieout/rules ──────────────────────────────────────────────
+// ─── @recheq/rules ──────────────────────────────────────────────
 // Barrel re-export of all rules, calculators, and state machine.
 
 export {

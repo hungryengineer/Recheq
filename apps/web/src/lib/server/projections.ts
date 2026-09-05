@@ -1,6 +1,6 @@
 import { repository } from './repository';
 import { db } from './db';
-import { projectOpsSteps } from '@tieout/api/src/workflows/step-projection.js';
+import { projectOpsSteps } from '@recheq/api/src/workflows/step-projection.js';
 
 export async function projectCaseDetail(caseId: string, orgId: string) {
   const caseRecord = await repository.getCaseByIdAndOrg(caseId, orgId);

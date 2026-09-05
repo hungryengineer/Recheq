@@ -1,6 +1,6 @@
 import React from 'react';
 import { getCases } from '../../../lib/api/cases';
-import type { CaseSummary } from '@tieout/schema';
+import type { CaseSummary } from '@recheq/schema';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';

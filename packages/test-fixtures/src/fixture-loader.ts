@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { FindingInput } from '@tieout/schema';
-import type { CheckContext } from '@tieout/rules';
+import type { FindingInput } from '@recheq/schema';
+import type { CheckContext } from '@recheq/rules';
 
 export interface FixtureCase {
   id: string;

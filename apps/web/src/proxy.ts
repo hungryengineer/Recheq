@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { verifyToken } from '@recheq/api/src/security/jwt.js';
 import { isSafeRelativePath } from '@/lib/safe-path';
 
 export async function proxy(request: NextRequest) {

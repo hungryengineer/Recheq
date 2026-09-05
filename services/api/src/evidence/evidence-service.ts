@@ -1,11 +1,11 @@
-import type { CheckContext, ForensicsData } from '@tieout/rules';
+import type { CheckContext, ForensicsData } from '@recheq/rules';
 import type {
   EvidenceOrigin,
   EvidenceAssembly,
   PayslipExtraction,
   Form16Extraction,
   CaseStatus,
-} from '@tieout/schema';
+} from '@recheq/schema';
 import type { EpfoHistory } from '../epfo/epfo-provider.js';
 
 export interface EvidenceServiceDeps {

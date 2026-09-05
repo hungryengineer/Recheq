@@ -4,7 +4,7 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from '../src/extraction/llm-document-extractor.js';
-import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { PayslipExtraction, Form16Extraction } from '@recheq/schema';
 import { RegexFallbackExtractor } from '../src/extraction/providers/regex-fallback-extractor.js';
 import { createProductionExtractor } from '../src/extraction/extractor-factory.js';
 

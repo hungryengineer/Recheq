@@ -4,8 +4,8 @@ import {
   resolveToken,
   listDocumentKindsByCase,
   toErrorResponse,
-} from '@tieout/api/web';
-import type { CandidateSafeView } from '@tieout/api/web';
+} from '@recheq/api/web';
+import type { CandidateSafeView } from '@recheq/api/web';
 import { getDb } from '@/lib/api/db';
 import { getConsentDeps, getTokenVerifier } from '@/lib/api/public';
 

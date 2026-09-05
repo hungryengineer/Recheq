@@ -2,8 +2,8 @@
 // Provider-independent interface for extracting structured data from documents
 // All implementations must follow this contract
 
-import type { DocumentKind } from '@tieout/schema';
-import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { DocumentKind } from '@recheq/schema';
+import type { PayslipExtraction, Form16Extraction } from '@recheq/schema';
 
 interface ExtractionResultBase {
   rawOutput: string;

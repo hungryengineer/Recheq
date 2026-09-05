@@ -1,4 +1,4 @@
-// ─── @tieout/schema ─────────────────────────────────────────────
+// ─── @recheq/schema ─────────────────────────────────────────────
 // Barrel re-export of all shared domain types and enums.
 
 export {

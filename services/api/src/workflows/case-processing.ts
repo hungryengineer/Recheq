@@ -1,15 +1,15 @@
-import type { CaseStatus, EventInput, EventRecord } from '@tieout/schema';
+import type { CaseStatus, EventInput, EventRecord } from '@recheq/schema';
 import type { Database } from '../db/client.js';
 import { checkProcessingIdempotency } from './idempotency.js';
 import type { EvidenceServiceDeps } from '../evidence/evidence-service.js';
 import type { EpfoProvider } from '../epfo/epfo-provider.js';
 import type { LlmDocumentExtractor } from '../extraction/llm-document-extractor.js';
-import { Engine, type StepContext, type EngineResult } from '@tieout/workflow';
+import { Engine, type StepContext, type EngineResult } from '@recheq/workflow';
 import { ExtractionStep } from './steps/extraction-step.js';
 import { ForensicsStep } from './steps/forensics-step.js';
 import { EpfoHistoryStep } from './steps/epfo-history-step.js';
 import { TriangulateStep, type TriangulateArtifact } from './steps/triangulate-step.js';
-import type { EpfoHistory, ScorableFinding } from '@tieout/rules';
+import type { EpfoHistory, ScorableFinding } from '@recheq/rules';
 
 export interface CaseProcessingDeps extends EvidenceServiceDeps {
   db: Database &

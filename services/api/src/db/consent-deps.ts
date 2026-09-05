@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
-import { ConsentStatus, type ConsentRecord } from '@tieout/schema';
+import { ConsentStatus, type ConsentRecord } from '@recheq/schema';
 import type { ConsentServiceDeps } from '../services/consent/consent-service.js';
 import type { Database } from './client.js';
 import { toCaseRecord, getCaseRecordById } from './case-queries.js';

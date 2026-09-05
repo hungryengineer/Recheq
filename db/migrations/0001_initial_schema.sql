@@ -4,7 +4,7 @@
 -- This migration creates all 11 required tables with proper
 -- foreign keys, unique constraints, and indexes.
 --
--- Run: psql -d tieout -f db/migrations/0001_initial_schema.sql
+-- Run: psql -d recheq -f db/migrations/0001_initial_schema.sql
 
 BEGIN;
 

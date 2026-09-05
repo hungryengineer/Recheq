@@ -23,7 +23,7 @@ interface ServiceCheck {
 const services: ServiceCheck[] = [
   {
     name: 'PostgreSQL',
-    url: 'postgresql://postgres:postgres@localhost:5432/tieout',
+    url: 'postgresql://postgres:postgres@localhost:5432/recheq',
     timeout: 30000,
   },
   {

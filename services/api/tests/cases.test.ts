@@ -7,7 +7,7 @@ import {
   type CaseServiceDeps,
 } from '../src/services/cases/case-service.js';
 import { AppError } from '../src/http/errors.js';
-import type { CaseRecord, CaseSummary } from '@tieout/schema';
+import type { CaseRecord, CaseSummary } from '@recheq/schema';
 
 describe('Case Service', () => {
   beforeEach(() => {

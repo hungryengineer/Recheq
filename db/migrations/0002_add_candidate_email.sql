@@ -10,7 +10,7 @@ ALTER TABLE cases
 
 -- Backfill any legacy rows so every case has a valid email.
 UPDATE cases
-  SET candidate_email = 'candidate@tieout.local'
+  SET candidate_email = 'candidate@recheq.local'
   WHERE candidate_email IS NULL OR candidate_email = '';
 
 ALTER TABLE cases

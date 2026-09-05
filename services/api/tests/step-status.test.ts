@@ -10,7 +10,7 @@ import {
 } from '../src/workflows/step-projection.js';
 import { getStatusHandler } from '../src/routes/public/status.js';
 import type { StatusRouteRequest, StatusRouteDeps } from '../src/routes/public/status.js';
-import type { CaseRecord } from '@tieout/schema';
+import type { CaseRecord } from '@recheq/schema';
 
 // ─── Fixtures ───────────────────────────────────────────────────
 

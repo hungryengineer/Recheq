@@ -153,7 +153,7 @@ async function verifyEnv(): Promise<void> {
 
 async function printServiceUrls(): Promise<void> {
   console.log('🎯 Service URLs:\n');
-  console.log('  PostgreSQL:   postgresql://postgres:postgres@localhost:5432/tieout');
+  console.log('  PostgreSQL:   postgresql://postgres:postgres@localhost:5432/recheq');
   console.log('  MinIO:        http://localhost:9000 (console: http://localhost:9001)');
   console.log('  Mailpit:      http://localhost:8025\n');
 }

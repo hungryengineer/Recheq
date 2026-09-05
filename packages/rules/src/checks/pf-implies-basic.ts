@@ -1,4 +1,4 @@
-import type { FindingInput } from '@tieout/schema';
+import type { FindingInput } from '@recheq/schema';
 import type { RuleFunction } from '../check.js';
 import { PAYSLIP_ARITHMETIC_TOLERANCE } from '../constants.js';
 

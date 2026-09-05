@@ -13,6 +13,6 @@ export async function createInviteRouteHandler(
 
   // The token is appended to the public URL for the candidate to click
   return {
-    inviteUrl: `https://app.tieout.dev/c/${rawToken}`,
+    inviteUrl: `https://app.recheq.dev/c/${rawToken}`,
   };
 }

@@ -4,7 +4,7 @@ import { getCaseDetails } from '@/lib/api/cases';
 import { FindingCard } from '@/components/dashboard/FindingCard';
 import { EditCaseButton } from '@/components/dashboard/EditCaseButton';
 import type {} from '@/components/dashboard/FindingCard';
-import type { CaseRecord, FindingRecord } from '@tieout/schema';
+import type { CaseRecord, FindingRecord } from '@recheq/schema';
 
 interface PageProps {
   params: Promise<{ id: string }>;

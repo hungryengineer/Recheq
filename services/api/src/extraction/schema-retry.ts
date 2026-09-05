@@ -6,8 +6,8 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from './llm-document-extractor.js';
-import { PayslipExtraction, Form16Extraction } from '@tieout/schema';
-import type { DocumentKind } from '@tieout/schema';
+import { PayslipExtraction, Form16Extraction } from '@recheq/schema';
+import type { DocumentKind } from '@recheq/schema';
 import { ExtractionError, ExtractionFailureType } from './llm-document-extractor.js';
 
 /**

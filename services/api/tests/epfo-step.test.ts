@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { EpfoHistoryStep } from '../src/workflows/steps/epfo-history-step.js';
 import type { CaseProcessingDeps, CaseStepContext } from '../src/workflows/case-processing.js';
 import type { EpfoProvider } from '../src/epfo/epfo-provider.js';
-import type { EpfoHistory } from '@tieout/rules';
+import type { EpfoHistory } from '@recheq/rules';
 
 const SAMPLE_HISTORY: EpfoHistory = {
   uan: '100000000001',

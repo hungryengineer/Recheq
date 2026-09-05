@@ -8,7 +8,7 @@ async function run() {
     userId: '00000000-0000-0000-0000-000000000001',
     orgId: '00000000-0000-0000-0000-000000000002',
     role: 'verifier',
-    email: 'test@tieout.dev',
+    email: 'test@recheq.dev',
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -25,7 +25,7 @@ async function run() {
     },
     body: JSON.stringify({
       candidate_name: 'E2E Test User',
-      candidate_email: 'e2e@tieout.dev',
+      candidate_email: 'e2e@recheq.dev',
       employer_name: 'Tieout Corp',
       title: 'Software Engineer',
       claimed_ctc: 2500000,

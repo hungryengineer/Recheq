@@ -1,4 +1,4 @@
-import { CaseCreateInput } from '@tieout/schema';
+import { CaseCreateInput } from '@recheq/schema';
 import { apiClient, ApiError } from './client';
 import type {
   CreateCaseResult,
@@ -17,7 +17,7 @@ export type {
   UpdateCaseSuccess,
 } from './actions-types';
 
-import { CaseUpdateInput } from '@tieout/schema';
+import { CaseUpdateInput } from '@recheq/schema';
 
 export async function createCase(rawInput: unknown): Promise<CreateCaseResult> {
   // Zod explicitly strips out malicious/unexpected fields, preventing mass assignment

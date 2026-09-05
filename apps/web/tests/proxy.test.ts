@@ -12,7 +12,7 @@ import { SignJWT } from 'jose';
  * middleware.ts the ticket asks for. These tests drive the real handler
  * with real NextRequest objects.
  *
- * JWT_SECRET is read at module scope inside @tieout/api's jwt.ts, so the
+ * JWT_SECRET is read at module scope inside @recheq/api's jwt.ts, so the
  * secret must be set before those modules are imported — hence the lazy
  * dynamic imports below instead of top-level static imports.
  */
@@ -25,11 +25,11 @@ beforeAll(async () => {
   try {
     process.env.JWT_SECRET ??= TEST_SECRET;
     ({ proxy: proxyFn } = await import('../src/proxy.js'));
-    ({ signToken } = await import('@tieout/api/src/security/jwt.js'));
+    ({ signToken } = await import('@recheq/api/src/security/jwt.js'));
   } catch (cause) {
     throw new Error(
       'proxy test setup failed: could not load proxy or jwt modules — ' +
-        'check that JWT_SECRET is set and @tieout/api is built',
+        'check that JWT_SECRET is set and @recheq/api is built',
       { cause },
     );
   }

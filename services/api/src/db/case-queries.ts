@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
-import { CaseStatus, Verdict, type CaseRecord } from '@tieout/schema';
+import { CaseStatus, Verdict, type CaseRecord } from '@recheq/schema';
 import { cases } from './schema/cases.js';
 import type { Database } from './client.js';
 
-/** Maps a DB row to the @tieout/schema CaseRecord contract (numeric/timestamp -> primitives). */
+/** Maps a DB row to the @recheq/schema CaseRecord contract (numeric/timestamp -> primitives). */
 export function toCaseRecord(row: (typeof cases)['$inferSelect']): CaseRecord {
   return {
     id: row.id,

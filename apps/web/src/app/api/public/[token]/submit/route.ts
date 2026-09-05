@@ -1,5 +1,5 @@
 import { toPublicHandler } from '../../../../../lib/server/adapter';
-import { submitCaseHandler } from '@tieout/api/src/routes/public/submit.js';
+import { submitCaseHandler } from '@recheq/api/src/routes/public/submit.js';
 import { startProcessing } from '../../../../../lib/server/process';
 import { NextResponse, after } from 'next/server';
 

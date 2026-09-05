@@ -1,4 +1,4 @@
-import type { EventInput } from '@tieout/schema';
+import type { EventInput } from '@recheq/schema';
 import { AppError } from '../../http/errors.js';
 
 export interface DisputeServiceDeps {

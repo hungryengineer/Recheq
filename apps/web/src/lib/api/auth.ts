@@ -1,17 +1,17 @@
 'use server';
 
-import type { LoginResponse } from '@tieout/schema';
-import { LoginInputSchema, SignupInputSchema, LoginResponseSchema } from '@tieout/schema';
+import type { LoginResponse } from '@recheq/schema';
+import { LoginInputSchema, SignupInputSchema, LoginResponseSchema } from '@recheq/schema';
 import { cookies } from 'next/headers';
-import { loginHandler } from '@tieout/api/src/routes/auth/login.js';
-import { signupHandler } from '@tieout/api/src/routes/auth/signup.js';
+import { loginHandler } from '@recheq/api/src/routes/auth/login.js';
+import { signupHandler } from '@recheq/api/src/routes/auth/signup.js';
 import { getDb } from '@/lib/server/db';
 
 // SSO, forgot-password, reset-password handlers take no arguments in this phase.
 // They are stub implementations that will be expanded later.
-import { ssoHandler } from '@tieout/api/src/routes/auth/sso.js';
-import { forgotPasswordHandler } from '@tieout/api/src/routes/auth/forgot-password.js';
-import { resetPasswordHandler } from '@tieout/api/src/routes/auth/reset-password.js';
+import { ssoHandler } from '@recheq/api/src/routes/auth/sso.js';
+import { forgotPasswordHandler } from '@recheq/api/src/routes/auth/forgot-password.js';
+import { resetPasswordHandler } from '@recheq/api/src/routes/auth/reset-password.js';
 
 export type AuthActionResult = {
   success: boolean;

@@ -1,8 +1,8 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { signupHandler } from '@tieout/api/src/routes/auth/signup.js';
-import { toErrorResponse } from '@tieout/api/src/http/errors.js';
+import { signupHandler } from '@recheq/api/src/routes/auth/signup.js';
+import { toErrorResponse } from '@recheq/api/src/http/errors.js';
 import { getDb } from '@/lib/server/db';
 
 export async function POST(request: Request) {

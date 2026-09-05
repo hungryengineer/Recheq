@@ -56,7 +56,7 @@ async function main() {
       .values({
         id: devUserId,
         org_id: orgId,
-        email: 'upload-test-runner@tieout.test',
+        email: 'upload-test-runner@recheq.test',
         name: 'Upload Test Runner',
       })
       .onConflictDoNothing()

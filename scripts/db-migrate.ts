@@ -58,13 +58,13 @@ const sql = postgres(connectionString, { max: 1, onnotice: () => {} });
 try {
   // Ensure the tracking table exists (outside any migration transaction).
   await sql`
-    CREATE TABLE IF NOT EXISTS tieout_migrations (
+    CREATE TABLE IF NOT EXISTS recheq_migrations (
       name       text        PRIMARY KEY,
       applied_at timestamptz NOT NULL DEFAULT now()
     )
   `;
 
-  const applied = (await sql`SELECT name FROM tieout_migrations`) as { name: string }[];
+  const applied = (await sql`SELECT name FROM recheq_migrations`) as { name: string }[];
 
   for (const file of files) {
     if (applied.some((row) => row.name === file)) {
@@ -77,7 +77,7 @@ try {
     if (needsAutocommit(content)) {
       // Run as-is; the file's own transaction wraps the DDL.
       await sql.unsafe(content);
-      await sql`INSERT INTO tieout_migrations (name) VALUES (${file})`;
+      await sql`INSERT INTO recheq_migrations (name) VALUES (${file})`;
     } else {
       // Wrap in a transaction with an advisory lock so concurrent runners
       // cannot apply the same migration simultaneously.
@@ -91,14 +91,14 @@ try {
 
         // Re-check inside the transaction in case a concurrent runner just
         // committed the same migration while we were waiting for the lock.
-        const alreadyApplied = await tx`SELECT 1 FROM tieout_migrations WHERE name = ${file}`;
+        const alreadyApplied = await tx`SELECT 1 FROM recheq_migrations WHERE name = ${file}`;
         if (alreadyApplied.length > 0) {
           console.log(`  – ${file} applied by concurrent runner, skipping`);
           return;
         }
 
         await tx.unsafe(content);
-        await tx`INSERT INTO tieout_migrations (name) VALUES (${file})`;
+        await tx`INSERT INTO recheq_migrations (name) VALUES (${file})`;
       });
     }
 

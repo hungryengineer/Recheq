@@ -19,9 +19,9 @@ Welcome to the Recheq codebase. This document is the ultimate source of truth fo
 
 We employ a strict boundaries-driven architecture using Turborepo/pnpm workspaces. Avoid cyclic dependencies and adhere to this structure:
 
-- **`@tieout/schema`** (in `packages/schema`): The single source of truth for Zod domain types and enums. Contains no business logic.
-- **`@tieout/rules`** (in `packages/rules`): Pure, deterministic business logic. Zero side effects. No DB, network, or clock access allowed here.
-- **`@tieout/api`** (in `services/api`): Backend execution layer containing routing, Drizzle ORM queries, token systems, and storage integration.
+- **`@recheq/schema`** (in `packages/schema`): The single source of truth for Zod domain types and enums. Contains no business logic.
+- **`@recheq/rules`** (in `packages/rules`): Pure, deterministic business logic. Zero side effects. No DB, network, or clock access allowed here.
+- **`@recheq/api`** (in `services/api`): Backend execution layer containing routing, Drizzle ORM queries, token systems, and storage integration.
 - **`apps/web`** (in `apps/web`): The frontend Next.js application.
 
 _All workspace packages must use ES Modules (`"type": "module"`) and imports must explicitly include the `.js` extension._

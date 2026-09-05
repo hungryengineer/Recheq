@@ -3,7 +3,7 @@ import { calculateEventHash } from '../src/audit/hash-chain.js';
 import { verifyChain, ChainVerificationError } from '../src/audit/verify-chain.js';
 import type { IAuditRepository } from '../src/audit/audit-service.js';
 import { AuditService } from '../src/audit/audit-service.js';
-import type { EventRecord } from '@tieout/schema';
+import type { EventRecord } from '@recheq/schema';
 
 describe('hash-chain', () => {
   it('calculates deterministic hashes ignoring object key order', () => {

@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from './db';
-import { schema } from '@tieout/api/src/db/client.js';
+import { schema } from '@recheq/api/src/db/client.js';
 import { eq, and, desc, inArray } from 'drizzle-orm';
-import type { CaseStatus } from '@tieout/schema';
-import type { CaseRecord, DocumentRecord } from '@tieout/schema';
-import type { EpfoHistory, ScorableFinding } from '@tieout/rules';
-import { createDocumentStorageFromEnv } from '@tieout/api/src/storage/document-storage.js';
-import type { TransactionHandle } from '@tieout/api/src/db/case-deps.js';
+import type { CaseStatus } from '@recheq/schema';
+import type { CaseRecord, DocumentRecord } from '@recheq/schema';
+import type { EpfoHistory, ScorableFinding } from '@recheq/rules';
+import { createDocumentStorageFromEnv } from '@recheq/api/src/storage/document-storage.js';
+import type { TransactionHandle } from '@recheq/api/src/db/case-deps.js';
 
 let _storage: ReturnType<typeof createDocumentStorageFromEnv>;
 function getStorage() {

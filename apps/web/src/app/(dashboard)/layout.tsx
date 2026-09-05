@@ -4,9 +4,9 @@ import { ProfileDropdown } from '@/components/dashboard/ProfileDropdown';
 import { HelpWidget } from '@/components/dashboard/HelpWidget';
 import { UserProvider } from '@/contexts/UserContext';
 import { cookies } from 'next/headers';
-import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { verifyToken } from '@recheq/api/src/security/jwt.js';
 import { getDb } from '@/lib/server/db';
-import { schema } from '@tieout/api/src/db/client.js';
+import { schema } from '@recheq/api/src/db/client.js';
 import { eq } from 'drizzle-orm';
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();

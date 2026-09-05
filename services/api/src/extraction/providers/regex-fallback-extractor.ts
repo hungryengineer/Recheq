@@ -12,7 +12,7 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from '../llm-document-extractor.js';
-import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { PayslipExtraction, Form16Extraction } from '@recheq/schema';
 import { RegexDocumentExtractor } from './regex-extractor.js';
 
 function failureResult<T>(error: string): ExtractionResult<T> {

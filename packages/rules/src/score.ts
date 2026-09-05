@@ -1,4 +1,4 @@
-import type { FindingSeverity, FindingStatus } from '@tieout/schema';
+import type { FindingSeverity, FindingStatus } from '@recheq/schema';
 import { HIGH_WEIGHT, MEDIUM_WEIGHT, LOW_WEIGHT, MAX_SCORE } from './constants.js';
 
 /**

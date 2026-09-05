@@ -1,7 +1,7 @@
-import type { VerificationStep, StepResult } from '@tieout/workflow';
+import type { VerificationStep, StepResult } from '@recheq/workflow';
 import type { CaseStepContext } from '../case-processing.js';
-import { calculateVerdict, calculateRiskScore, runAllChecks } from '@tieout/rules';
-import type { FindingInput } from '@tieout/schema';
+import { calculateVerdict, calculateRiskScore, runAllChecks } from '@recheq/rules';
+import type { FindingInput } from '@recheq/schema';
 import { assembleEvidence } from '../../evidence/evidence-service.js';
 
 export interface TriangulateArtifact {

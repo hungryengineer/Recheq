@@ -4,7 +4,7 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from '../src/extraction/llm-document-extractor.js';
-import type { PayslipExtraction } from '@tieout/schema';
+import type { PayslipExtraction } from '@recheq/schema';
 import { createFixtureExtractor } from '../src/extraction/fixture-extractor.js';
 import { withSchemaRetry } from '../src/extraction/schema-retry.js';
 import { createAnthropicExtractor } from '../src/extraction/providers/anthropic-extractor.js';

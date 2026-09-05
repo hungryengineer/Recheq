@@ -6,7 +6,7 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from './llm-document-extractor.js';
-import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { PayslipExtraction, Form16Extraction } from '@recheq/schema';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

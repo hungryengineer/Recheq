@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { updateCase } from '@/lib/api/actions';
 import { isUpdateCaseError } from '@/lib/api/actions-types';
-import { CaseUpdateInput, type CaseRecord } from '@tieout/schema';
+import { CaseUpdateInput, type CaseRecord } from '@recheq/schema';
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

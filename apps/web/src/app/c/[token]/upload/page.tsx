@@ -3,7 +3,7 @@
 import React, { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Upload, FileText, Check } from 'lucide-react';
-import type { CaseUpdateInput } from '@tieout/schema';
+import type { CaseUpdateInput } from '@recheq/schema';
 
 type CaseData = {
   candidateName: string;

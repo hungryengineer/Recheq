@@ -1,6 +1,6 @@
 import type { RequestContext } from '../../observability/request-context.js';
 import { toErrorResponse, notFoundError } from '../../http/errors.js';
-import type { EventInput, EventRecord } from '@tieout/schema';
+import type { EventInput, EventRecord } from '@recheq/schema';
 
 export interface DeleteCaseDeps {
   db: {

@@ -377,7 +377,7 @@ describe('service keys, DB URLs, LLM keys absent from serialised responses', () 
 
   it('does not expose DATABASE_URL-style values in response body', () => {
     const payload = {
-      dbUrl: 'postgresql://postgres:postgres@localhost:5432/tieout',
+      dbUrl: 'postgresql://postgres:postgres@localhost:5432/recheq',
       safe: 'value',
     };
     const result = sanitizeSensitiveFields(payload);
