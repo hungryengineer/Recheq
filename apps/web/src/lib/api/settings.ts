@@ -394,3 +394,32 @@ export async function getOrganizationMembersAction() {
     return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
   }
 }
+
+export async function signOutOtherDevicesAction(): Promise<{ success: boolean } | ActionError> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+  if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
+
+  const payload = await verifySessionToken(getDb(), token);
+  if (!payload?.userId) {
+    return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
+  }
+
+  try {
+    const db = getDb();
+    // This revokes all sessions (including the current one, which forces a re-login)
+    await db
+      .update(users)
+      .set({ token_cutoff_at: new Date(), updated_at: new Date() })
+      .where(eq(users.id, payload.userId));
+  } catch (error) {
+    console.error('Failed to revoke sessions:', error);
+    return { error: { code: 'INTERNAL_ERROR', message: 'Database error' } };
+  }
+
+  // Clear cookie so they are logged out of the current device as well
+  cookieStore.delete('recheq_session');
+  
+  revalidatePath('/', 'layout');
+  return { success: true };
+}

@@ -29,7 +29,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo -e "${BLUE}════════════════════════════════════════${NC}"
-echo -e "${BLUE}🔍 Running Tieout Fixture Validation Suite${NC}"
+echo -e "${BLUE}🔍 Running Recheq Fixture Validation Suite${NC}"
 echo -e "${BLUE}════════════════════════════════════════${NC}"
 
 # Verify fixtures directory exists

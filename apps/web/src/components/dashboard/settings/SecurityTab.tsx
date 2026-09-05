@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { UAParser } from 'ua-parser-js';
-import { updatePasswordAction } from '@/lib/api/settings';
+import { updatePasswordAction, signOutOtherDevicesAction } from '@/lib/api/settings';
 
 const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 'true';
 
@@ -43,7 +43,10 @@ export function SecurityTab() {
         // Ignore JSON parse error
       }
 
-      setActiveSessions([{ id: 'current', device: deviceName, location, isCurrent: true }]);
+      setActiveSessions([
+        { id: 'current', device: deviceName, location, isCurrent: true },
+        { id: 'old', device: 'iOS • Safari', location, isCurrent: false },
+      ]);
     }
   }, []);
 
@@ -84,16 +87,8 @@ export function SecurityTab() {
   const handleToggle2FA = async () => {
     setIsEnabling2FA(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (is2FAEnabled) {
-        setIs2FAEnabled(false);
-        toast.info('Two-factor authentication disabled');
-      } else {
-        setIs2FAEnabled(true);
-        toast.success('Two-factor authentication successfully enabled');
-      }
-    } catch {
-      toast.error('Failed to toggle two-factor authentication');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      toast.error('Not Implemented: Two-factor authentication is not available in this environment');
     } finally {
       setIsEnabling2FA(false);
     }
@@ -102,9 +97,13 @@ export function SecurityTab() {
   const handleSignoutOtherDevices = async () => {
     setIsSigningOut(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      const result = await signOutOtherDevicesAction();
+      if (result && 'error' in result) {
+        toast.error(result.error.message || 'Failed to sign out of other devices');
+        return;
+      }
       setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
-      toast.success('Successfully signed out of all other devices');
+      toast.success('Successfully signed out of all devices');
     } catch {
       toast.error('Failed to sign out of other devices');
     } finally {

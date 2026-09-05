@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "description": "Tieout hackathon monorepo",
+  "description": "Recheq hackathon monorepo",
   "packageManager": "pnpm@10.12.4",
   "engines": {
     "node": ">=22.0.0"
