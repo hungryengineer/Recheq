@@ -6,13 +6,13 @@ import { schema } from '@recheq/api/src/db/client.js';
 import { eq } from 'drizzle-orm';
 
 import { cookies } from 'next/headers';
-import { verifyToken } from '@recheq/api/src/security/jwt.js';
+import { verifySessionToken } from '@recheq/api/src/security/session.js';
 
 async function getAuthOrgId(): Promise<string> {
   const cookieStore = await cookies();
   const token = cookieStore.get('recheq_session')?.value;
   if (token) {
-    const payload = await verifyToken(token);
+    const payload = await verifySessionToken(getDb(), token);
     if (payload?.orgId) {
       return payload.orgId;
     }

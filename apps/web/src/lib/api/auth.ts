@@ -226,5 +226,21 @@ export async function signupAction(input: unknown): Promise<AuthActionResult> {
 
 export async function signoutAction() {
   const cookieStore = await cookies();
+  const token = cookieStore.get('recheq_session')?.value;
+
+  // P1: Actually revoke the session server-side instead of just clearing the
+  // cookie, so the 7-day JWT cannot be replayed by a stolen cookie value. A
+  // revocation failure is surfaced (the caller keeps the user signed in and
+  // shows an error) instead of silently reporting success with a live token.
+  if (token) {
+    const { getDb } = await import('@/lib/server/db');
+    const { verifySessionToken, revokeSession } =
+      await import('@recheq/api/src/security/session.js');
+    const claims = await verifySessionToken(getDb(), token);
+    if (claims) {
+      await revokeSession(getDb(), { jti: claims.jti, exp: claims.exp }, 'logout', claims.userId);
+    }
+  }
+
   cookieStore.delete('recheq_session');
 }

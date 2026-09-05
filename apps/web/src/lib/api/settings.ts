@@ -12,7 +12,7 @@ import { getDb } from '@/lib/server/db';
 import { users } from '@recheq/api/src/db/schema/users.js';
 import { organizations } from '@recheq/api/src/db/schema/organizations.js';
 import { eq } from 'drizzle-orm';
-import { verifyToken } from '@recheq/api/src/security/jwt.js';
+import { verifySessionToken } from '@recheq/api/src/security/session.js';
 import { revalidatePath } from 'next/cache';
 
 export type ApiKey = {
@@ -24,6 +24,18 @@ export type ApiKey = {
 
 export type ApiKeyCreated = ApiKey & {
   fullSecret: string;
+};
+
+export type Webhook = {
+  id: string;
+  url: string;
+  events: string[];
+  active: boolean;
+  createdAt: string;
+};
+
+export type WebhookCreated = Webhook & {
+  secret: string;
 };
 
 async function getAuthHeader() {
@@ -103,6 +115,79 @@ export async function deleteApiKeyAction(
   }
 }
 
+export async function getWebhooksAction(): Promise<
+  { success: true; data: Webhook[] } | { success: false; error: string }
+> {
+  try {
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/settings/webhooks`, {
+      method: 'GET',
+      headers: await getAuthHeader(),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Failed to load webhooks (${response.status})` };
+    }
+
+    return { success: true, data: await response.json() };
+  } catch (error) {
+    console.error('Failed to fetch webhooks:', error);
+    return { success: false, error: 'Could not reach the server' };
+  }
+}
+
+export async function createWebhookAction(
+  url: string,
+  events: string[],
+): Promise<{ success: boolean; data?: WebhookCreated; error?: string }> {
+  try {
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/settings/webhooks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await getAuthHeader()),
+      },
+      body: JSON.stringify({ url, events }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: 'Failed to create webhook.' };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to create webhook:', error);
+    return { success: false, error: 'An unexpected error occurred.' };
+  }
+}
+
+export async function deleteWebhookAction(
+  id: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/settings/webhooks/${id}`, {
+      method: 'DELETE',
+      headers: await getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: 'Failed to delete webhook.' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to delete webhook:', error);
+    return { success: false, error: 'An unexpected error occurred.' };
+  }
+}
+
 export async function updateProfileAction(
   data: unknown,
 ): Promise<{ success: boolean } | ActionError> {
@@ -125,7 +210,7 @@ export async function updateProfileAction(
   const token = cookieStore.get('recheq_session')?.value;
   if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
 
-  const payload = await verifyToken(token);
+  const payload = await verifySessionToken(getDb(), token);
   if (!payload?.userId) {
     return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
   }
@@ -173,7 +258,7 @@ export async function updatePasswordAction(
   const token = cookieStore.get('recheq_session')?.value;
   if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
 
-  const payload = await verifyToken(token);
+  const payload = await verifySessionToken(getDb(), token);
   if (!payload?.userId) return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
 
   try {
@@ -193,9 +278,13 @@ export async function updatePasswordAction(
     }
 
     const newHash = await bcrypt.hash(parsed.data.newPassword, 10);
+    // P1: Password change invalidates every previously issued JWT so sessions
+    // on other devices (which cannot know the new password) die. The hash and
+    // the revocation cutoff are written in ONE atomic UPDATE so a partial
+    // failure can never leave old tokens valid with a rotated password.
     await db
       .update(users)
-      .set({ password_hash: newHash, updated_at: new Date() })
+      .set({ password_hash: newHash, token_cutoff_at: new Date(), updated_at: new Date() })
       .where(eq(users.id, payload.userId));
   } catch (error) {
     console.error('Failed to update password:', error);
@@ -229,7 +318,7 @@ export async function updateOrganizationAction(
   const token = cookieStore.get('recheq_session')?.value;
   if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
 
-  const payload = await verifyToken(token);
+  const payload = await verifySessionToken(getDb(), token);
   if (!payload?.orgId) {
     return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
   }
@@ -282,7 +371,7 @@ export async function getOrganizationMembersAction() {
   const token = cookieStore.get('recheq_session')?.value;
   if (!token) return { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } };
 
-  const payload = await verifyToken(token);
+  const payload = await verifySessionToken(getDb(), token);
   if (!payload?.orgId) {
     return { error: { code: 'UNAUTHORIZED', message: 'Invalid session' } };
   }

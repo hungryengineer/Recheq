@@ -16,6 +16,7 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
     EvidenceServiceDeps['db'] & {
       getCaseById: (caseId: string) => Promise<{
         id: string;
+        org_id: string;
         uan: string | null;
         status: CaseStatus;
         claimed_ctc: string;
@@ -51,11 +52,49 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
   };
   epfoProvider: EpfoProvider;
   extractor: LlmDocumentExtractor;
+  publishCaseCompletedWebhooks?: (
+    caseId: string,
+    orgId: string,
+    payload: {
+      verdict: string;
+      risk_score: number;
+      finding_count: number;
+      findings: Array<{ rule_id: string; severity: string; title: string }>;
+    },
+  ) => Promise<void>;
 }
 
 export interface CaseStepContext extends StepContext {
   caseId: string;
   deps: CaseProcessingDeps;
+}
+
+interface CaseCompletedWebhookInput {
+  verdict: string;
+  risk_score: number;
+  finding_count: number;
+  findings: Array<{ rule_id: string; severity: string; title: string }>;
+}
+
+// A failed webhook publication must never roll back a committed case verdict:
+// the case is complete regardless, so the publish attempt errors out of the
+// path (calling code already caught it with try/catch). Log and move on.
+async function publishCaseCompletedWebhooksSafely(
+  deps: CaseProcessingDeps,
+  caseId: string,
+  orgId: string,
+  input: CaseCompletedWebhookInput,
+): Promise<void> {
+  if (!deps.publishCaseCompletedWebhooks) return;
+  try {
+    await deps.publishCaseCompletedWebhooks(caseId, orgId, input);
+  } catch (err) {
+    console.error('Failed to publish case.completed webhooks', {
+      caseId,
+      orgId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 }
 
 export async function processCase(
@@ -116,6 +155,13 @@ export async function processCase(
         actor: 'system',
       });
     });
+
+    await publishCaseCompletedWebhooksSafely(deps, caseId, caseRecord.org_id, {
+      verdict: 'insufficient_evidence',
+      risk_score: 100,
+      finding_count: 0,
+      findings: [],
+    });
     return;
   }
 
@@ -141,6 +187,13 @@ export async function processCase(
         },
         actor: 'system',
       });
+    });
+
+    await publishCaseCompletedWebhooksSafely(deps, caseId, caseRecord.org_id, {
+      verdict,
+      risk_score: score,
+      finding_count: findings.length,
+      findings,
     });
   } else {
     // If triangulation failed or didn't run due to dependencies, fail the case
@@ -169,6 +222,13 @@ export async function processCase(
         },
         actor: 'system',
       });
+    });
+
+    await publishCaseCompletedWebhooksSafely(deps, caseId, caseRecord.org_id, {
+      verdict: engineResult.verdict,
+      risk_score: UNVERIFIED_RISK_SCORE,
+      finding_count: 0,
+      findings: [],
     });
   }
 }

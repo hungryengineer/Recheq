@@ -4,7 +4,7 @@ import { ProfileDropdown } from '@/components/dashboard/ProfileDropdown';
 import { HelpWidget } from '@/components/dashboard/HelpWidget';
 import { UserProvider } from '@/contexts/UserContext';
 import { cookies } from 'next/headers';
-import { verifyToken } from '@recheq/api/src/security/jwt.js';
+import { verifySessionToken } from '@recheq/api/src/security/session.js';
 import { getDb } from '@/lib/server/db';
 import { schema } from '@recheq/api/src/db/client.js';
 import { eq } from 'drizzle-orm';
@@ -15,7 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let initialUser = undefined;
 
   if (token) {
-    const payload = await verifyToken(token);
+    const payload = await verifySessionToken(getDb(), token);
     if (payload?.userId) {
       const db = getDb();
       const userRes = await db

@@ -15,6 +15,8 @@ tags:
     description: Verifier routes for managing cases. Requires Bearer authentication.
   - name: public-candidate
     description: Public candidate routes using path tokens.
+  - name: platform
+    description: Programmatic platform routes authenticated with an API key.
 paths:
   /api/auth/signup:
     post:
@@ -551,8 +553,111 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalServerError' }
 
+  /api/settings/webhooks:
+    get:
+      operationId: listWebhooks
+      summary: List webhook subscriptions
+      tags: [settings]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: A list of webhook subscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WebhookSubscription' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    post:
+      operationId: createWebhook
+      summary: Create a webhook subscription
+      tags: [settings]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com/hooks/recheq
+                events:
+                  type: array
+                  items: { type: string, enum: [case.completed] }
+                  default: [case.completed]
+                  example: [case.completed]
+      responses:
+        '201':
+          description: Webhook subscription created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookSubscriptionCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/settings/webhooks/{id}:
+    delete:
+      operationId: deleteWebhook
+      summary: Delete a webhook subscription
+      tags: [settings]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          description: Webhook subscription ID
+      responses:
+        '204':
+          description: Webhook subscription deleted successfully
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/v1/cases:
+    get:
+      operationId: listPlatformCases
+      summary: List cases via API key
+      description: Programmatic read surface for ATS integrations. Authenticated with a platform API key.
+      tags: [platform]
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [draft, awaiting_consent, awaiting_documents, processing, complete, withdrawn]
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: Opaque cursor (ISO timestamp of the last returned case).
+      responses:
+        '200':
+          description: A page of cases
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/V1CaseListResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
 components:
   securitySchemes:
+    apiKeyAuth:
+      type: http
+      scheme: bearer
+      description: Platform API key (`req_live_...`) presented in the Authorization header.
     bearerAuth:
       type: http
       scheme: bearer
@@ -972,3 +1077,51 @@ components:
           required: [fullSecret]
           properties:
             fullSecret: { type: string, example: 'req_live_fake_key_12345' }
+
+    WebhookSubscription:
+      type: object
+      required: [id, url, events, active, createdAt]
+      properties:
+        id: { type: string, example: 'wh_123' }
+        url: { type: string, format: uri, example: https://example.com/hooks/recheq }
+        events:
+          type: array
+          items: { type: string, enum: [case.completed] }
+          example: [case.completed]
+        active: { type: boolean, example: true }
+        createdAt: { type: string, format: date-time, example: '2026-08-15T10:00:00Z' }
+
+    WebhookSubscriptionCreated:
+      allOf:
+        - $ref: '#/components/schemas/WebhookSubscription'
+        - type: object
+          required: [secret]
+          properties:
+            secret: { type: string, example: 'whsec_pLuy...' }
+
+    V1CaseSummary:
+      type: object
+      required: [id, title, candidateName, status, verdict, riskScore, createdAt]
+      properties:
+        id: { type: string, example: 'case_123' }
+        title: { type: string, example: Senior Analyst - Arun Kumar }
+        candidateName: { type: string, example: Arun Kumar }
+        status:
+          type: string
+          enum: [draft, awaiting_consent, awaiting_documents, processing, complete, withdrawn]
+        verdict:
+          type: string
+          enum: [verified, verified_with_notes, needs_review, insufficient_evidence]
+          nullable: true
+          example: needs_review
+        riskScore: { type: integer, minimum: 0, maximum: 100, nullable: true, example: 80 }
+        createdAt: { type: string, format: date-time, example: '2026-08-15T10:00:00Z' }
+
+    V1CaseListResponse:
+      type: object
+      required: [cases, nextCursor]
+      properties:
+        cases:
+          type: array
+          items: { $ref: '#/components/schemas/V1CaseSummary' }
+        nextCursor: { type: string, nullable: true, example: '2026-08-14T09:30:00Z' }

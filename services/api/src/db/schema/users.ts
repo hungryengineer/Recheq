@@ -12,6 +12,9 @@ export const users = pgTable('users', {
   name: varchar('name', { length: 500 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('verifier'),
   avatar: text('avatar'),
+  // Any JWT with iat < this timestamp is rejected. Bumped on password change
+  // or "sign out all devices" to revoke every previously issued session.
+  token_cutoff_at: timestamp('token_cutoff_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

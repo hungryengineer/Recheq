@@ -23,41 +23,69 @@ import { createHash } from 'node:crypto';
 const DUMMY_HASH = bcrypt.hashSync('__dummy_timing_padding__', 10);
 
 // ─── Rate-limit state ───────────────────────────────────────────
-// Rolling window rate limiter. For production, use Redis.
-class RollingRateLimiter {
+// Durable Postgres-backed limiter shared across instances. Login is the one
+// route we always gate; public token routes are gated in toPublicHandler.
+import type { RateLimitStore, RateLimitResult } from '../../security/rate-limit.js';
+import {
+  createSqlRateLimitStore,
+  createRateLimitCounterRepo,
+} from '../../security/sql-rate-limit-store.js';
+
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const EMAIL_MAX_ATTEMPTS = 5;
+const IP_MAX_ATTEMPTS = 20;
+
+/**
+ * In-memory rolling-window limiter used only when no DB-backed store is
+ * available (unit tests with { repo } deps). Production uses the SQL store.
+ */
+class RollingRateLimiter implements RateLimitStore {
   private store = new Map<string, number[]>();
-  private readonly windowMs: number;
   private readonly maxEntries: number;
 
-  constructor(windowMs: number, maxEntries = 10000) {
-    this.windowMs = windowMs;
+  constructor(maxEntries = 10000) {
     this.maxEntries = maxEntries;
   }
 
-  check(key: string, maxAttempts: number): { allowed: boolean; retryAfterSeconds?: number } {
+  async increment({
+    scope,
+    key,
+    windowMs,
+    maxRequests,
+  }: {
+    scope: string;
+    key: string;
+    windowMs: number;
+    maxRequests: number;
+  }): Promise<RateLimitResult> {
     const now = Date.now();
-    let attempts = this.store.get(key) || [];
+    const mapKey = `${scope}:${key}`;
+    let attempts = this.store.get(mapKey) || [];
 
-    // Remove expired attempts
-    attempts = attempts.filter((timestamp) => now - timestamp < this.windowMs);
+    attempts = attempts.filter((timestamp) => now - timestamp < windowMs);
 
-    if (attempts.length >= maxAttempts) {
-      this.store.set(key, attempts);
+    if (attempts.length >= maxRequests) {
+      this.store.set(mapKey, attempts);
       const oldest = attempts[0]!;
-      const retryAfterSeconds = Math.ceil((oldest + this.windowMs - now) / 1000);
-      return { allowed: false, retryAfterSeconds };
+      const retryAfterSeconds = Math.ceil((oldest + windowMs - now) / 1000);
+      return {
+        allowed: false,
+        count: attempts.length,
+        limit: maxRequests,
+        resetAt: oldest + windowMs,
+        retryAfterSeconds,
+      };
     }
 
     attempts.push(now);
 
-    // Evict old entries if Map gets too large (bounding)
-    if (this.store.size >= this.maxEntries && !this.store.has(key)) {
+    if (this.store.size >= this.maxEntries && !this.store.has(mapKey)) {
       const firstKey = this.store.keys().next().value;
       if (firstKey !== undefined) this.store.delete(firstKey);
     }
 
-    this.store.set(key, attempts);
-    return { allowed: true };
+    this.store.set(mapKey, attempts);
+    return { allowed: true, count: attempts.length, limit: maxRequests, resetAt: now + windowMs };
   }
 
   clear(): void {
@@ -65,17 +93,24 @@ class RollingRateLimiter {
   }
 }
 
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const emailLimits = new RollingRateLimiter(WINDOW_MS, 10000);
-const ipLimits = new RollingRateLimiter(WINDOW_MS, 10000);
+const _testEmailLimits = new RollingRateLimiter();
+const _testIpLimits = new RollingRateLimiter();
 
 export function _clearLoginRateLimitsForTest() {
-  emailLimits.clear();
-  ipLimits.clear();
+  _testEmailLimits.clear();
+  _testIpLimits.clear();
 }
 
-const EMAIL_MAX_ATTEMPTS = 5;
-const IP_MAX_ATTEMPTS = 20;
+function buildLoginLimiters(deps: { db: Database } | { repo: LoginRepository }): {
+  email: RateLimitStore;
+  ip: RateLimitStore;
+} {
+  if ('db' in deps) {
+    const sqlStore = () => createSqlRateLimitStore(createRateLimitCounterRepo(deps.db));
+    return { email: sqlStore(), ip: sqlStore() };
+  }
+  return { email: _testEmailLimits, ip: _testIpLimits };
+}
 
 /** Hash the email for logging — never log the raw email on failed attempts */
 function hashEmail(email: string): string {
@@ -120,7 +155,13 @@ export async function loginHandler(
 
     // R6.2: Per-email rate limit
     const emailKey = email.toLowerCase().trim();
-    const emailCheck = emailLimits.check(emailKey, EMAIL_MAX_ATTEMPTS);
+    const limiters = buildLoginLimiters(deps);
+    const emailCheck = await limiters.email.increment({
+      scope: 'login_email',
+      key: emailKey,
+      windowMs: WINDOW_MS,
+      maxRequests: EMAIL_MAX_ATTEMPTS,
+    });
     if (!emailCheck.allowed) {
       // R6.4: Log with hashed email, never log password
       console.warn(`Rate limit exceeded for email=${hashEmail(email)} ip=${ip}`);
@@ -137,7 +178,12 @@ export async function loginHandler(
     }
 
     // R6.3: Per-IP rate limit
-    const ipCheck = ipLimits.check(ip, IP_MAX_ATTEMPTS);
+    const ipCheck = await limiters.ip.increment({
+      scope: 'login_ip',
+      key: ip,
+      windowMs: WINDOW_MS,
+      maxRequests: IP_MAX_ATTEMPTS,
+    });
     if (!ipCheck.allowed) {
       console.warn(`Rate limit exceeded for ip=${ip}`);
       return {

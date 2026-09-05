@@ -1,102 +1,146 @@
 // ─── Rate Limiting Middleware ───────────────────────────────────
-// Implements rate limiting for public token routes using a sliding window counter
-// Stores request counts in memory. In production, use Redis for distributed systems.
+// Store-agnostic fixed-window rate limiter for public token routes.
+//
+// Production uses a Postgres-backed store (see createSqlRateLimitStore) so the
+// limit is enforced across serverless instances and survives restarts. An
+// in-memory store is provided for tests and local single-process use.
+//
+// Keys are per (IP, token) so a candidate's budget is isolated per endpoint
+// token, while an abusive IP cannot drain unrelated sessions.
 
-interface RateLimitRecord {
+export interface RateLimitResult {
+  allowed: boolean;
   count: number;
-  resetTime: number;
+  limit: number;
+  resetAt: number; // epoch ms when the current window ends
+  retryAfterSeconds?: number;
 }
 
-interface RateLimitConfig {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Maximum requests per window
+export interface RateLimitStore {
+  /**
+   * Atomically increments the counter for (scope, key) within the current
+   * window and reports whether the request is still within maxRequests.
+   */
+  increment(args: {
+    scope: string;
+    key: string;
+    windowMs: number;
+    maxRequests: number;
+  }): Promise<RateLimitResult>;
 }
 
-interface RateLimitState {
-  [key: string]: RateLimitRecord | undefined;
+// ─── In-memory store ────────────────────────────────────────────
+interface InMemoryRecord {
+  windowStart: number;
+  windowEnd: number;
+  count: number;
+  maxRequests: number;
 }
 
-// In-memory storage for rate limiting
-// Note: This is reset on server restart. For production, use Redis.
-const rateLimitState: RateLimitState = {};
+export function createInMemoryRateLimitStore(): RateLimitStore & {
+  clear: () => void;
+  getStatus: (mapKey: string) => InMemoryRecord | undefined;
+} {
+  // Per-instance state: independent quotas and clearing for each store so two
+  // limiter instances (e.g. in tests, or isolates) never share counters.
+  const inMemoryState = new Map<string, InMemoryRecord>();
 
-const DEFAULT_CONFIG: RateLimitConfig = {
-  windowMs: 60_000, // 1 minute
-  maxRequests: 10, // 10 requests per minute per IP + token combination
-};
+  return {
+    async increment({ scope, key, windowMs, maxRequests }) {
+      const mapKey = `${scope}:${key}`;
+      const now = Date.now();
+      let record = inMemoryState.get(mapKey);
 
-export function createRateLimiter(config: RateLimitConfig = DEFAULT_CONFIG) {
-  const { windowMs, maxRequests } = config;
+      if (!record || now >= record.windowEnd) {
+        record = { windowStart: now, windowEnd: now + windowMs, count: 0, maxRequests };
+        inMemoryState.set(mapKey, record);
+      }
+
+      record.count += 1;
+      record.maxRequests = maxRequests;
+
+      if (record.count > maxRequests) {
+        return {
+          allowed: false,
+          count: record.count,
+          limit: maxRequests,
+          resetAt: record.windowEnd,
+          retryAfterSeconds: Math.ceil((record.windowEnd - now) / 1000),
+        };
+      }
+
+      return { allowed: true, count: record.count, limit: maxRequests, resetAt: record.windowEnd };
+    },
+
+    clear() {
+      inMemoryState.clear();
+    },
+
+    getStatus(mapKey) {
+      const record = inMemoryState.get(mapKey);
+      if (!record) return undefined;
+      const now = Date.now();
+      if (now >= record.windowEnd) {
+        inMemoryState.delete(mapKey);
+        return undefined;
+      }
+      return record;
+    },
+  };
+}
+
+// ─── Response helpers ───────────────────────────────────────────
+export function rateLimitBlockedResponse(result: RateLimitResult): Response {
+  const now = Date.now();
+  return new Response(
+    JSON.stringify({
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests. Please try again later.',
+      },
+    }),
+    {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-RateLimit-Limit': String(result.limit),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': String(Math.ceil(result.resetAt / 1000)),
+        'Retry-After': String(
+          Math.max(1, result.retryAfterSeconds ?? Math.ceil((result.resetAt - now) / 1000)),
+        ),
+      },
+    },
+  );
+}
+
+// ─── Middleware ─────────────────────────────────────────────────
+export interface CreateRateLimiterOptions {
+  windowMs?: number;
+  maxRequests?: number;
+}
+
+export function createRateLimiter(
+  store: RateLimitStore,
+  options: CreateRateLimiterOptions = {},
+  scope = 'public',
+) {
+  const { windowMs = 60_000, maxRequests = 10 } = options;
 
   return function rateLimit(
     req: Request,
     next: (req: Request) => Promise<Response>,
   ): Promise<Response> {
     const url = new URL(req.url);
-    const token = url.pathname.split('/')[3]; // Extract token from /api/public/:token/...
+    const token = url.pathname.split('/')[3] || 'anonymous'; // /api/public/:token/...
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
     const key = `${ip}:${token}`;
-
-    const now = Date.now();
-    const record = rateLimitState[key];
-
-    // Check if we have an existing record and if it's still within the window
-    if (record && record.resetTime > now) {
-      record.count++;
-
-      if (record.count > maxRequests) {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              error: {
-                code: 'RATE_LIMIT_EXCEEDED',
-                message: 'Too many requests. Please try again later.',
-              },
-            }),
-            {
-              status: 429,
-              headers: {
-                'Content-Type': 'application/json',
-                'X-RateLimit-Limit': String(maxRequests),
-                'X-RateLimit-Remaining': '0',
-                'X-RateLimit-Reset': String(record.resetTime),
-                'Retry-After': String(Math.ceil((record.resetTime - now) / 1000)),
-              },
-            },
-          ),
-        );
+    return store.increment({ scope, key, windowMs, maxRequests }).then((result) => {
+      if (!result.allowed) {
+        return rateLimitBlockedResponse(result);
       }
-    } else {
-      // Create new record for the new window
-      rateLimitState[key] = {
-        count: 1,
-        resetTime: now + windowMs,
-      };
-    }
-
-    return next(req);
+      return next(req);
+    });
   };
-}
-
-// Export cleanup function for testing or graceful shutdown
-export function clearRateLimitState(): void {
-  Object.keys(rateLimitState).forEach((key) => {
-    delete rateLimitState[key];
-  });
-}
-
-// Get current rate limit status for a key (for testing/debugging)
-export function getRateLimitStatus(key: string): RateLimitRecord | undefined {
-  const record = rateLimitState[key];
-  if (!record) {
-    return undefined;
-  }
-
-  const now = Date.now();
-  if (now > record.resetTime) {
-    return undefined;
-  }
-
-  return record;
 }
