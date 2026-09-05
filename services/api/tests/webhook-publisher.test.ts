@@ -67,7 +67,7 @@ describe('publishCaseCompletedWebhooks', () => {
     );
 
     expect(store.webhook_deliveries).toHaveLength(1);
-    const delivery = store.webhook_deliveries[0];
+    const delivery = store.webhook_deliveries[0]!;
     expect(delivery.subscription_id).toBe('sub-1');
     expect(delivery.event).toBe('case.completed');
     expect(delivery.case_id).toBe('case-1');
