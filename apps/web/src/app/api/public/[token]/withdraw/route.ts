@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { withdrawConsentHandler, toErrorResponse } from '@recheq/api/web';
 import { getConsentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
+import { toPublicHandler } from '@/lib/server/adapter';
 
-export async function POST(_request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export const POST = toPublicHandler(async (req: { raw: Request; params: { token: string } }) => {
+  const token = req.params.token;
 
   try {
     const result = await withdrawConsentHandler(
@@ -17,9 +17,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ to
       },
     );
 
-    return NextResponse.json(result.body, { status: result.status });
+    return result;
   } catch (error) {
-    const { status, body } = toErrorResponse(error);
-    return NextResponse.json(body, { status });
+    return toErrorResponse(error);
   }
-}
+});

@@ -122,3 +122,65 @@ describe('listCasesV1Handler', () => {
     expect(result.body).toEqual({ cases: [], nextCursor: null });
   });
 });
+
+import { createCaseV1Handler } from '../src/routes/v1/cases/create.js';
+import * as CaseService from '../src/services/cases/case-service.js';
+
+describe('createCaseV1Handler', () => {
+  it('rejects creation if no user exists in org', async () => {
+    const db = mockQuery([]); // Returns empty array for user lookup
+    const result = await createCaseV1Handler(
+      {
+        body: {},
+        context: {} as unknown as never,
+        auth: { orgId: 'org-1', apiKeyId: 'key-1', name: 'Test Key' },
+      },
+      { db: db as never } as unknown as never,
+    );
+
+    expect(result.status).toBe(500); // Because it throws an Error, which toErrorResponse catches as 500
+    expect(result.body).toMatchObject({ error: { code: 'INTERNAL_ERROR' } });
+  });
+
+  it('delegates to createCase with found user ID and returns 201', async () => {
+    // Mock user lookup
+    const db = mockQuery([{ id: 'user-1' } as unknown as never]);
+
+    // Mock createCase
+    const createCaseSpy = vi.spyOn(CaseService, 'createCase').mockResolvedValue({
+      id: 'new-case-1',
+      status: 'awaiting_consent',
+      created_at: '2026-01-01T00:00:00Z',
+    } as unknown as never);
+
+    const body = {
+      candidate_name: 'John',
+      candidate_email: 'john@example.com',
+      employer_name: 'Acme',
+      title: 'Dev',
+      claimed_ctc: 1000,
+      employment_start: '2025-01-01',
+      employment_end: '2025-12-31',
+    };
+
+    const result = await createCaseV1Handler(
+      {
+        body,
+        context: {} as unknown as never,
+        auth: { orgId: 'org-1', apiKeyId: 'key-1', name: 'Test Key' },
+      },
+      { db: db as never } as unknown as never,
+    );
+
+    expect(createCaseSpy).toHaveBeenCalledWith(body, 'user-1', 'org-1', expect.anything());
+    expect(result.status).toBe(201);
+    expect(result.body).toMatchObject({
+      id: 'new-case-1',
+      status: 'awaiting_consent',
+      candidate_link: 'https://recheq.com/c/pending',
+      created_at: '2026-01-01T00:00:00Z',
+    });
+
+    createCaseSpy.mockRestore();
+  });
+});

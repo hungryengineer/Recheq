@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
 import { uploadDocumentHandler, toErrorResponse } from '@recheq/api/web';
 import { getDocumentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
+import { toPublicHandler } from '@/lib/server/adapter';
 
 /** Must stay in sync with the service-layer MAX_UPLOAD_BYTES (10 MB). */
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
-export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
-
+export const POST = toPublicHandler(async (req: { raw: Request; params: { token: string } }) => {
+  const token = req.params.token;
+  const request = req.raw;
   let file: File | null = null;
   let kind: unknown = null;
 
@@ -34,19 +34,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
 
     kind = formData.get('kind') ?? null;
   } catch {
-    return NextResponse.json({ success: false, message: 'Invalid request body' }, { status: 400 });
+    return { status: 400, body: { success: false, message: 'Invalid request body' } };
   }
 
   if (!file) {
-    return NextResponse.json({ success: false, message: 'Missing file' }, { status: 400 });
+    return { status: 400, body: { success: false, message: 'Missing file' } };
   }
 
   // Validate size before reading the full body into memory.
   if (file.size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json(
-      { success: false, message: 'File exceeds the 10 MB limit' },
-      { status: 413 },
-    );
+    return { status: 413, body: { success: false, message: 'File exceeds the 10 MB limit' } };
   }
 
   try {
@@ -63,9 +60,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       },
     );
 
-    return NextResponse.json(result.body, { status: result.status });
+    return result;
   } catch (error) {
-    const { status, body } = toErrorResponse(error);
-    return NextResponse.json(body, { status });
+    return toErrorResponse(error);
   }
-}
+});

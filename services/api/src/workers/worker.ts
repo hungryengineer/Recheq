@@ -33,9 +33,70 @@ async function processEmployerJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   await processEmployerWorkflowJob(jobs);
 }
-async function retentionJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
+import { lt, and, ne, eq } from 'drizzle-orm';
+import { schema } from '../db/client.js';
+import { createDocumentStorageFromEnv } from '../storage/document-storage.js';
+
+export async function retentionJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
-  for (const job of jobs) console.log('retention cleanup', { id: job.id });
+  if (process.env.RETENTION_PURGE_ENABLED !== 'true') {
+    for (const job of jobs) console.log('retention purge disabled via config', { id: job.id });
+    return;
+  }
+
+  if (!caseWorker) {
+    throw new Error('Case worker dependencies not initialized, cannot process retention job');
+  }
+
+  const db = getWebhookDb();
+  const storage = createDocumentStorageFromEnv(process.env);
+
+  const thresholdDays = parseInt(process.env.RETENTION_THRESHOLD_DAYS || '180', 10);
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - thresholdDays);
+
+  const oldCases = await db
+    .select({ id: schema.cases.id, org_id: schema.cases.org_id })
+    .from(schema.cases)
+    .where(
+      and(lt(schema.cases.created_at, cutoffDate), ne(schema.cases.candidate_name, '[REDACTED]')),
+    );
+
+  for (const c of oldCases) {
+    console.log(`Purging retention PII for case ${c.id}`);
+
+    // Delete documents from storage
+    const docs = await db
+      .select({ id: schema.documents.id, storage_path: schema.documents.storage_path })
+      .from(schema.documents)
+      .where(eq(schema.documents.case_id, c.id));
+
+    for (const d of docs) {
+      if (d.storage_path) {
+        try {
+          await storage.deleteObject(d.storage_path);
+        } catch (e) {
+          console.error(`Failed to delete storage object ${d.storage_path}`, e);
+        }
+      }
+    }
+
+    // Nullify PII in DB
+    await db
+      .update(schema.cases)
+      .set({
+        candidate_name: '[REDACTED]',
+        candidate_email: '[REDACTED]',
+        employer_name: '[REDACTED]',
+        title: '[REDACTED]',
+        uan: null,
+      })
+      .where(eq(schema.cases.id, c.id));
+
+    // Acknowledge jobs (if we have multiple jobs, we log it)
+  }
+  for (const job of jobs)
+    console.log('retention cleanup complete', { id: job.id, casesPurged: oldCases.length });
 }
 
 // Webhook delivery runs against a raw Postgres connection (not the web app's

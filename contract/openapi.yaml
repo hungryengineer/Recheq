@@ -620,6 +620,27 @@ paths:
         '500': { $ref: '#/components/responses/InternalServerError' }
 
   /api/v1/cases:
+    post:
+      operationId: createPlatformCase
+      summary: Create a new case via API key
+      description: Programmatic write surface for ATS integrations. Authenticated with a platform API key.
+      tags: [platform]
+      security: [{ apiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaseCreateInput' }
+      responses:
+        '201':
+          description: Case created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaseCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
     get:
       operationId: listPlatformCases
       summary: List cases via API key

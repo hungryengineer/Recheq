@@ -19,6 +19,9 @@ describe('Case Processing Orchestration', () => {
           .fn()
           .mockResolvedValue([{ employment_history: { establishment: { establishmentId: 'A' } } }]),
         getCompletedForensics: vi.fn().mockResolvedValue([]),
+        createExtraction: vi.fn().mockResolvedValue('ext-1'),
+        updateExtractionSuccess: vi.fn().mockResolvedValue(undefined),
+        updateExtractionFailure: vi.fn().mockResolvedValue(undefined),
         createPendingRecord: vi.fn().mockResolvedValue('epfo-1'),
         updateRecordSuccess: vi.fn().mockResolvedValue(undefined),
         updateRecordFailure: vi.fn().mockResolvedValue(undefined),

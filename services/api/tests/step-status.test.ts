@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import * as yaml from 'js-yaml';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 import {
   projectPublicSteps,
   projectOpsSteps,
@@ -330,7 +335,8 @@ describe('RCQ-20113 — per-step status API', () => {
     it('StatusResponse validates for every lifecycle state', async () => {
       let raw: string;
       try {
-        raw = await readFile('contract/openapi.yaml', 'utf8');
+        const contractPath = path.resolve(__dirname, '../../../contract/openapi.yaml');
+        raw = await readFile(contractPath, 'utf8');
         contract = yaml.load(raw) as typeof contract;
       } catch (cause) {
         throw new Error('failed to load contract/openapi.yaml for validation', { cause });
@@ -351,7 +357,8 @@ describe('RCQ-20113 — per-step status API', () => {
     it('CaseDetail.steps validates including evidence', async () => {
       let raw: string;
       try {
-        raw = await readFile('contract/openapi.yaml', 'utf8');
+        const contractPath = path.resolve(__dirname, '../../../contract/openapi.yaml');
+        raw = await readFile(contractPath, 'utf8');
         contract = yaml.load(raw) as typeof contract;
       } catch (cause) {
         throw new Error('failed to load contract/openapi.yaml for validation', { cause });

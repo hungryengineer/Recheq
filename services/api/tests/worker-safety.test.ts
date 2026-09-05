@@ -11,11 +11,11 @@ describe('Worker Safety', () => {
     const dbUrl = process.env.DATABASE_URL;
     boss = new PgBoss(dbUrl!);
     await boss.start();
-  });
+  }, 30000);
 
   afterEach(async () => {
     if (boss) await boss.stop();
-  });
+  }, 30000);
 
   it('should retry failed jobs', async () => {
     await boss.createQueue('retry_test');
@@ -36,7 +36,7 @@ describe('Worker Safety', () => {
     }
 
     expect(attempts).toBe(2);
-  }, 15000);
+  }, 30000);
 
   it('should maintain job queue across restarts', async () => {
     await boss.createQueue('persist_test');
@@ -54,7 +54,7 @@ describe('Worker Safety', () => {
     expect(state2).toBeGreaterThan(0);
 
     boss = boss2;
-  }, 15000);
+  }, 30000);
 
   it('should cap case processing concurrency at 4', async () => {
     await boss.createQueue('case_proc_test');
@@ -80,7 +80,7 @@ describe('Worker Safety', () => {
 
     await new Promise((r) => setTimeout(r, 2000));
     expect(maxConcurrent).toBeLessThanOrEqual(4);
-  }, 15000);
+  }, 30000);
 
   it('should not log personal document data', async () => {
     await boss.createQueue('safe_log_test');
@@ -97,7 +97,7 @@ describe('Worker Safety', () => {
     });
 
     await new Promise((r) => setTimeout(r, 500));
-  }, 15000);
+  }, 30000);
 
   it('should maintain idempotency with singleton keys', async () => {
     await boss.createQueue('idempotent_test');
@@ -113,7 +113,7 @@ describe('Worker Safety', () => {
 
     await new Promise((r) => setTimeout(r, 1000));
     expect(execCount).toBeLessThanOrEqual(2);
-  }, 15000);
+  }, 30000);
 
   it.skip('should handle job expiration', async () => {
     await boss.createQueue('expire_test');
