@@ -19,8 +19,7 @@ import { CaseProcessingWorker } from './case-processing-worker.js';
 let caseWorker: CaseProcessingWorker | null = null;
 async function processCaseJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
   if (!caseWorker) {
-    console.warn('Case worker dependencies not initialized, skipping case processing job');
-    return;
+    throw new Error('Case worker dependencies not initialized, cannot process case job');
   }
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   for (const job of jobs) {
