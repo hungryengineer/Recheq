@@ -8,12 +8,24 @@ export interface JobContext {
   [key: string]: unknown;
 }
 
-// Case processing runs in-process from the submit route (see
-// apps/web/src/lib/server/process.ts) rather than through pg-boss, per the
-// platform decision. This worker only owns employer/retention/webhook jobs.
+// Case processing now runs off the request path in the 'case_processing' queue.
 
 import { processEmployerWorkflowJob } from '../workflows/employer-reminders.js';
 import { processEmailDelivery } from '../workflows/email-worker.js';
+import type { CaseProcessingDeps } from '../workflows/case-processing.js';
+import type { ProcessCaseJob } from '../workflows/job-types.js';
+import { CaseProcessingWorker } from './case-processing-worker.js';
+
+let caseWorker: CaseProcessingWorker | null = null;
+async function processCaseJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
+  if (!caseWorker) {
+    throw new Error('Case worker dependencies not initialized, cannot process case job');
+  }
+  const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
+  for (const job of jobs) {
+    await caseWorker.handleJob(job.data as unknown as ProcessCaseJob);
+  }
+}
 
 async function processEmployerJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
@@ -28,7 +40,10 @@ async function webhookJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
   for (const job of jobs) console.log('webhook delivery', { id: job.id });
 }
 
-export async function startWorkers(): Promise<void> {
+export async function startWorkers(deps?: CaseProcessingDeps): Promise<void> {
+  if (deps) {
+    caseWorker = new CaseProcessingWorker(deps);
+  }
   try {
     const boss = await initPgBoss();
 
@@ -42,6 +57,7 @@ export async function startWorkers(): Promise<void> {
       );
 
     await Promise.all([
+      startQueue('case_processing', 2, processCaseJob),
       startQueue('employer_workflow', 2, processEmployerJob),
       startQueue('retention_cleanup', 1, retentionJob),
       startQueue('webhook_delivery', 3, webhookJob),

@@ -75,6 +75,7 @@ export async function initPgBoss(): Promise<PgBoss> {
 
     try {
       // Run sequentially to minimize deadlock chances in Neon Serverless/HMR
+      await newBoss.createQueue('case_processing');
       await newBoss.createQueue('employer_workflow');
       await newBoss.createQueue('retention_cleanup');
       await newBoss.createQueue('webhook_delivery');

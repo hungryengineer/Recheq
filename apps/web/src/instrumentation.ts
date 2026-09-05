@@ -7,7 +7,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     try {
       const { startWorkers } = await import('@recheq/api/src/workers/worker.js');
-      await startWorkers();
+      const { buildDeps } = await import('./lib/server/deps');
+      await startWorkers(buildDeps());
     } catch (err) {
       console.error('Failed to start workers', err);
     }
