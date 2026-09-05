@@ -28,9 +28,9 @@ export function buildDeps(): WebAppDeps {
     const extendedDb = new Proxy(db, {
       get(target, prop) {
         if (prop in repository) {
-          return (repository as Record<string | symbol, unknown>)[prop];
+          return (repository as unknown as Record<string | symbol, unknown>)[prop];
         }
-        const val = (target as Record<string | symbol, unknown>)[prop];
+        const val = (target as unknown as Record<string | symbol, unknown>)[prop];
         if (typeof val === 'function') {
           return val.bind(target);
         }
