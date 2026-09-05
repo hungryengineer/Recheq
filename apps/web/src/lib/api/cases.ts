@@ -31,7 +31,6 @@ export type CaseDetailsResult =
       found: true;
       caseRecord: CaseRecord;
       findings: FindingRecord[];
-      notAssessed: string[];
       origins: string[];
     }
   | { found: false };
@@ -44,11 +43,7 @@ export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
     // Load findings from the findings table so the discrepancy ledger is
     // populated for seeded demo cases (BE-15).
     const db = getDb();
-    const allFindings = await getFindingsByCase(db, id);
-    const findings = allFindings.filter((f) => f.status !== 'not_assessed');
-    const notAssessed = allFindings
-      .filter((f) => f.status === 'not_assessed')
-      .map((f) => f.rule_id);
+    const findings = await getFindingsByCase(db, id);
 
     const originsSet = new Set<string>();
     const docKinds = await listDocumentKindsByCase(db, id);
@@ -67,7 +62,6 @@ export async function getCaseDetails(id: string): Promise<CaseDetailsResult> {
       found: true,
       caseRecord,
       findings,
-      notAssessed,
       origins: Array.from(originsSet),
     };
   } catch (err: unknown) {
