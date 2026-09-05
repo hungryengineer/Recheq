@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+// Use global crypto.randomUUID() which is standard in Edge and Node runtimes
 import { SignJWT, jwtVerify } from 'jose';
 
 let _secretKey: Uint8Array | null = null;
@@ -41,7 +41,7 @@ export interface JwtClaims extends JwtPayload {
 }
 
 export async function signToken(payload: JwtPayload): Promise<string> {
-  const jti = randomUUID();
+  const jti = crypto.randomUUID();
   return new SignJWT({ ...payload, jti })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
