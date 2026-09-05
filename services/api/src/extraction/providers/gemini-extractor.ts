@@ -2,7 +2,7 @@
 // Implements LlmDocumentExtractor using the Google Gemini REST API.
 //
 // Design decisions:
-// - Uses Flash-tier models (gemini-2.5-flash default) — ~5x cheaper than Pro,
+// - Uses Flash-tier models (gemini-3.6-flash default) — cheaper than Pro,
 //   fast enough for live demo, and today we will run hundreds of test extractions.
 // - Sends PDFs as inline base64 parts so the model reads printed figures
 //   directly from the rendered document, not from text extraction. This is
@@ -32,7 +32,7 @@ export interface GeminiExtractorConfig {
   /** Google Gemini API key */
   apiKey: string;
   /**
-   * Model name. Default: gemini-2.5-flash.
+   * Model name. Default: gemini-3.6-flash.
    * Use Flash-tier models for cost and speed. Pro is ~5x more expensive.
    */
   model: string;
@@ -50,9 +50,11 @@ export interface GeminiExtractorConfig {
   fixturesFallback: boolean;
 }
 
+export const DEFAULT_EXTRACTION_MODEL = 'gemini-3.6-flash';
+
 const DEFAULT_CONFIG: GeminiExtractorConfig = {
   apiKey: '',
-  model: 'gemini-2.5-flash',
+  model: DEFAULT_EXTRACTION_MODEL,
   baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
   maxOutputTokens: 4096,
   temperature: 0.1,
@@ -409,7 +411,7 @@ export function createGeminiExtractor(
  * Create a GeminiExtractor by reading environment variables.
  *
  * Required:  GEMINI_API_KEY
- * Optional:  EXTRACTION_MODEL (default: gemini-2.5-flash)
+ * Optional:  EXTRACTION_MODEL (default: gemini-3.6-flash)
  *            EXTRACTION_FALLBACK=fixture  → activates fixture fallback
  */
 export function createGeminiExtractorFromEnv(
@@ -422,7 +424,7 @@ export function createGeminiExtractorFromEnv(
 
   return createGeminiExtractor({
     apiKey,
-    model: env.EXTRACTION_MODEL ?? DEFAULT_CONFIG.model,
+    model: env.EXTRACTION_MODEL ?? DEFAULT_EXTRACTION_MODEL,
     fixturesFallback: env.EXTRACTION_FALLBACK === 'fixture',
   });
 }

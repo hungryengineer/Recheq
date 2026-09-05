@@ -43,8 +43,8 @@ fi
 FIXTURE_COUNT=$(find "$FIXTURES_DIR" -maxdepth 1 -name '*.json' -type f | wc -l)
 echo -e "${BLUE}Found $FIXTURE_COUNT fixture files${NC}"
 
-if [[ $FIXTURE_COUNT -ne 10 ]]; then
-  echo -e "${YELLOW}⚠️  Expected 10 fixtures, found $FIXTURE_COUNT${NC}"
+if [[ $FIXTURE_COUNT -ne 16 ]]; then
+  echo -e "${YELLOW}⚠️  Expected 16 extraction fixtures, found $FIXTURE_COUNT${NC}"
 fi
 
 echo ""
