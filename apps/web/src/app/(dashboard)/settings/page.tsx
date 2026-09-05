@@ -9,11 +9,13 @@ import { BillingTab } from '@/components/dashboard/settings/BillingTab';
 import { NotificationsTab } from '@/components/dashboard/settings/NotificationsTab';
 import { SecurityTab } from '@/components/dashboard/settings/SecurityTab';
 
+const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 'true';
+
 const tabs = [
   { id: 'profile', name: 'Profile', icon: User },
   { id: 'organization', name: 'Organization', icon: Building },
   { id: 'api-keys', name: 'API Keys', icon: Key },
-  { id: 'billing', name: 'Billing', icon: CreditCard },
+  ...(ENABLE_MOCK_FEATURES ? [{ id: 'billing', name: 'Billing', icon: CreditCard }] : []),
   { id: 'notifications', name: 'Notifications', icon: Bell },
   { id: 'security', name: 'Security', icon: Shield },
 ];
