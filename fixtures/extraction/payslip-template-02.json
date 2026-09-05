@@ -1,0 +1,47 @@
+{
+  "_fixture": "payslip-template-02",
+  "_description": "Real payroll template — BluePeak Consulting, net/gross/deductions summary band at bottom.",
+  "employee_name": "Nisha Kapoor",
+  "employee_id": "EMP-20817",
+  "employer_name": "BluePeak Consulting Services Pvt. Ltd.",
+  "month": "July",
+  "year": 2026,
+  "basic": {
+    "raw_label": "Basic Salary",
+    "amount": 65000
+  },
+  "hra": {
+    "raw_label": "HRA",
+    "amount": 32500
+  },
+  "da": {
+    "raw_label": null,
+    "amount": null
+  },
+  "special_allowance": {
+    "raw_label": "Special Allowance",
+    "amount": 18000
+  },
+  "other_allowances": [
+    {
+      "raw_label": "Conveyance",
+      "amount": 4500
+    },
+    {
+      "raw_label": "Medical Allowance",
+      "amount": 2500
+    }
+  ],
+  "gross_salary": 122500,
+  "pf_deduction": 7800,
+  "professional_tax": 200,
+  "income_tax": 7600,
+  "other_deductions": null,
+  "total_deductions": 15600,
+  "net_salary": 106900,
+  "uan": "101345678901",
+  "pf_account_number": null,
+  "pan": "FGHIJ5678K",
+  "extraction_notes": "Synthetic BluePeak template from docs/diverse_salary_slip_templates/salary_slip_template_2.pdf.",
+  "schema_version": "payslip-v1"
+}

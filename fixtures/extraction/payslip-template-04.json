@@ -1,0 +1,47 @@
+{
+  "_fixture": "payslip-template-04",
+  "_description": "Real payroll template — Vertex Financial, credit/debit column layout.",
+  "employee_name": "Priya Nair",
+  "employee_id": "EMP-42518",
+  "employer_name": "Vertex Financial Technology India Pvt. Ltd.",
+  "month": "July",
+  "year": 2026,
+  "basic": {
+    "raw_label": "Basic Salary",
+    "amount": 70000
+  },
+  "hra": {
+    "raw_label": "HRA",
+    "amount": 35000
+  },
+  "da": {
+    "raw_label": null,
+    "amount": null
+  },
+  "special_allowance": {
+    "raw_label": "Special Allowance",
+    "amount": 19500
+  },
+  "other_allowances": [
+    {
+      "raw_label": "Conveyance",
+      "amount": 5000
+    },
+    {
+      "raw_label": "Medical Allowance",
+      "amount": 3000
+    }
+  ],
+  "gross_salary": 132500,
+  "pf_deduction": 8400,
+  "professional_tax": 200,
+  "income_tax": 8200,
+  "other_deductions": null,
+  "total_deductions": 16800,
+  "net_salary": 115700,
+  "uan": "101567890123",
+  "pf_account_number": null,
+  "pan": "QRSTU3456V",
+  "extraction_notes": "Synthetic Vertex Financial template from docs/diverse_salary_slip_templates/salary_slip_template_4.pdf.",
+  "schema_version": "payslip-v1"
+}

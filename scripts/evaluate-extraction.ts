@@ -9,117 +9,112 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pdfParse from 'pdf-parse';
-import { createGeminiExtractorFromEnv } from '../services/api/src/extraction/providers/gemini-extractor.js';
 import {
-  evaluateExtraction,
-  FailureMode,
-  type Failure,
-} from '../services/api/src/extraction/evaluator.js';
+  createGeminiExtractorFromEnv,
+  DEFAULT_EXTRACTION_MODEL,
+} from '../services/api/src/extraction/providers/gemini-extractor.js';
+import { evaluateExtraction, FailureMode } from '../services/api/src/extraction/evaluator.js';
 import type { ExtractionRequest } from '../services/api/src/extraction/llm-document-extractor.js';
+import {
+  findMissingPdfPaths,
+  listExtractionLabels,
+  resolvePdfPath,
+} from './lib/extraction-corpus.js';
+import {
+  buildEvaluationReport,
+  formatEvaluationReport,
+  formatTokenSummary,
+  rowFromEvaluation,
+} from './lib/evaluation-report.js';
+import { loadEnvFile } from './lib/load-env.js';
 
-// Load environment
+loadEnvFile('.env.local', ['GEMINI_API_KEY']);
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
+const FIXTURES_DIR = path.join(PROJECT_ROOT, 'fixtures', 'extraction');
+const DOCUMENTS_DIR = path.join(PROJECT_ROOT, 'fixtures', 'documents');
+const TEMPLATES_DIR = path.join(PROJECT_ROOT, 'docs', 'diverse_salary_slip_templates');
+const REPORT_PATH = path.join(PROJECT_ROOT, 'docs', 'extraction-evaluation-results.md');
+const TOKEN_SUMMARY_PATH = path.join(PROJECT_ROOT, 'docs', '.evaluation-token-summary.json');
 
-// For this evaluation, we can use the Mock/Fixture Extractor to test the evaluator,
-// or we can plug in AnthropicExtractor/OpenAIExtractor. To avoid making real API calls
-// by default and costing money on CI, we'll use FixtureExtractor for dry runs or
-// a Mock LLM output that intentionally introduces some errors to demonstrate the failure modes.
+const corpusPaths = {
+  fixturesDir: FIXTURES_DIR,
+  documentsDir: DOCUMENTS_DIR,
+  templatesDir: TEMPLATES_DIR,
+};
 
-async function main() {
+async function readPdfText(pdfPath: string): Promise<string> {
+  const pdfBuffer = fs.readFileSync(pdfPath);
+  const pdfData = await pdfParse(pdfBuffer);
+  return pdfData.text;
+}
+
+export async function runExtractionEvaluation(): Promise<void> {
   console.log('╔════════════════════════════════════════════════════════════╗');
   console.log('║        Evaluation Run: Extraction Reliability (RCQ-140)    ║');
   console.log('╚════════════════════════════════════════════════════════════╝\n');
 
-  const fixturesDir = path.join(PROJECT_ROOT, 'fixtures', 'extraction');
-  const documentsDir = path.join(PROJECT_ROOT, 'fixtures', 'documents');
-
-  if (!fs.existsSync(fixturesDir) || !fs.existsSync(documentsDir)) {
+  if (!fs.existsSync(FIXTURES_DIR)) {
     console.error('❌ Fixtures directory not found.');
     process.exit(1);
   }
 
-  const files = fs.readdirSync(fixturesDir).filter((f) => f.endsWith('.json'));
+  const labels = listExtractionLabels(FIXTURES_DIR);
+  const missing = findMissingPdfPaths(labels, corpusPaths);
 
-  let totalTP = 0;
-  let totalFP = 0;
-  let totalFN = 0;
-  const allFailures: (Failure & { document: string })[] = [];
+  if (missing.length > 0) {
+    console.error('❌ Corpus incomplete — missing PDFs:');
+    missing.forEach((pdfPath) => console.error(`   - ${pdfPath}`));
+    console.error('\nRun `pnpm generate:fixtures` for generated documents first.');
+    process.exit(1);
+  }
 
-  // Initialize the real LLM extractor
+  delete process.env.EXTRACTION_FALLBACK;
+  if (!process.env.EXTRACTION_MODEL || process.env.EXTRACTION_MODEL === 'gemini-2.5-flash') {
+    process.env.EXTRACTION_MODEL = DEFAULT_EXTRACTION_MODEL;
+  }
+
   const extractor = createGeminiExtractorFromEnv();
+  const rows = [];
 
-  for (const file of files) {
-    console.log(`\n📄 Evaluating: ${file}`);
+  for (const labelFile of labels) {
+    console.log(`\n📄 Evaluating: ${labelFile}`);
 
-    // Parse the expected label
-    const expectedContent = fs.readFileSync(path.join(fixturesDir, file), 'utf8');
-    const expected = JSON.parse(expectedContent);
+    const expected = JSON.parse(
+      fs.readFileSync(path.join(FIXTURES_DIR, labelFile), 'utf8'),
+    ) as Record<string, unknown>;
 
-    // Infer the document path
-    // E.g. payslip-clean-01.json -> clean-01/payslip.pdf
-    let docType = 'payslip';
-    let docDir = file.replace('.json', '');
-
-    if (file.startsWith('payslip-')) {
-      docType = 'payslip';
-      docDir = file.replace('payslip-', '').replace('.json', '');
-    } else if (file.startsWith('form16-')) {
-      docType = 'form16';
-      docDir = file.replace('form16-', '').replace('.json', '');
-    }
-
-    const pdfPath = path.join(documentsDir, docDir, `${docType}.pdf`);
-    let pdfText = '';
-
-    if (fs.existsSync(pdfPath)) {
-      try {
-        const pdfBuffer = fs.readFileSync(pdfPath);
-        const pdfData = await pdfParse(pdfBuffer);
-        pdfText = pdfData.text;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.warn(`   ⚠️ Error parsing PDF at ${pdfPath}: ${message}`);
-        pdfText = 'mock text fallback';
-      }
-    } else {
-      console.warn(`   ⚠️ Source PDF not found at ${pdfPath}, skipping extraction logic...`);
-      // We still run evaluation by simulating actual extraction equal to expected
-      pdfText = 'mock text';
-    }
-
-    // Prepare extraction request
-    const documentKind = docType === 'form16' ? 'form_16' : 'payslip';
+    const resolved = resolvePdfPath(labelFile, corpusPaths);
+    const pdfText = await readPdfText(resolved.pdfPath);
+    const documentKind = resolved.docType === 'form16' ? 'form_16' : 'payslip';
 
     const request: ExtractionRequest = {
-      documentId: file.replace('.json', ''),
+      documentId: labelFile.replace('.json', ''),
       documentKind,
       documentContent: pdfText,
       mimeType: 'text/plain',
       schemaVersion:
-        typeof expected.schema_version === 'string' ? expected.schema_version : `${docType}-v1`,
+        typeof expected.schema_version === 'string'
+          ? expected.schema_version
+          : `${resolved.docType}-v1`,
     };
 
-    // Run extraction
-    let actualResult: unknown;
-    if (docType === 'payslip') {
-      const result = await extractor.extractPayslip(request);
-      actualResult = result.status === 'success' ? result.data : {};
-    } else {
-      const result = await extractor.extractForm16(request);
-      actualResult = result.status === 'success' ? result.data : {};
-    }
+    const result =
+      resolved.docType === 'payslip'
+        ? await extractor.extractPayslip(request)
+        : await extractor.extractForm16(request);
 
-    // Evaluate
+    const actualResult = result.status === 'success' ? result.data : {};
     const evalResult = evaluateExtraction(expected, actualResult);
+    const usage = result.usage ?? { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
-    totalTP += evalResult.truePositives;
-    totalFP += evalResult.falsePositives;
-    totalFN += evalResult.falseNegatives;
-
-    evalResult.failures.forEach((f) => {
-      allFailures.push({ ...f, document: file });
-    });
+    rows.push(
+      rowFromEvaluation(labelFile, evalResult, {
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+      }),
+    );
 
     console.log(
       `   ✓ Precision: ${(evalResult.precision * 100).toFixed(1)}% | Recall: ${(evalResult.recall * 100).toFixed(1)}%`,
@@ -129,47 +124,34 @@ async function main() {
     }
   }
 
-  // Final Report
+  const report = buildEvaluationReport(rows);
+
   console.log('\n=============================================================');
   console.log('📊 AGGREGATE RELIABILITY METRICS (OVER LABELLED CORPUS)');
   console.log('=============================================================');
-
-  const overallPrecision = totalTP + totalFP > 0 ? totalTP / (totalTP + totalFP) : 0;
-  const overallRecall = totalTP + totalFN > 0 ? totalTP / (totalTP + totalFN) : 0;
-
-  console.log(`Total True Positives  : ${totalTP}`);
-  console.log(`Total False Positives : ${totalFP}`);
-  console.log(`Total False Negatives : ${totalFN}`);
-  console.log(`Overall Precision     : ${(overallPrecision * 100).toFixed(2)}%`);
-  console.log(`Overall Recall        : ${(overallRecall * 100).toFixed(2)}%`);
+  console.log(`Total True Positives  : ${report.totalTruePositives}`);
+  console.log(`Total False Positives : ${report.totalFalsePositives}`);
+  console.log(`Total False Negatives : ${report.totalFalseNegatives}`);
+  console.log(`Overall Precision     : ${(report.overallPrecision * 100).toFixed(2)}%`);
+  console.log(`Overall Recall        : ${(report.overallRecall * 100).toFixed(2)}%`);
 
   console.log('\n⚠️ CATEGORISED FAILURE MODES:');
-  const failureCounts: Record<string, number> = {
-    [FailureMode.MISSING_FIELD]: 0,
-    [FailureMode.HALLUCINATED_FIELD]: 0,
-    [FailureMode.VALUE_MISMATCH]: 0,
-    [FailureMode.TYPE_MISMATCH]: 0,
-  };
-
-  allFailures.forEach((f) => {
-    failureCounts[f.mode]!++;
+  Object.values(FailureMode).forEach((mode) => {
+    console.log(`- ${mode}: ${report.failureCounts[mode]}`);
   });
 
-  Object.entries(failureCounts).forEach(([mode, count]) => {
-    console.log(`- ${mode}: ${count}`);
-  });
+  fs.writeFileSync(REPORT_PATH, formatEvaluationReport(report));
+  fs.writeFileSync(TOKEN_SUMMARY_PATH, formatTokenSummary(report));
+  console.log(`\n📝 Report written to ${path.relative(PROJECT_ROOT, REPORT_PATH)}`);
+}
 
-  if (allFailures.length > 0) {
-    console.log('\nTop 5 Failure Examples:');
-    allFailures.slice(0, 5).forEach((f, idx) => {
-      console.log(`  ${idx + 1}. [${f.document}] ${f.path} -> ${f.mode}`);
-      if (f.expected !== undefined) console.log(`       Expected: ${JSON.stringify(f.expected)}`);
-      if (f.actual !== undefined) console.log(`       Actual: ${JSON.stringify(f.actual)}`);
-    });
+async function main() {
+  try {
+    await runExtractionEvaluation();
+  } catch (err) {
+    console.error('Fatal evaluation error:', err);
+    process.exit(1);
   }
 }
 
-main().catch((err) => {
-  console.error('Fatal evaluation error:', err);
-  process.exit(1);
-});
+void main();
