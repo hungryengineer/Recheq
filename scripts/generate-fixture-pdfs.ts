@@ -9,10 +9,21 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolvePdfPath } from './lib/extraction-corpus.js';
+import {
+  fixtureJsonPath,
+  listFixtureJsonFiles,
+  loadForm16RenderData,
+  loadPayslipRenderData,
+  type Form16RenderData,
+  type PayslipRenderData,
+} from './lib/fixture-pdf-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
+const FIXTURES = path.join(ROOT, 'fixtures', 'extraction');
 const DOCS = path.join(ROOT, 'fixtures', 'documents');
+const TEMPLATES = path.join(ROOT, 'docs', 'diverse_salary_slip_templates');
 
 const BLACK = rgb(0, 0, 0);
 const DARK = rgb(0.1, 0.1, 0.1);
@@ -82,31 +93,7 @@ function inr(amount: number): string {
 
 // ─── Payslip generator ────────────────────────────────────────────
 
-interface PayslipData {
-  employeeName: string;
-  employeeId: string;
-  department: string;
-  designation: string;
-  employerName: string;
-  month: string;
-  year: number;
-  uan: string;
-  pfAccount: string;
-  basic: number;
-  hra: number;
-  da: number;
-  specialAllowance: number;
-  transportAllowance: number;
-  grossSalary: number;
-  pfDeduction: number;
-  professionalTax: number;
-  incomeTax: number;
-  otherDeductions: number;
-  totalDeductions: number;
-  netSalary: number;
-}
-
-async function generatePayslipPdf(data: PayslipData): Promise<Uint8Array> {
+async function generatePayslipPdf(data: PayslipRenderData): Promise<Uint8Array> {
   const { doc, page } = await newDoc();
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const regular = await doc.embedFont(StandardFonts.Helvetica);
@@ -174,22 +161,8 @@ async function generatePayslipPdf(data: PayslipData): Promise<Uint8Array> {
     color: rgb(0.85, 0.85, 0.85),
   });
 
-  const earnings: [string, number][] = [
-    ['Basic Salary', data.basic],
-    ['House Rent Allowance', data.hra],
-    ['Dearness Allowance', data.da],
-    ['Special Allowance', data.specialAllowance],
-    ['Transport Allowance', data.transportAllowance],
-  ];
-
-  const deductions: [string, number][] = [
-    ['Provident Fund (Employee)', data.pfDeduction],
-    ['Professional Tax', data.professionalTax],
-    ['Income Tax (TDS)', data.incomeTax],
-    ...(data.otherDeductions > 0
-      ? [['Other Deductions', data.otherDeductions] as [string, number]]
-      : []),
-  ];
+  const earnings = data.earnings;
+  const deductions = data.deductions;
 
   const rows = Math.max(earnings.length, deductions.length);
   y -= 18;
@@ -269,25 +242,7 @@ async function generatePayslipPdf(data: PayslipData): Promise<Uint8Array> {
 
 // ─── Form 16 generator ───────────────────────────────────────────
 
-interface Form16Data {
-  employeeName: string;
-  employeePan: string;
-  employerName: string;
-  employerTan: string;
-  employerPan: string;
-  financialYear: string;
-  assessmentYear: string;
-  grossTotalIncome: number;
-  totalSalary: number;
-  exemptAllowances: number;
-  standardDeduction: number;
-  professionalTax: number;
-  netTaxableIncome: number;
-  totalTaxDeducted: number;
-  totalTaxDeposited: number;
-}
-
-async function generateForm16Pdf(data: Form16Data): Promise<Uint8Array> {
+async function generateForm16Pdf(data: Form16RenderData): Promise<Uint8Array> {
   const { doc, page } = await newDoc();
   doc.setTitle('Form 16');
   doc.setProducer('TaxFiler Pro v2.1');
@@ -358,7 +313,9 @@ async function generateForm16Pdf(data: Form16Data): Promise<Uint8Array> {
 
   y -= 22;
   const rows: [string, string][] = [
-    ['Gross Total Income', inr(data.grossTotalIncome)],
+    ...(data.grossTotalIncome != null
+      ? [['Gross Total Income', inr(data.grossTotalIncome)] as [string, string]]
+      : []),
     ['Total Tax Deducted at Source', inr(data.totalTaxDeducted)],
     ['Total Tax Deposited', inr(data.totalTaxDeposited)],
   ];
@@ -370,35 +327,54 @@ async function generateForm16Pdf(data: Form16Data): Promise<Uint8Array> {
     y -= 20;
   }
 
-  // Part B heading
-  y -= 14;
-  drawRect(ctx, M, y, W - 2 * M, 16, ACCENT);
-  drawText(
-    ctx,
-    'PART B — Details of Salary Paid and any other income and tax deducted',
-    M + 8,
-    y + 4,
-    { size: 8, font: 'bold', color: rgb(1, 1, 1) },
-  );
+  if (data.includePartB) {
+    // Part B heading
+    y -= 14;
+    drawRect(ctx, M, y, W - 2 * M, 16, ACCENT);
+    drawText(
+      ctx,
+      'PART B — Details of Salary Paid and any other income and tax deducted',
+      M + 8,
+      y + 4,
+      { size: 8, font: 'bold', color: rgb(1, 1, 1) },
+    );
 
-  y -= 22;
-  const partBRows: [string, string, boolean][] = [
-    ['Gross Salary (u/s 17(1))', inr(data.totalSalary), false],
-    ['Less: Exempt Allowances (u/s 10)', inr(data.exemptAllowances), false],
-    ['Net Salary', inr(data.totalSalary - data.exemptAllowances), false],
-    ['Less: Standard Deduction (u/s 16(ia))', inr(data.standardDeduction), false],
-    ['Less: Professional Tax (u/s 16(iii))', inr(data.professionalTax), false],
-    ['Income Chargeable under "Salaries"', inr(data.netTaxableIncome), true],
-    ['Total Income Tax Payable', inr(data.totalTaxDeducted), true],
-  ];
+    y -= 22;
+    const totalSalary = data.totalSalary ?? 0;
+    const exemptAllowances = data.exemptAllowances ?? 0;
+    const standardDeduction = data.standardDeduction ?? 0;
+    const professionalTax = data.professionalTax ?? 0;
+    const netTaxableIncome = data.netTaxableIncome ?? 0;
+    const totalIncomeTaxPayable = data.totalIncomeTaxPayable ?? data.totalTaxDeducted;
 
-  for (const [label, value, isBold] of partBRows) {
-    const bg = isBold ? rgb(0.88, 0.93, 0.98) : rgb(1, 1, 1);
-    drawRect(ctx, M, y - 14, W - 2 * M, 16, bg);
-    drawLine(ctx, M, y, W - M, y, 0.3);
-    drawText(ctx, label, M + 8, y - 9, { size: 8, font: isBold ? 'bold' : 'regular', color: DARK });
-    drawText(ctx, value, W - M - 90, y - 9, { size: 9, font: 'bold' });
-    y -= 16;
+    const partBRows: [string, string, boolean][] = [
+      ['Gross Salary (u/s 17(1))', inr(totalSalary), false],
+      ['Less: Exempt Allowances (u/s 10)', inr(exemptAllowances), false],
+      ['Net Salary', inr(totalSalary - exemptAllowances), false],
+      ['Less: Standard Deduction (u/s 16(ia))', inr(standardDeduction), false],
+      ['Less: Professional Tax (u/s 16(iii))', inr(professionalTax), false],
+      ['Income Chargeable under "Salaries"', inr(netTaxableIncome), true],
+      ['Total Income Tax Payable', inr(totalIncomeTaxPayable), true],
+    ];
+
+    for (const [label, value, isBold] of partBRows) {
+      const bg = isBold ? rgb(0.88, 0.93, 0.98) : rgb(1, 1, 1);
+      drawRect(ctx, M, y - 14, W - 2 * M, 16, bg);
+      drawLine(ctx, M, y, W - M, y, 0.3);
+      drawText(ctx, label, M + 8, y - 9, {
+        size: 8,
+        font: isBold ? 'bold' : 'regular',
+        color: DARK,
+      });
+      drawText(ctx, value, W - M - 90, y - 9, { size: 9, font: 'bold' });
+      y -= 16;
+    }
+  } else {
+    y -= 10;
+    drawText(ctx, 'Part B not attached to this certificate.', M + 8, y - 10, {
+      size: 8,
+      color: GREY,
+    });
   }
 
   // Footer
@@ -417,74 +393,6 @@ async function generateForm16Pdf(data: Form16Data): Promise<Uint8Array> {
   return doc.save({ useObjectStreams: false });
 }
 
-// ─── Fixture data ─────────────────────────────────────────────────
-
-// Demo persona: Arun Kumar, UAN 100123456789, Acme Technologies Pvt Ltd
-// clean-01: consistent, basic=30000, pf=3600 (12% of basic ✓)
-
-const cleanPayslip: PayslipData = {
-  employeeName: 'Arun Kumar',
-  employeeId: 'ACM-2847',
-  department: 'Engineering',
-  designation: 'Senior Software Engineer',
-  employerName: 'Acme Technologies Pvt Ltd',
-  month: 'March',
-  year: 2026,
-  uan: '100123456789',
-  pfAccount: 'MH/MUM/12345/000/2847',
-  basic: 30000,
-  hra: 12000,
-  da: 3000,
-  specialAllowance: 8000,
-  transportAllowance: 1600,
-  grossSalary: 54600,
-  pfDeduction: 3600, // 12% of 30000 ✓
-  professionalTax: 200,
-  incomeTax: 4800,
-  otherDeductions: 0,
-  totalDeductions: 8600,
-  netSalary: 46000, // 54600 - 8600 = 46000 ✓
-};
-
-const cleanForm16: Form16Data = {
-  employeeName: 'Arun Kumar',
-  employeePan: 'ABCAK5678G',
-  employerName: 'Acme Technologies Pvt Ltd',
-  employerTan: 'MUMA12345D',
-  employerPan: 'AAACA5678B',
-  financialYear: '2025-26',
-  assessmentYear: '2026-27',
-  grossTotalIncome: 655200, // 54600 × 12
-  totalSalary: 655200,
-  exemptAllowances: 19200, // HRA partial exemption
-  standardDeduction: 50000,
-  professionalTax: 2400,
-  netTaxableIncome: 583600,
-  totalTaxDeducted: 57600, // ~10% effective
-  totalTaxDeposited: 57600,
-};
-
-// doctored-01: basic inflated 30000→52000, PF left at 3600 (should be 6240)
-// fires: pf-implies-basic (3600÷0.12=30000 ≠ 52000), pf-matches-epfo (EPFO says 1800)
-
-const doctoredPayslip01: PayslipData = {
-  ...cleanPayslip,
-  basic: 52000, // ← TAMPERED (was 30000)
-  hra: 20800, // looks proportional
-  grossSalary: 85400, // adjusted so it looks internally consistent with new basic
-  pfDeduction: 3600, // ← LEFT UNCHANGED — the tell
-  totalDeductions: 8600, // unchanged
-  netSalary: 76800, // 85400 - 8600 = 76800 ✓ (arithmetic holds; PF is the anomaly)
-};
-
-// doctored-02: net salary tampered, gross-deductions≠net
-// fires: payslip-arithmetic-net
-
-const doctoredPayslip02: PayslipData = {
-  ...cleanPayslip,
-  netSalary: 58000, // ← TAMPERED: should be 46000 (54600 - 8600)
-};
-
 // ─── Main ─────────────────────────────────────────────────────────
 
 async function ensureDir(dir: string) {
@@ -492,43 +400,45 @@ async function ensureDir(dir: string) {
 }
 
 async function writePdf(filePath: string, bytes: Uint8Array) {
+  await ensureDir(path.dirname(filePath));
   await fs.writeFile(filePath, bytes);
   const kb = (bytes.length / 1024).toFixed(1);
   console.log(`  ✓ ${path.relative(ROOT, filePath)} (${kb} KB)`);
 }
 
+export async function generateAllFixturePdfs(): Promise<string[]> {
+  const written: string[] = [];
+  const labels = listFixtureJsonFiles(FIXTURES);
+
+  for (const labelFile of labels) {
+    const resolved = resolvePdfPath(labelFile, {
+      fixturesDir: FIXTURES,
+      documentsDir: DOCS,
+      templatesDir: TEMPLATES,
+    });
+
+    if (resolved.source === 'template') {
+      continue;
+    }
+
+    const fixturePath = fixtureJsonPath(FIXTURES, labelFile);
+    const bytes =
+      resolved.docType === 'payslip'
+        ? await generatePayslipPdf(loadPayslipRenderData(fixturePath))
+        : await generateForm16Pdf(loadForm16RenderData(fixturePath));
+
+    await writePdf(resolved.pdfPath, bytes);
+    written.push(resolved.pdfPath);
+  }
+
+  return written;
+}
+
 async function main() {
   try {
     console.log('Generating fixture PDFs...\n');
-
-    await ensureDir(path.join(DOCS, 'clean-01'));
-    await ensureDir(path.join(DOCS, 'doctored-01'));
-    await ensureDir(path.join(DOCS, 'doctored-02'));
-
-    // clean-01
-    await writePdf(
-      path.join(DOCS, 'clean-01', 'payslip.pdf'),
-      await generatePayslipPdf(cleanPayslip),
-    );
-    await writePdf(path.join(DOCS, 'clean-01', 'form16.pdf'), await generateForm16Pdf(cleanForm16));
-
-    // doctored-01: basic inflated, PF unchanged
-    await writePdf(
-      path.join(DOCS, 'doctored-01', 'payslip.pdf'),
-      await generatePayslipPdf(doctoredPayslip01),
-    );
-    await writePdf(
-      path.join(DOCS, 'doctored-01', 'form16.pdf'),
-      await generateForm16Pdf(cleanForm16), // Form 16 matches clean — cross-doc inconsistency
-    );
-
-    // doctored-02: net pay tampered
-    await writePdf(
-      path.join(DOCS, 'doctored-02', 'payslip.pdf'),
-      await generatePayslipPdf(doctoredPayslip02),
-    );
-
-    console.log('\nDone. Files written to fixtures/documents/');
+    const written = await generateAllFixturePdfs();
+    console.log(`\nDone. ${written.length} files written to fixtures/documents/`);
   } catch (err) {
     console.error('PDF generation failed:', err instanceof Error ? err.message : String(err));
     process.exitCode = 1;

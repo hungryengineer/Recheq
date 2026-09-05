@@ -1,0 +1,47 @@
+{
+  "_fixture": "payslip-template-03",
+  "_description": "Real payroll template — Nimbus Retail, tabular PAY COMPONENT / DEDUCTION layout.",
+  "employee_name": "Rohan Verma",
+  "employee_id": "EMP-31706",
+  "employer_name": "Nimbus Retail Technologies Pvt. Ltd.",
+  "month": "July",
+  "year": 2026,
+  "basic": {
+    "raw_label": "Basic Salary",
+    "amount": 74000
+  },
+  "hra": {
+    "raw_label": "HRA",
+    "amount": 37000
+  },
+  "da": {
+    "raw_label": null,
+    "amount": null
+  },
+  "special_allowance": {
+    "raw_label": "Special Allowance",
+    "amount": 21000
+  },
+  "other_allowances": [
+    {
+      "raw_label": "Conveyance",
+      "amount": 5000
+    },
+    {
+      "raw_label": "Medical Allowance",
+      "amount": 3000
+    }
+  ],
+  "gross_salary": 140000,
+  "pf_deduction": 8880,
+  "professional_tax": 200,
+  "income_tax": 9400,
+  "other_deductions": null,
+  "total_deductions": 18480,
+  "net_salary": 121520,
+  "uan": "101456789012",
+  "pf_account_number": null,
+  "pan": "KLMNO9012P",
+  "extraction_notes": "Synthetic Nimbus Retail template from docs/diverse_salary_slip_templates/salary_slip_template_3.pdf.",
+  "schema_version": "payslip-v1"
+}

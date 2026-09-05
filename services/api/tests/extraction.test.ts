@@ -14,6 +14,7 @@ import {
   GeminiExtractor,
   GeminiWithFallback,
   createGeminiExtractor,
+  DEFAULT_EXTRACTION_MODEL,
 } from '../src/extraction/providers/gemini-extractor.js';
 
 function assertSuccess<T>(
@@ -922,7 +923,7 @@ describe('GeminiExtractor', () => {
       // Model reads doctored numbers faithfully — contradiction is the rules engine's job
       expect(result.data.basic?.amount).toBe(52000);
       expect(result.data.pf_deduction).toBe(3600);
-      expect(result.modelId).toBe('gemini-2.5-flash');
+      expect(result.modelId).toBe(DEFAULT_EXTRACTION_MODEL);
       expect(result.usage.totalTokens).toBe(700);
     });
 
