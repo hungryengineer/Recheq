@@ -29,8 +29,21 @@ export function buildDeps(): WebAppDeps {
     const tokenVerifier = createTokenVerifier(db);
     const webhookPublisher: PublishWebhookDeps = { db, canPublish: true };
 
+    const extendedDb = new Proxy(db, {
+      get(target, prop) {
+        if (prop in repository) {
+          return (repository as unknown as Record<string | symbol, unknown>)[prop];
+        }
+        const val = (target as unknown as Record<string | symbol, unknown>)[prop];
+        if (typeof val === 'function') {
+          return val.bind(target);
+        }
+        return val;
+      },
+    });
+
     globalForDeps.__deps = {
-      db: repository,
+      db: extendedDb,
       audit: auditService,
       epfoProvider: new FixtureEpfoProvider(),
       extractor: createProductionExtractor(process.env),
