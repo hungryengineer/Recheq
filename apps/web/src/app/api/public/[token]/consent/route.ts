@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { grantConsentHandler, toErrorResponse } from '@recheq/api/web';
 import { getConsentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
+import { toPublicHandler } from '@/lib/server/adapter';
 
-export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export const POST = toPublicHandler(async (req: { raw: Request, params: { token: string } }) => {
+  const token = req.params.token;
+  const request = req.raw;
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ success: false, message: 'Invalid request body' }, { status: 400 });
+    return { status: 400, body: { success: false, message: 'Invalid request body' } };
   }
 
   try {
@@ -27,9 +29,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       },
     );
 
-    return NextResponse.json(result.body, { status: result.status });
+    return result;
   } catch (error) {
-    const { status, body: errorBody } = toErrorResponse(error);
-    return NextResponse.json(errorBody, { status });
+    return toErrorResponse(error);
   }
-}
+});

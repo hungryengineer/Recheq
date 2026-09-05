@@ -330,7 +330,7 @@ describe('RCQ-20113 — per-step status API', () => {
     it('StatusResponse validates for every lifecycle state', async () => {
       let raw: string;
       try {
-        raw = await readFile('contract/openapi.yaml', 'utf8');
+        raw = await readFile('../../contract/openapi.yaml', 'utf8');
         contract = yaml.load(raw) as typeof contract;
       } catch (cause) {
         throw new Error('failed to load contract/openapi.yaml for validation', { cause });
@@ -351,7 +351,7 @@ describe('RCQ-20113 — per-step status API', () => {
     it('CaseDetail.steps validates including evidence', async () => {
       let raw: string;
       try {
-        raw = await readFile('contract/openapi.yaml', 'utf8');
+        raw = await readFile('../../contract/openapi.yaml', 'utf8');
         contract = yaml.load(raw) as typeof contract;
       } catch (cause) {
         throw new Error('failed to load contract/openapi.yaml for validation', { cause });

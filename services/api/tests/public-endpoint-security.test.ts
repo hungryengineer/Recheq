@@ -164,7 +164,7 @@ describe('rate-limit.ts', () => {
   });
 
   describe('rateLimitBlockedResponse', () => {
-    it('builds a 429 response with headers', () => {
+    it('builds a 429 response with headers and clean error envelope', async () => {
       const response = rateLimitBlockedResponse({
         allowed: false,
         count: 3,
@@ -175,6 +175,11 @@ describe('rate-limit.ts', () => {
       expect(response.status).toBe(429);
       expect(response.headers.get('X-RateLimit-Limit')).toBe('2');
       expect(response.headers.get('Retry-After')).toBe('30');
+      
+      const body = (await response.json()) as { error?: { code?: string; message?: string; stack?: string } };
+      expect(body.error?.code).toBe('RATE_LIMIT_EXCEEDED');
+      expect(body.error?.message).toBe('Too many requests. Please try again later.');
+      expect(body.error?.stack).toBeUndefined(); // Asserts no internal trace leaks
     });
   });
 });
