@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, boolean, integer, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  timestamp,
+  jsonb,
+  boolean,
+  integer,
+  index,
+} from 'drizzle-orm/pg-core';
 import { organizations } from './organizations.js';
 
 // ─── Webhook Subscriptions ──────────────────────────────────────

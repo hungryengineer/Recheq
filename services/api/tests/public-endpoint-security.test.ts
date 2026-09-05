@@ -121,15 +121,30 @@ describe('rate-limit.ts', () => {
 
   describe('createInMemoryRateLimitStore', () => {
     it('tracks status by scope:key', async () => {
-      await store.increment({ scope: 'public', key: 'unknown:test123', windowMs: 60_000, maxRequests: 10 });
+      await store.increment({
+        scope: 'public',
+        key: 'unknown:test123',
+        windowMs: 60_000,
+        maxRequests: 10,
+      });
       expect(store.getStatus('public:unknown:test123')).toBeDefined();
       store.clear();
       expect(store.getStatus('public:unknown:test123')).toBeUndefined();
     });
 
     it('records count and resetAt', async () => {
-      const first = await store.increment({ scope: 'public', key: '1.2.3.4:a', windowMs: 60_000, maxRequests: 2 });
-      const second = await store.increment({ scope: 'public', key: '1.2.3.4:a', windowMs: 60_000, maxRequests: 2 });
+      const first = await store.increment({
+        scope: 'public',
+        key: '1.2.3.4:a',
+        windowMs: 60_000,
+        maxRequests: 2,
+      });
+      const second = await store.increment({
+        scope: 'public',
+        key: '1.2.3.4:a',
+        windowMs: 60_000,
+        maxRequests: 2,
+      });
       expect(first.allowed).toBe(true);
       expect(second.allowed).toBe(true);
       expect(second.count).toBe(2);
@@ -137,7 +152,12 @@ describe('rate-limit.ts', () => {
 
     it('blocks once the limit is exceeded', async () => {
       await store.increment({ scope: 'public', key: 'x:y', windowMs: 60_000, maxRequests: 1 });
-      const blocked = await store.increment({ scope: 'public', key: 'x:y', windowMs: 60_000, maxRequests: 1 });
+      const blocked = await store.increment({
+        scope: 'public',
+        key: 'x:y',
+        windowMs: 60_000,
+        maxRequests: 1,
+      });
       expect(blocked.allowed).toBe(false);
       expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
     });

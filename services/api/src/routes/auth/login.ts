@@ -26,7 +26,10 @@ const DUMMY_HASH = bcrypt.hashSync('__dummy_timing_padding__', 10);
 // Durable Postgres-backed limiter shared across instances. Login is the one
 // route we always gate; public token routes are gated in toPublicHandler.
 import type { RateLimitStore, RateLimitResult } from '../../security/rate-limit.js';
-import { createSqlRateLimitStore, createRateLimitCounterRepo } from '../../security/sql-rate-limit-store.js';
+import {
+  createSqlRateLimitStore,
+  createRateLimitCounterRepo,
+} from '../../security/sql-rate-limit-store.js';
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const EMAIL_MAX_ATTEMPTS = 5;

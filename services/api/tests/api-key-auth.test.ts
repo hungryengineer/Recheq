@@ -59,9 +59,7 @@ describe('api-key-auth.ts', () => {
 
     it('returns null when the secret does not match any stored hash', async () => {
       const hash = await bcrypt.hash('req_live_differentsecret', 4);
-      const repo = makeRepo({}, [
-        { id: 'key-1', org_id: 'org-1', name: 'ATS', secret_hash: hash },
-      ]);
+      const repo = makeRepo({}, [{ id: 'key-1', org_id: 'org-1', name: 'ATS', secret_hash: hash }]);
 
       const result = await authenticateApiKey(repo, 'req_live_wrong');
       expect(result).toBeNull();
@@ -84,9 +82,9 @@ describe('api-key-auth.ts', () => {
       const secret = 'req_live_oksecret';
       const hash = await bcrypt.hash(secret, 4);
       const unavailable = {
-        findCandidatesByPrefix: vi.fn().mockResolvedValue([
-          { id: 'key-1', org_id: 'org-1', name: 'ATS', secret_hash: hash },
-        ]),
+        findCandidatesByPrefix: vi
+          .fn()
+          .mockResolvedValue([{ id: 'key-1', org_id: 'org-1', name: 'ATS', secret_hash: hash }]),
         recordUsage: vi.fn().mockRejectedValue(new Error('db unavailable')),
       };
 

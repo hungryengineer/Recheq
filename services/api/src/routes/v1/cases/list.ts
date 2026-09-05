@@ -30,7 +30,10 @@ export async function listCasesV1Handler(
   if (cursor) {
     const cursorDate = new Date(cursor);
     if (Number.isNaN(cursorDate.getTime())) {
-      return { status: 400, body: { error: { code: 'INVALID_CURSOR', message: 'Invalid cursor' } } };
+      return {
+        status: 400,
+        body: { error: { code: 'INVALID_CURSOR', message: 'Invalid cursor' } },
+      };
     }
     conditions.push(lt(schema.cases.created_at, cursorDate));
   }

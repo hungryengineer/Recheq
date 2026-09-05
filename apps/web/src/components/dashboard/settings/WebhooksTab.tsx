@@ -3,11 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Plus, Trash2, Loader2, Webhook as WebhookIcon } from 'lucide-react';
-import {
-  getWebhooksAction,
-  createWebhookAction,
-  deleteWebhookAction,
-} from '@/lib/api/settings';
+import { getWebhooksAction, createWebhookAction, deleteWebhookAction } from '@/lib/api/settings';
 import type { Webhook } from '@/lib/api/settings';
 
 export function WebhooksTab() {

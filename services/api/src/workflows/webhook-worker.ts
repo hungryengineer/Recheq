@@ -67,7 +67,10 @@ export async function deliverWebhook(
   }
 }
 
-async function deliverOne(job: PgBoss.Job<WebhookDeliveryJob>, deps: WebhookDeliveryDeps): Promise<void> {
+async function deliverOne(
+  job: PgBoss.Job<WebhookDeliveryJob>,
+  deps: WebhookDeliveryDeps,
+): Promise<void> {
   const { db, now = () => new Date() } = deps;
   const httpPost = deps.httpPost ?? defaultHttpPost;
 
@@ -139,7 +142,7 @@ async function deliverOne(job: PgBoss.Job<WebhookDeliveryJob>, deps: WebhookDeli
           response_status: result.status,
           response_body_preview: result.body.slice(0, 500),
           completed_at: now(),
-          })
+        })
         .where(eq(schema.webhook_deliveries.id, delivery.id));
       console.log('webhook delivered', { deliveryId: delivery.id, status: result.status });
       return;

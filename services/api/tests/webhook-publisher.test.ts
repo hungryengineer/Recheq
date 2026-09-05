@@ -57,7 +57,12 @@ describe('publishCaseCompletedWebhooks', () => {
     await publishCaseCompletedWebhooks(
       'case-1',
       'org-1',
-      { verdict: 'verified', risk_score: 5, finding_count: 1, findings: [{ rule_id: 'r1', severity: 'high', title: 'Mismatch' }] },
+      {
+        verdict: 'verified',
+        risk_score: 5,
+        finding_count: 1,
+        findings: [{ rule_id: 'r1', severity: 'high', title: 'Mismatch' }],
+      },
       { db: db as never, canPublish: true },
     );
 

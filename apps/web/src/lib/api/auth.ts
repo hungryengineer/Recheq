@@ -233,9 +233,8 @@ export async function signoutAction() {
   if (token) {
     try {
       const { getDb } = await import('@/lib/server/db');
-      const { verifySessionToken, revokeSession } = await import(
-        '@recheq/api/src/security/session.js'
-      );
+      const { verifySessionToken, revokeSession } =
+        await import('@recheq/api/src/security/session.js');
       const claims = await verifySessionToken(getDb(), token);
       if (claims) {
         await revokeSession(getDb(), { jti: claims.jti, exp: claims.exp }, 'logout', claims.userId);

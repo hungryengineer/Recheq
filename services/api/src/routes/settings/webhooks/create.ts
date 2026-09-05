@@ -6,7 +6,10 @@ import crypto from 'node:crypto';
 
 const CreateWebhookInput = z.object({
   url: z.string().url('URL must be a valid http(s) URL'),
-  events: z.array(z.string()).min(1, 'At least one event must be subscribed').default(['case.completed']),
+  events: z
+    .array(z.string())
+    .min(1, 'At least one event must be subscribed')
+    .default(['case.completed']),
 });
 
 const WEBHOOK_EVENTS = new Set(['case.completed']);

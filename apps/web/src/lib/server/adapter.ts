@@ -124,9 +124,8 @@ export function toApiKeyHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Pr
         }
       }
 
-      const { authenticateApiKey, createApiKeyRepository } = await import(
-        '@recheq/api/src/security/api-key-auth.js'
-      );
+      const { authenticateApiKey, createApiKeyRepository } =
+        await import('@recheq/api/src/security/api-key-auth.js');
       const authHeader = request.headers.get('authorization');
 
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -182,7 +181,11 @@ export function toApiKeyHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Pr
       const handlerReq = {
         body,
         context: reqCtx,
-        auth: { orgId: apiKeyContext.orgId, apiKeyId: apiKeyContext.apiKeyId, name: apiKeyContext.name },
+        auth: {
+          orgId: apiKeyContext.orgId,
+          apiKeyId: apiKeyContext.apiKeyId,
+          name: apiKeyContext.name,
+        },
         params,
         query,
         raw: request,
@@ -218,9 +221,8 @@ export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Pr
     // serverless instances. Wired here so every public route inherits it.
     try {
       const { createRateLimiter } = await import('@recheq/api/src/security/rate-limit.js');
-      const { createSqlRateLimitStore, createRateLimitCounterRepo } = await import(
-        '@recheq/api/src/security/sql-rate-limit-store.js'
-      );
+      const { createSqlRateLimitStore, createRateLimitCounterRepo } =
+        await import('@recheq/api/src/security/sql-rate-limit-store.js');
       const { getDb } = await import('@/lib/server/db');
       const windowMs = Number(process.env.RATE_LIMIT_PUBLIC_WINDOW_MS ?? 60_000);
       const maxRequests = Number(process.env.RATE_LIMIT_PUBLIC_MAX ?? 10);

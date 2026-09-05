@@ -70,7 +70,9 @@ describe('session.ts revocation', () => {
     const selectMock = vi.fn();
     const deleteMock = vi.fn();
     const whereDeleteMock = vi.fn().mockResolvedValue([]);
-    selectMock.mockReturnValue({ from: () => ({ where: () => Promise.resolve([{ jti: 'old' }]) }) });
+    selectMock.mockReturnValue({
+      from: () => ({ where: () => Promise.resolve([{ jti: 'old' }]) }),
+    });
     deleteMock.mockReturnValue({ where: whereDeleteMock });
     const db = makeMockDb({ select: selectMock, delete: deleteMock });
 

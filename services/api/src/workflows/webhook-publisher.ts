@@ -40,9 +40,16 @@ export async function publishCaseCompletedWebhooks(
   const subscriptions = await deps.db
     .select()
     .from(schema.webhook_subscriptions)
-    .where(and(eq(schema.webhook_subscriptions.org_id, orgId), eq(schema.webhook_subscriptions.active, true)));
+    .where(
+      and(
+        eq(schema.webhook_subscriptions.org_id, orgId),
+        eq(schema.webhook_subscriptions.active, true),
+      ),
+    );
 
-  const matching = subscriptions.filter((sub) => (sub.events ?? []).includes(WEBHOOK_EVENT_CASE_COMPLETED));
+  const matching = subscriptions.filter((sub) =>
+    (sub.events ?? []).includes(WEBHOOK_EVENT_CASE_COMPLETED),
+  );
   if (matching.length === 0) return;
 
   const eventPayload: CaseCompletedWebhookPayload = {

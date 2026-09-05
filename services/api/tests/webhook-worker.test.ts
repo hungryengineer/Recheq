@@ -111,7 +111,12 @@ describe('deliverWebhook', () => {
       webhook_deliveries: [{ ...delivery }],
       webhook_subscriptions: [{ ...subscription }],
     });
-    const httpPost = vi.fn(async (_url: string, _init: { body: string; headers: Record<string, string>; signal: AbortSignal }) => ({ status: 200, body: 'ok' }));
+    const httpPost = vi.fn(
+      async (
+        _url: string,
+        _init: { body: string; headers: Record<string, string>; signal: AbortSignal },
+      ) => ({ status: 200, body: 'ok' }),
+    );
 
     await deliverWebhook(job('del-1'), { db: db as never, httpPost });
 
@@ -136,7 +141,12 @@ describe('deliverWebhook', () => {
       webhook_deliveries: [{ ...delivery }],
       webhook_subscriptions: [{ ...subscription }],
     });
-    const httpPost = vi.fn(async (_url: string, _init: { body: string; headers: Record<string, string>; signal: AbortSignal }) => ({ status: 503, body: 'nope' }));
+    const httpPost = vi.fn(
+      async (
+        _url: string,
+        _init: { body: string; headers: Record<string, string>; signal: AbortSignal },
+      ) => ({ status: 503, body: 'nope' }),
+    );
 
     await expect(deliverWebhook(job('del-1'), { db: db as never, httpPost })).rejects.toThrow(
       /returned 503/,
@@ -152,9 +162,14 @@ describe('deliverWebhook', () => {
       webhook_deliveries: [{ ...delivery }],
       webhook_subscriptions: [{ ...subscription }],
     });
-    const httpPost = vi.fn(async (_url: string, _init: { body: string; headers: Record<string, string>; signal: AbortSignal }) => {
-      throw new Error('ECONNREFUSED');
-    });
+    const httpPost = vi.fn(
+      async (
+        _url: string,
+        _init: { body: string; headers: Record<string, string>; signal: AbortSignal },
+      ) => {
+        throw new Error('ECONNREFUSED');
+      },
+    );
 
     await expect(deliverWebhook(job('del-1'), { db: db as never, httpPost })).rejects.toThrow(
       'ECONNREFUSED',
@@ -191,9 +206,9 @@ describe('deliverWebhook', () => {
     const httpPost = vi.fn();
     const badJob = { id: 'j', data: { nope: true } } as never;
 
-    await expect(
-      deliverWebhook(badJob, { db: db as never, httpPost }),
-    ).rejects.toThrow(/Invalid webhook delivery payload/);
+    await expect(deliverWebhook(badJob, { db: db as never, httpPost })).rejects.toThrow(
+      /Invalid webhook delivery payload/,
+    );
     expect(httpPost).not.toHaveBeenCalled();
   });
 });

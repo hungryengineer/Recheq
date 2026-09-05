@@ -10,7 +10,12 @@ export async function deleteWebhookHandler(
   const id = req.params.id as string;
   await deps.db
     .delete(schema.webhook_subscriptions)
-    .where(and(eq(schema.webhook_subscriptions.id, id), eq(schema.webhook_subscriptions.org_id, req.auth.orgId)));
+    .where(
+      and(
+        eq(schema.webhook_subscriptions.id, id),
+        eq(schema.webhook_subscriptions.org_id, req.auth.orgId),
+      ),
+    );
 
   return { status: 204, body: null };
 }
