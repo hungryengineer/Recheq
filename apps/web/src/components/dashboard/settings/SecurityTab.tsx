@@ -88,7 +88,9 @@ export function SecurityTab() {
     setIsEnabling2FA(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      toast.error('Not Implemented: Two-factor authentication is not available in this environment');
+      toast.error(
+        'Not Implemented: Two-factor authentication is not available in this environment',
+      );
     } finally {
       setIsEnabling2FA(false);
     }

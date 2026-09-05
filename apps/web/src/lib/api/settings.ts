@@ -419,7 +419,7 @@ export async function signOutOtherDevicesAction(): Promise<{ success: boolean } 
 
   // Clear cookie so they are logged out of the current device as well
   cookieStore.delete('recheq_session');
-  
+
   revalidatePath('/', 'layout');
   return { success: true };
 }

@@ -587,11 +587,12 @@ try {
         severity: 'high',
         status: 'open',
         title: 'Overlapping Employment Detected (Moonlighting)',
-        explanation: 'Candidate has concurrent EPFO contributions from Acme Technologies Pvt Ltd and Rival Systems Pvt Ltd during Oct-Dec 2025.',
+        explanation:
+          'Candidate has concurrent EPFO contributions from Acme Technologies Pvt Ltd and Rival Systems Pvt Ltd during Oct-Dec 2025.',
         expected: '1 active employer',
         observed: '2 concurrent employers',
         source_document_ids: [],
-      }
+      },
     ],
     eventInputs: [
       {
