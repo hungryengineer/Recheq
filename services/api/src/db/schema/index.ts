@@ -11,3 +11,6 @@ export * from './epfo-records.js';
 export * from './extractions.js';
 export * from './consents.js';
 export * from './forensics.js';
+export * from './revoked-tokens.js';
+export * from './rate-limits.js';
+export * from './webhooks.js';
