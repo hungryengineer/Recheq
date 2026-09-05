@@ -1,12 +1,12 @@
 import type { Database } from '../../../db/client.js';
 import { schema } from '../../../db/client.js';
 import { eq } from 'drizzle-orm';
+import type { HandlerResult, WebhookSubscriptionView } from './create.js';
 
 export async function listWebhooksHandler(
   req: { auth: { orgId: string } },
   deps: { db: Database },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<{ status: number; body: any }> {
+): Promise<HandlerResult> {
   const rows = await deps.db
     .select({
       id: schema.webhook_subscriptions.id,
@@ -19,14 +19,13 @@ export async function listWebhooksHandler(
     .where(eq(schema.webhook_subscriptions.org_id, req.auth.orgId))
     .orderBy(schema.webhook_subscriptions.created_at);
 
-  return {
-    status: 200,
-    body: rows.map((w) => ({
-      id: w.id,
-      url: w.url,
-      events: w.events,
-      active: w.active,
-      createdAt: w.created_at.toISOString(),
-    })),
-  };
+  const body: WebhookSubscriptionView[] = rows.map((w) => ({
+    id: w.id,
+    url: w.url,
+    events: w.events,
+    active: w.active,
+    createdAt: w.created_at.toISOString(),
+  }));
+
+  return { status: 200, body };
 }

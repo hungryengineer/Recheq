@@ -4,7 +4,9 @@ import {
   verifyWebhookSignature,
   deliverWebhook,
   WEBHOOK_EVENT_CASE_COMPLETED,
+  type WebhookDeliveryJob,
 } from '../src/workflows/webhook-worker.js';
+import type PgBoss from 'pg-boss';
 import { schema } from '../src/db/client.js';
 
 // ─── Minimal chainable fake db for drizzle query builders ───────
@@ -78,13 +80,15 @@ const delivery = {
   error_message: null,
 };
 
-function job(deliveryId: string) {
+function job(deliveryId: string): PgBoss.Job<WebhookDeliveryJob> {
   return {
     id: 'job-1',
-    name: 'webhook_delivery',
+    name: 'webhook_delivery' as const,
     data: { delivery_id: deliveryId },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any;
+    // The worker only reads `job.data`, so the remaining pg-boss job fields are
+    // intentionally omitted; the cast keeps the fixture type-safe without
+    // enumerating the full library shape.
+  } as PgBoss.Job<WebhookDeliveryJob>;
 }
 
 describe('webhook signature', () => {
@@ -210,5 +214,19 @@ describe('deliverWebhook', () => {
       /Invalid webhook delivery payload/,
     );
     expect(httpPost).not.toHaveBeenCalled();
+  });
+
+  it('fails permanently without retrying when the subscription URL is unsafe (SSRF)', async () => {
+    const { db, store } = makeFakeDb({
+      webhook_deliveries: [{ ...delivery }],
+      webhook_subscriptions: [{ ...subscription, url: 'http://169.254.169.254/latest/meta-data' }],
+    });
+    const httpPost = vi.fn();
+
+    await deliverWebhook(job('del-1'), { db: db as never, httpPost });
+    expect(httpPost).not.toHaveBeenCalled();
+    const row = store.webhook_deliveries[0]!;
+    expect(row.status).toBe('failed');
+    expect(row.error_message).toMatch(/blocked|required/i);
   });
 });

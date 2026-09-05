@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import type PgBoss from 'pg-boss';
 import { schema } from '../db/client.js';
 import type { Database } from '../db/client.js';
+import { isSafeWebhookUrl } from '../security/webhook-url.js';
 
 // ─── Webhook Delivery Worker ────────────────────────────────────
 // Replaces the previous console.log stub. Loads the subscription, signs the
@@ -43,17 +44,42 @@ export function verifyWebhookSignature(secret: string, body: string, signature: 
   return timingSafeEqual(a, b);
 }
 
+async function readBodyPreview(res: Response, limit = 500): Promise<string> {
+  if (!res.body) return '';
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let out = '';
+  while (out.length < limit) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    out += decoder.decode(value, { stream: true });
+    if (out.length >= limit) {
+      // Stop buffering the remainder of a possibly huge response body.
+      await reader.cancel();
+      break;
+    }
+  }
+  return out.slice(0, limit);
+}
+
 async function defaultHttpPost(
   url: string,
   init: { body: string; headers: Record<string, string>; signal: AbortSignal },
 ): Promise<{ status: number; body: string }> {
+  // Defense-in-depth: reject destinations that slipped past create-time
+  // validation, and never follow redirects (a 3xx is a failure, so a webhook
+  // URL cannot be redirected onto an internal/private address space).
+  if (!isSafeWebhookUrl(url)) {
+    throw new Error('Webhook destination blocked: HTTPS and a public host are required');
+  }
   const res = await fetch(url, {
     method: 'POST',
     headers: init.headers,
     body: init.body,
     signal: init.signal,
+    redirect: 'manual',
   });
-  const body = await res.text();
+  const body = await readBodyPreview(res);
   return { status: res.status, body };
 }
 
@@ -106,6 +132,21 @@ async function deliverOne(
     await db
       .update(schema.webhook_deliveries)
       .set({ status: 'cancelled', completed_at: now() })
+      .where(eq(schema.webhook_deliveries.id, delivery.id));
+    return;
+  }
+
+  // Permanent failure: the destination violates the SSRF/HTTPS guard. Do not
+  // re-throw (an unsafe URL is not transient), so pg-boss will not retry.
+  if (!isSafeWebhookUrl(subscription.url)) {
+    await db
+      .update(schema.webhook_deliveries)
+      .set({
+        status: 'failed',
+        attempts: delivery.attempts + 1,
+        error_message: 'Webhook destination blocked: HTTPS and a public host are required',
+        completed_at: now(),
+      })
       .where(eq(schema.webhook_deliveries.id, delivery.id));
     return;
   }

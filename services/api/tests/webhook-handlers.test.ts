@@ -44,13 +44,20 @@ describe('createWebhookHandler', () => {
     );
 
     expect(result.status).toBe(201);
-    expect(result.body).toMatchObject({
+    const created = result.body as {
+      id: string;
+      url: string;
+      events: string[];
+      active: boolean;
+      secret: string;
+    };
+    expect(created).toMatchObject({
       id: 'wh-1',
       url: 'https://example.com/hooks',
       events: ['case.completed'],
       active: true,
     });
-    expect(result.body.secret).toMatch(/^whsec_/);
+    expect(created.secret).toMatch(/^whsec_/);
   });
 
   it('rejects invalid URLs', async () => {
@@ -61,6 +68,36 @@ describe('createWebhookHandler', () => {
         { db: db as never },
       ),
     ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('rejects non-HTTPS webhook URLs', async () => {
+    const { db } = fakeDb();
+    await expect(
+      createWebhookHandler(
+        {
+          body: { url: 'http://example.com/hooks', events: ['case.completed'] },
+          auth: { orgId: 'org-1' },
+        },
+        { db: db as never },
+      ),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('rejects private/loopback webhook URLs (SSRF guard)', async () => {
+    const { db } = fakeDb();
+    for (const url of [
+      'https://127.0.0.1/hooks',
+      'https://localhost/hooks',
+      'https://169.254.169.254/latest/meta-data',
+      'https://metadata.google.internal',
+    ]) {
+      await expect(
+        createWebhookHandler(
+          { body: { url, events: ['case.completed'] }, auth: { orgId: 'org-1' } },
+          { db: db as never },
+        ),
+      ).rejects.toMatchObject({ statusCode: 400 });
+    }
   });
 
   it('rejects unsupported event names', async () => {
@@ -111,10 +148,17 @@ describe('listWebhooksHandler', () => {
 });
 
 describe('deleteWebhookHandler', () => {
-  it('returns 204 and scopes the delete to the org', async () => {
-    const whereMock = vi.fn(() => Promise.resolve([]));
+  it('deletes the delivery history and subscription inside one transaction', async () => {
+    const deliveriesWhere = vi.fn(() => Promise.resolve([]));
+    const subscriptionsWhere = vi.fn(() => Promise.resolve([]));
+    const tx = {
+      delete: vi.fn(() => ({ where: vi.fn() })),
+    };
+    tx.delete.mockReturnValueOnce({ where: deliveriesWhere }).mockReturnValueOnce({
+      where: subscriptionsWhere,
+    });
     const db = {
-      delete: vi.fn(() => ({ where: whereMock })),
+      transaction: vi.fn(async (cb: (t: typeof tx) => Promise<void>) => cb(tx)),
     };
 
     const result = await deleteWebhookHandler(
@@ -122,6 +166,11 @@ describe('deleteWebhookHandler', () => {
       { db: db as never },
     );
     expect(result.status).toBe(204);
-    expect(whereMock).toHaveBeenCalled();
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    expect(tx.delete).toHaveBeenCalledTimes(2);
+    // deliveries are removed first (FK-safe order), then the subscription,
+    // which is both scoped to the org.
+    expect(deliveriesWhere).toHaveBeenCalled();
+    expect(subscriptionsWhere).toHaveBeenCalled();
   });
 });
