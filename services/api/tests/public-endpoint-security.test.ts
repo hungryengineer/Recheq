@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createRateLimiter,
-  clearRateLimitState,
-  getRateLimitStatus,
+  createInMemoryRateLimitStore,
+  rateLimitBlockedResponse,
 } from '../src/security/rate-limit.js';
 import { createSecurityHeadersMiddleware } from '../src/security/security-headers.js';
 import {
@@ -15,17 +15,19 @@ import {
 import type { TokenRecord } from '../src/tokens/verify-token.js';
 
 describe('rate-limit.ts', () => {
+  let store: ReturnType<typeof createInMemoryRateLimitStore>;
+
   beforeEach(() => {
-    clearRateLimitState();
+    store = createInMemoryRateLimitStore();
   });
 
   afterEach(() => {
-    clearRateLimitState();
+    store.clear();
   });
 
   describe('createRateLimiter', () => {
     it('allows requests under the limit', async () => {
-      const rateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
+      const rateLimit = createRateLimiter(store, { windowMs: 60_000, maxRequests: 5 });
 
       let callCount = 0;
       const next = () => {
@@ -43,7 +45,7 @@ describe('rate-limit.ts', () => {
     });
 
     it('blocks requests over the limit with 429 status', async () => {
-      const rateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 3 });
+      const rateLimit = createRateLimiter(store, { windowMs: 60_000, maxRequests: 3 });
       const next = vi.fn().mockResolvedValue(new Response('OK'));
 
       // Make 4 requests (1 over the limit)
@@ -56,16 +58,13 @@ describe('rate-limit.ts', () => {
       expect(next).toHaveBeenCalledTimes(3);
     });
 
-    it('returns rate limit headers', async () => {
-      const rateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 2 });
-
+    it('returns rate limit headers on block', async () => {
+      const rateLimit = createRateLimiter(store, { windowMs: 60_000, maxRequests: 2 });
       const next = () => Promise.resolve(new Response('OK'));
 
-      // Make 2 requests to hit the limit
       await rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
       await rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
 
-      // The 3rd request should be blocked with headers
       const req = new Request('http://localhost/api/public/test123/consent');
       const response = await rateLimit(req, next);
 
@@ -76,17 +75,15 @@ describe('rate-limit.ts', () => {
     });
 
     it('uses different limits for different IP + token combinations', async () => {
-      const rateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 2 });
+      const rateLimit = createRateLimiter(store, { windowMs: 60_000, maxRequests: 2 });
       const next = vi.fn().mockResolvedValue(new Response('OK'));
 
-      // Requests from different IPs
       const req1 = new Request('http://localhost/api/public/test123/consent');
       req1.headers.set('X-Forwarded-For', '192.168.1.1');
 
       const req2 = new Request('http://localhost/api/public/test123/consent');
       req2.headers.set('X-Forwarded-For', '192.168.1.2');
 
-      // Each should have separate rate limits
       await rateLimit(req1, next);
       await rateLimit(req2, next);
 
@@ -94,58 +91,70 @@ describe('rate-limit.ts', () => {
     });
 
     it('resets the rate limit window after timeout', async () => {
-      // Use a very short window for testing
-      const rateLimit = createRateLimiter({ windowMs: 100, maxRequests: 2 });
+      const rateLimit = createRateLimiter(store, { windowMs: 100, maxRequests: 2 });
       const next = vi.fn().mockResolvedValue(new Response('OK'));
 
-      // Hit the limit
       await rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
       await rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
 
       expect(next).toHaveBeenCalledTimes(2);
 
-      // Wait for window to reset
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      // Should be allowed again
       await rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
       expect(next).toHaveBeenCalledTimes(3);
     });
-  });
 
-  describe('clearRateLimitState', () => {
-    it('clears all rate limit records', () => {
-      const rateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 10 });
+    it('keys by token from the request path', async () => {
+      const rateLimit = createRateLimiter(store, { windowMs: 60_000, maxRequests: 1 });
       const next = vi.fn().mockResolvedValue(new Response('OK'));
 
-      rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
+      // Hit limit for token A
+      await rateLimit(new Request('http://localhost/api/public/tokenA/consent'), next);
 
-      expect(getRateLimitStatus('unknown:test123')).toBeDefined();
+      // Different token B should not be blocked
+      await rateLimit(new Request('http://localhost/api/public/tokenB/consent'), next);
 
-      clearRateLimitState();
-
-      expect(getRateLimitStatus('unknown:test123')).toBeUndefined();
+      expect(next).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('getRateLimitStatus', () => {
-    it('returns undefined for non-existent key', () => {
-      expect(getRateLimitStatus('nonexistent:key')).toBeUndefined();
+  describe('createInMemoryRateLimitStore', () => {
+    it('tracks status by scope:key', async () => {
+      await store.increment({ scope: 'public', key: 'unknown:test123', windowMs: 60_000, maxRequests: 10 });
+      expect(store.getStatus('public:unknown:test123')).toBeDefined();
+      store.clear();
+      expect(store.getStatus('public:unknown:test123')).toBeUndefined();
     });
 
-    it('returns undefined for expired record', async () => {
-      clearRateLimitState();
-      const rateLimit = createRateLimiter({ windowMs: 10, maxRequests: 10 });
-      const next = vi.fn().mockResolvedValue(new Response('OK'));
+    it('records count and resetAt', async () => {
+      const first = await store.increment({ scope: 'public', key: '1.2.3.4:a', windowMs: 60_000, maxRequests: 2 });
+      const second = await store.increment({ scope: 'public', key: '1.2.3.4:a', windowMs: 60_000, maxRequests: 2 });
+      expect(first.allowed).toBe(true);
+      expect(second.allowed).toBe(true);
+      expect(second.count).toBe(2);
+    });
 
-      await rateLimit(new Request('http://localhost/api/public/test123/consent'), next);
+    it('blocks once the limit is exceeded', async () => {
+      await store.increment({ scope: 'public', key: 'x:y', windowMs: 60_000, maxRequests: 1 });
+      const blocked = await store.increment({ scope: 'public', key: 'x:y', windowMs: 60_000, maxRequests: 1 });
+      expect(blocked.allowed).toBe(false);
+      expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
+    });
+  });
 
-      // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 20));
-
-      expect(getRateLimitStatus('unknown:test123')).toBeUndefined();
-
-      clearRateLimitState();
+  describe('rateLimitBlockedResponse', () => {
+    it('builds a 429 response with headers', () => {
+      const response = rateLimitBlockedResponse({
+        allowed: false,
+        count: 3,
+        limit: 2,
+        resetAt: Date.now() + 30_000,
+        retryAfterSeconds: 30,
+      });
+      expect(response.status).toBe(429);
+      expect(response.headers.get('X-RateLimit-Limit')).toBe('2');
+      expect(response.headers.get('Retry-After')).toBe('30');
     });
   });
 });

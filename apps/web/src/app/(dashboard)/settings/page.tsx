@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Building, Key, CreditCard, Bell, Shield } from 'lucide-react';
+import { User, Building, Key, CreditCard, Bell, Shield, Webhook } from 'lucide-react';
 import { ProfileTab } from '@/components/dashboard/settings/ProfileTab';
 import { OrganizationTab } from '@/components/dashboard/settings/OrganizationTab';
 import { ApiKeysTab } from '@/components/dashboard/settings/ApiKeysTab';
 import { BillingTab } from '@/components/dashboard/settings/BillingTab';
 import { NotificationsTab } from '@/components/dashboard/settings/NotificationsTab';
 import { SecurityTab } from '@/components/dashboard/settings/SecurityTab';
+import { WebhooksTab } from '@/components/dashboard/settings/WebhooksTab';
 
 const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 'true';
 
@@ -15,6 +16,7 @@ const tabs = [
   { id: 'profile', name: 'Profile', icon: User },
   { id: 'organization', name: 'Organization', icon: Building },
   { id: 'api-keys', name: 'API Keys', icon: Key },
+  { id: 'webhooks', name: 'Webhooks', icon: Webhook },
   ...(ENABLE_MOCK_FEATURES ? [{ id: 'billing', name: 'Billing', icon: CreditCard }] : []),
   { id: 'notifications', name: 'Notifications', icon: Bell },
   { id: 'security', name: 'Security', icon: Shield },
@@ -66,6 +68,7 @@ export default function SettingsPage() {
           {activeTab === 'profile' && <ProfileTab />}
           {activeTab === 'organization' && <OrganizationTab />}
           {activeTab === 'api-keys' && <ApiKeysTab />}
+          {activeTab === 'webhooks' && <WebhooksTab />}
           {activeTab === 'billing' && <BillingTab />}
           {activeTab === 'notifications' && <NotificationsTab />}
           {activeTab === 'security' && <SecurityTab />}

@@ -16,6 +16,7 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
     EvidenceServiceDeps['db'] & {
       getCaseById: (caseId: string) => Promise<{
         id: string;
+        org_id: string;
         uan: string | null;
         status: CaseStatus;
         claimed_ctc: string;
@@ -51,6 +52,16 @@ export interface CaseProcessingDeps extends EvidenceServiceDeps {
   };
   epfoProvider: EpfoProvider;
   extractor: LlmDocumentExtractor;
+  publishCaseCompletedWebhooks?: (
+    caseId: string,
+    orgId: string,
+    payload: {
+      verdict: string;
+      risk_score: number;
+      finding_count: number;
+      findings: Array<{ rule_id: string; severity: string; title: string }>;
+    },
+  ) => Promise<void>;
 }
 
 export interface CaseStepContext extends StepContext {
@@ -116,6 +127,13 @@ export async function processCase(
         actor: 'system',
       });
     });
+
+    await deps.publishCaseCompletedWebhooks?.(caseId, caseRecord.org_id, {
+      verdict: 'insufficient_evidence',
+      risk_score: 100,
+      finding_count: 0,
+      findings: [],
+    });
     return;
   }
 
@@ -141,6 +159,13 @@ export async function processCase(
         },
         actor: 'system',
       });
+    });
+
+    await deps.publishCaseCompletedWebhooks?.(caseId, caseRecord.org_id, {
+      verdict,
+      risk_score: score,
+      finding_count: findings.length,
+      findings,
     });
   } else {
     // If triangulation failed or didn't run due to dependencies, fail the case
@@ -169,6 +194,13 @@ export async function processCase(
         },
         actor: 'system',
       });
+    });
+
+    await deps.publishCaseCompletedWebhooks?.(caseId, caseRecord.org_id, {
+      verdict: engineResult.verdict,
+      risk_score: UNVERIFIED_RISK_SCORE,
+      finding_count: 0,
+      findings: [],
     });
   }
 }

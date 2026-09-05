@@ -1,5 +1,6 @@
 import type PgBoss from 'pg-boss';
 import { initPgBoss, getPgBoss } from '../workflows/pgboss.js';
+import { createDb, type Database } from '../db/client.js';
 
 export interface JobContext {
   case_id: string;
@@ -15,6 +16,7 @@ import { processEmailDelivery } from '../workflows/email-worker.js';
 import type { CaseProcessingDeps } from '../workflows/case-processing.js';
 import type { ProcessCaseJob } from '../workflows/job-types.js';
 import { CaseProcessingWorker } from './case-processing-worker.js';
+import { deliverWebhook, type WebhookDeliveryJob } from '../workflows/webhook-worker.js';
 
 let caseWorker: CaseProcessingWorker | null = null;
 async function processCaseJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
@@ -35,9 +37,21 @@ async function retentionJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void>
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
   for (const job of jobs) console.log('retention cleanup', { id: job.id });
 }
+
+// Webhook delivery runs against a raw Postgres connection (not the web app's
+// repository object) so the drizzle query builders in webhook-worker work.
+let webhookDb: Database | null = null;
+function getWebhookDb(): Database {
+  if (!webhookDb) {
+    const url = process.env.DATABASE_URL;
+    if (!url) throw new Error('DATABASE_URL not set for webhook delivery worker');
+    webhookDb = createDb(url);
+  }
+  return webhookDb;
+}
 async function webhookJob(jobsParam: PgBoss.Job | PgBoss.Job[]): Promise<void> {
   const jobs = Array.isArray(jobsParam) ? jobsParam : [jobsParam];
-  for (const job of jobs) console.log('webhook delivery', { id: job.id });
+  await deliverWebhook(jobs as unknown as PgBoss.Job<WebhookDeliveryJob>[], { db: getWebhookDb() });
 }
 
 export async function startWorkers(deps?: CaseProcessingDeps): Promise<void> {
