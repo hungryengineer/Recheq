@@ -46,7 +46,6 @@ export default async function CaseDetailsPage({ params }: PageProps) {
 
   let caseRecord: CaseRecord | null = null;
   let findings: FindingRecord[] = [];
-  let notAssessed: string[] = [];
   let origins: string[] = [];
 
   try {
@@ -56,7 +55,6 @@ export default async function CaseDetailsPage({ params }: PageProps) {
     }
     caseRecord = data.caseRecord;
     findings = data.findings;
-    notAssessed = data.notAssessed;
     origins = data.origins;
   } catch {
     return (
@@ -80,8 +78,8 @@ export default async function CaseDetailsPage({ params }: PageProps) {
     );
   }
 
-  const highCount = findings.filter((f) => f.severity === 'high').length;
-  const mediumCount = findings.filter((f) => f.severity === 'medium').length;
+  const highCount = findings.filter((f) => f.severity === 'high' && f.status === 'open').length;
+  const mediumCount = findings.filter((f) => f.severity === 'medium' && f.status === 'open').length;
 
   return (
     <div className="animate-fade-in pb-12">
@@ -123,9 +121,10 @@ export default async function CaseDetailsPage({ params }: PageProps) {
             </span>
             {caseRecord.risk_score !== null && (
               <span className="text-[10px] font-mono text-[var(--color-fg-subtle)]">
-                {caseRecord.risk_score === 100 && findings.length === 0
+                {caseRecord.risk_score === 100 &&
+                findings.filter((f) => f.status === 'open').length === 0
                   ? 'Unverified Default'
-                  : `40x${highCount} high + 15x${mediumCount} med`}
+                  : `(40 × ${highCount}) + (15 × ${mediumCount}) = ${caseRecord.risk_score}`}
               </span>
             )}
           </div>
@@ -189,19 +188,6 @@ export default async function CaseDetailsPage({ params }: PageProps) {
             {findings.map((f, i) => (
               <FindingCard key={i} finding={f} caseId={id} />
             ))}
-          </div>
-        )}
-
-        {notAssessed.length > 0 && (
-          <div className="bg-[var(--color-page)] rounded-[var(--radius-card)] border border-[var(--color-border)] p-4 flex flex-col sm:flex-row sm:items-center">
-            <span className="text-[13px] font-medium text-[var(--color-fg-muted)] mr-4 whitespace-nowrap mb-2 sm:mb-0">
-              Not assessed &mdash; {notAssessed.length} rules
-            </span>
-            <div className="flex flex-wrap gap-2 text-[11px] font-mono text-[var(--color-fg-subtle)]">
-              {notAssessed.map((rule) => (
-                <span key={rule}>· {rule}</span>
-              ))}
-            </div>
           </div>
         )}
       </div>

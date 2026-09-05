@@ -8,6 +8,7 @@ import { DocumentViewer } from './DocumentViewer';
 export interface UI_Finding {
   rule_id: string;
   severity: string;
+  status?: string;
   explanation: string;
   expected: string | number | null;
   observed: string | number | null;
@@ -18,14 +19,17 @@ export interface UI_Finding {
 export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: string }) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
-  const severityColor =
-    finding.severity === 'high'
+  const isNotAssessed = finding.status === 'not_assessed';
+  const severityColor = isNotAssessed
+    ? 'var(--color-fg-muted)'
+    : finding.severity === 'high'
       ? 'var(--color-high)'
       : finding.severity === 'medium'
         ? 'var(--color-medium)'
         : 'var(--color-fg-muted)';
-  const severityBg =
-    finding.severity === 'high'
+  const severityBg = isNotAssessed
+    ? 'var(--color-page)'
+    : finding.severity === 'high'
       ? 'var(--color-high-bg)'
       : finding.severity === 'medium'
         ? 'var(--color-medium-bg)'
@@ -44,7 +48,7 @@ export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: 
                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                 style={{ backgroundColor: severityBg, color: severityColor }}
               >
-                {finding.severity}
+                {isNotAssessed ? 'not assessed' : finding.severity}
               </span>
               <h3 className="text-[14px] font-medium text-[var(--color-fg)]">
                 {getFriendlyRuleTitle(finding.rule_id)}
@@ -64,7 +68,7 @@ export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: 
                   Expected
                 </div>
                 <div className="font-mono text-[13px] text-[var(--color-fg)]">
-                  {finding.expected}
+                  {isNotAssessed ? "we don't know" : (finding.expected ?? '-')}
                 </div>
               </div>
               <div>
@@ -72,7 +76,7 @@ export function FindingCard({ finding, caseId }: { finding: UI_Finding; caseId: 
                   Observed
                 </div>
                 <div className="font-mono text-[13px] font-medium" style={{ color: severityColor }}>
-                  {finding.observed}
+                  {isNotAssessed ? "we don't know" : (finding.observed ?? '-')}
                 </div>
               </div>
             </div>
