@@ -6,6 +6,8 @@ import { Loader2 } from 'lucide-react';
 import { UAParser } from 'ua-parser-js';
 import { updatePasswordAction } from '@/lib/api/settings';
 
+const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 'true';
+
 export function SecurityTab() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
@@ -208,86 +210,92 @@ export function SecurityTab() {
           </div>
         </div>
 
-        <hr className="border-[var(--color-border)]" />
+        {ENABLE_MOCK_FEATURES && (
+          <>
+            <hr className="border-[var(--color-border)]" />
 
-        <div className="flex flex-col md:flex-row md:items-start gap-4">
-          <div className="w-full md:w-1/3">
-            <label className="block text-sm font-medium text-[var(--color-fg)]">
-              Two-factor Authentication
-            </label>
-            <p className="text-xs text-[var(--color-fg-muted)] mt-1">
-              Add an extra layer of security to your account.
-            </p>
-          </div>
-          <div className="w-full md:w-2/3">
-            <div className="flex items-center gap-3 mb-3">
-              {is2FAEnabled ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
-                  Enabled
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">
-                  Disabled
-                </span>
-              )}
-            </div>
-            <button
-              onClick={handleToggle2FA}
-              disabled={isEnabling2FA}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 disabled:opacity-70 active:scale-95 transition-all"
-            >
-              {isEnabling2FA ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin text-[var(--color-surface)]" />
-              ) : null}
-              {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
-            </button>
-          </div>
-        </div>
-
-        <hr className="border-[var(--color-border)]" />
-
-        <div className="flex flex-col md:flex-row md:items-start gap-4">
-          <div className="w-full md:w-1/3">
-            <label className="block text-sm font-medium text-[var(--color-fg)]">
-              Active Sessions
-            </label>
-          </div>
-          <div className="w-full md:w-2/3">
-            <div className="space-y-3 mb-4">
-              {activeSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="border border-[var(--color-border)] rounded-[var(--radius-control)] p-3 flex justify-between items-center bg-[var(--color-surface)]"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-[var(--color-fg)]">{session.device}</p>
-                    <p className="text-xs text-[var(--color-fg-muted)]">
-                      {session.location} {session.isCurrent ? '• Current session' : ''}
-                    </p>
-                  </div>
-                  {session.isCurrent ? (
-                    <span className="text-xs font-medium text-[var(--color-ok)]">Active</span>
+            <div className="flex flex-col md:flex-row md:items-start gap-4">
+              <div className="w-full md:w-1/3">
+                <label className="block text-sm font-medium text-[var(--color-fg)]">
+                  Two-factor Authentication
+                </label>
+                <p className="text-xs text-[var(--color-fg-muted)] mt-1">
+                  Add an extra layer of security to your account.
+                </p>
+              </div>
+              <div className="w-full md:w-2/3">
+                <div className="flex items-center gap-3 mb-3">
+                  {is2FAEnabled ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-ok-bg)] text-[var(--color-ok)]">
+                      Enabled
+                    </span>
                   ) : (
-                    <span className="text-xs font-medium text-[var(--color-fg-subtle)]">
-                      2 hrs ago
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-high-bg)] text-[var(--color-high)]">
+                      Disabled
                     </span>
                   )}
                 </div>
-              ))}
+                <button
+                  onClick={handleToggle2FA}
+                  disabled={isEnabling2FA}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-[var(--color-surface)] bg-[var(--color-fg)] rounded-[var(--radius-control)] shadow-sm hover:opacity-90 disabled:opacity-70 active:scale-95 transition-all"
+                >
+                  {isEnabling2FA ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin text-[var(--color-surface)]" />
+                  ) : null}
+                  {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+                </button>
+              </div>
             </div>
 
-            {activeSessions.length > 1 && (
-              <button
-                onClick={handleSignoutOtherDevices}
-                disabled={isSigningOut}
-                className="text-sm text-[var(--color-high)] font-medium hover:underline disabled:opacity-70 inline-flex items-center"
-              >
-                {isSigningOut ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
-                Sign out of all other devices
-              </button>
-            )}
-          </div>
-        </div>
+            <hr className="border-[var(--color-border)]" />
+
+            <div className="flex flex-col md:flex-row md:items-start gap-4">
+              <div className="w-full md:w-1/3">
+                <label className="block text-sm font-medium text-[var(--color-fg)]">
+                  Active Sessions
+                </label>
+              </div>
+              <div className="w-full md:w-2/3">
+                <div className="space-y-3 mb-4">
+                  {activeSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="border border-[var(--color-border)] rounded-[var(--radius-control)] p-3 flex justify-between items-center bg-[var(--color-surface)]"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-[var(--color-fg)]">
+                          {session.device}
+                        </p>
+                        <p className="text-xs text-[var(--color-fg-muted)]">
+                          {session.location} {session.isCurrent ? '• Current session' : ''}
+                        </p>
+                      </div>
+                      {session.isCurrent ? (
+                        <span className="text-xs font-medium text-[var(--color-ok)]">Active</span>
+                      ) : (
+                        <span className="text-xs font-medium text-[var(--color-fg-subtle)]">
+                          2 hrs ago
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {activeSessions.length > 1 && (
+                  <button
+                    onClick={handleSignoutOtherDevices}
+                    disabled={isSigningOut}
+                    className="text-sm text-[var(--color-high)] font-medium hover:underline disabled:opacity-70 inline-flex items-center"
+                  >
+                    {isSigningOut ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
+                    Sign out of all other devices
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
