@@ -3,6 +3,7 @@ import type { Database } from '../../../db/client.js';
 import { schema } from '../../../db/client.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { API_KEY_PREFIX } from '../../../security/api-key-auth.js';
 
 export async function createApiKeyHandler(
   req: { body: unknown; auth: { orgId: string } },
@@ -15,8 +16,12 @@ export async function createApiKeyHandler(
   }
 
   const rawSecret = crypto.randomBytes(32).toString('base64url');
-  const prefix = 'req_live_';
+  const prefix = API_KEY_PREFIX; // 'req_live_'
   const fullSecret = `${prefix}${rawSecret}`;
+  // Persist a unique per-key lookup fragment (first 20 chars of the full
+  // secret) so auth narrows to exactly one row before the bcrypt comparison,
+  // regardless of how many keys exist.
+  const lookupFragment = fullSecret.slice(0, 20);
 
   const secretHash = await bcrypt.hash(fullSecret, 10);
 
@@ -25,7 +30,7 @@ export async function createApiKeyHandler(
     .values({
       org_id: req.auth.orgId,
       name: body.name,
-      prefix,
+      prefix: lookupFragment,
       secret_hash: secretHash,
     })
     .returning();

@@ -5,11 +5,14 @@ import type { Database } from '../db/client.js';
 
 // ─── API Key Authentication ─────────────────────────────────────
 // Verifies a `req_live_`-prefixed secret against the bcrypt hash stored in
-// `api_keys`. Lookup is narrowed by the prefix index before the bcrypt
-// comparison so a random bearer value never triggers a full-table scan or
-// leaks timing. Successful auth updates `last_used_at` best-effort.
+// `api_keys`. Lookup is narrowed by a per-key lookup fragment (the first
+// FRAGMENT_LENGTH characters of the full secret, persisted in the `prefix`
+// column) so a random bearer value never triggers a bcrypt comparison across
+// every key or a full-table scan. Successful auth updates `last_used_at`
+// best-effort.
 
 export const API_KEY_PREFIX = 'req_live_';
+const FRAGMENT_LENGTH = 20;
 
 export interface ApiKeyContext {
   apiKeyId: string;
@@ -25,7 +28,7 @@ export interface ApiKeyRecord {
 }
 
 export interface ApiKeyRepository {
-  /** Narrow the search using the stable prefix (index-backed). */
+  /** Narrow the search using the stable per-key fragment (index-backed). */
   findCandidatesByPrefix(prefix: string, limit?: number): Promise<ApiKeyRecord[]>;
   /** Best-effort usage tracking; must never throw into the auth path. */
   recordUsage(id: string): Promise<void>;
@@ -61,10 +64,10 @@ export function createApiKeyRepository(db: Database): ApiKeyRepository {
 }
 
 export function apiKeyPrefix(secret: string): string | null {
-  if (!secret.startsWith(API_KEY_PREFIX)) {
+  if (!secret.startsWith(API_KEY_PREFIX) || secret.length < FRAGMENT_LENGTH) {
     return null;
   }
-  return API_KEY_PREFIX;
+  return secret.slice(0, FRAGMENT_LENGTH);
 }
 
 /**

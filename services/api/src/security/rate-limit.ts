@@ -37,12 +37,14 @@ interface InMemoryRecord {
   maxRequests: number;
 }
 
-const inMemoryState = new Map<string, InMemoryRecord>();
-
 export function createInMemoryRateLimitStore(): RateLimitStore & {
   clear: () => void;
   getStatus: (mapKey: string) => InMemoryRecord | undefined;
 } {
+  // Per-instance state: independent quotas and clearing for each store so two
+  // limiter instances (e.g. in tests, or isolates) never share counters.
+  const inMemoryState = new Map<string, InMemoryRecord>();
+
   return {
     async increment({ scope, key, windowMs, maxRequests }) {
       const mapKey = `${scope}:${key}`;

@@ -20,8 +20,14 @@ function makeRepo(
 
 describe('api-key-auth.ts', () => {
   describe('apiKeyPrefix', () => {
-    it('recognises the req_live_ prefix', () => {
-      expect(apiKeyPrefix('req_live_abc123')).toBe(API_KEY_PREFIX);
+    it('returns the fixed 20-char lookup fragment for a well-formed secret', () => {
+      const token = API_KEY_PREFIX + 'abcdefghijklmnopqrstuvwxyz';
+      expect(apiKeyPrefix(token)).toBe(token.slice(0, 20));
+      expect(apiKeyPrefix(token)).toHaveLength(20);
+    });
+
+    it('returns null for secrets shorter than the lookup fragment', () => {
+      expect(apiKeyPrefix(API_KEY_PREFIX + 'short')).toBeNull();
     });
 
     it('returns null for secrets without the prefix', () => {
@@ -38,10 +44,11 @@ describe('api-key-auth.ts', () => {
       expect(repo.findCandidatesByPrefix).not.toHaveBeenCalled();
     });
 
-    it('returns null when no candidate keys exist under the prefix', async () => {
+    it('returns null when no candidate keys exist under the fragment', async () => {
       const repo = makeRepo({ findCandidatesByPrefix: vi.fn().mockResolvedValue([]) });
-      const result = await authenticateApiKey(repo, 'req_live_missing');
+      const result = await authenticateApiKey(repo, API_KEY_PREFIX + 'a'.repeat(15));
       expect(result).toBeNull();
+      expect(repo.findCandidatesByPrefix).toHaveBeenCalled();
     });
 
     it('returns the key context when the secret matches the stored hash', async () => {
@@ -53,7 +60,8 @@ describe('api-key-auth.ts', () => {
 
       const result = await authenticateApiKey(repo, secret);
       expect(result).toEqual({ apiKeyId: 'key-1', orgId: 'org-1', name: 'My ATS' });
-      expect(repo.findCandidatesByPrefix).toHaveBeenCalledWith(API_KEY_PREFIX);
+      // Auth narrows to the unique 20-char fragment, not the shared constant.
+      expect(repo.findCandidatesByPrefix).toHaveBeenCalledWith(secret.slice(0, 20));
       expect(repo.recordUsage).toHaveBeenCalledWith('key-1');
     });
 
@@ -79,7 +87,7 @@ describe('api-key-auth.ts', () => {
     });
 
     it('swallows recordUsage failures rather than failing auth', async () => {
-      const secret = 'req_live_oksecret';
+      const secret = API_KEY_PREFIX + 'oksecretttt';
       const hash = await bcrypt.hash(secret, 4);
       const unavailable = {
         findCandidatesByPrefix: vi

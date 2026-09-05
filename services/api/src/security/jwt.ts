@@ -58,14 +58,26 @@ export async function verifyToken(token: string): Promise<JwtClaims | null> {
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
     const claims = payload as unknown as {
-      userId?: string;
-      orgId?: string;
-      role?: string;
-      jti?: string;
-      iat?: number;
-      exp?: number;
+      userId?: unknown;
+      orgId?: unknown;
+      role?: unknown;
+      jti?: unknown;
+      iat?: unknown;
+      exp?: unknown;
     };
-    if (!claims.userId || !claims.orgId || !claims.jti || !claims.iat || !claims.exp) {
+    // Reject malformed payloads outright instead of trusting arbitrary types.
+    if (
+      typeof claims.userId !== 'string' ||
+      typeof claims.orgId !== 'string' ||
+      typeof claims.jti !== 'string' ||
+      typeof claims.iat !== 'number' ||
+      !Number.isFinite(claims.iat) ||
+      typeof claims.exp !== 'number' ||
+      !Number.isFinite(claims.exp)
+    ) {
+      return null;
+    }
+    if (claims.role !== undefined && typeof claims.role !== 'string') {
       return null;
     }
     return {
