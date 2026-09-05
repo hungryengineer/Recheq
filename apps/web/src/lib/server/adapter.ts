@@ -89,6 +89,9 @@ export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<
       if (result.status >= 400 && result.body && result.body.error) {
         result.body.error.request_id = requestId;
       }
+      if (result.status === 204) {
+        return new NextResponse(null, { status: 204 });
+      }
 
       return NextResponse.json(result.body, { status: result.status });
     } catch (err) {
@@ -143,6 +146,9 @@ export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Pr
 
       if (result.status >= 400 && result.body && result.body.error) {
         result.body.error.request_id = requestId;
+      }
+      if (result.status === 204) {
+        return new NextResponse(null, { status: 204 });
       }
 
       return NextResponse.json(result.body, { status: result.status });
