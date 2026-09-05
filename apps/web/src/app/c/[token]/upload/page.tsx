@@ -17,7 +17,7 @@ type CaseData = {
 };
 
 const FULL_CONSENT_TEXT =
-  'I hereby authorize Recheq and this employer to verify my employment history, including fetching records from EPFO using my UAN if provided. I understand my data will be retained for 180 days.';
+  'I hereby authorize Recheq and this employer to verify my employment history, including fetching records from EPFO using my UAN if provided.';
 
 export default function CandidateUploadPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);

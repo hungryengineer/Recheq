@@ -1,4 +1,4 @@
-ALTER TABLE "users" ADD COLUMN "password_hash" character varying(255);
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "password_hash" character varying(255);
 
 CREATE TABLE IF NOT EXISTS "api_keys" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
