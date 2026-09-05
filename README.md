@@ -18,10 +18,11 @@ Recheq is a B2B platform that allows employers to initiate secure, zero-trust ba
 
 ## 🏗️ Architecture & Tech Stack
 
-Recheq is built as a high-performance **Turborepo** monorepo, strictly separating the frontend product from the backend domain logic.
+Recheq is built as a **pnpm workspace** monorepo, strictly separating the frontend product from the backend domain logic.
 
-- **Frontend (`apps/web`)**: Next.js 14 (App Router), React, TailwindCSS, Lucide Icons.
-- **Backend (`services/api`)**: Node.js, Express, strict Zod validation.
+- **Frontend (`apps/web`)**: Next.js 16 (App Router), React, TailwindCSS, Lucide Icons.
+- **Backend (`services/api`)**: Pure request handlers invoked via a thin Next.js route-handler adapter — no Express, no separate server. API routes are co-hosted at `/api/*`.
+- **Packages**: `@recheq/schema` (Zod domain types), `@recheq/rules` (pure deterministic business logic), `@recheq/config` (env validation), `@recheq/workflow` (step engine).
 - **Database**: Neon (Serverless Postgres), Drizzle ORM.
 - **Storage**: Backblaze B2 (S3-compatible) for encrypted, private document storage.
 - **Background Jobs**: `pg-boss` for durable, Postgres-backed job queues.
@@ -64,7 +65,7 @@ Fire up the development server:
 pnpm run dev
 ```
 
-The web dashboard will be available at `http://localhost:3000` and the API at `http://localhost:4000`.
+The web dashboard and API will both be available at `http://localhost:3000`.
 
 ## 🤝 Contributing
 
@@ -83,7 +84,7 @@ For detailed architectural guidelines and team workflows, please refer to the [P
 
 ## 👨‍💻 Core Engineering Team
 
-Recheq.bvg was architected and built by a dedicated team of engineers, with development officially kicking off on **August 14th, 2026**.
+Recheq was architected and built by a dedicated team of engineers.
 
 | Name                  | Role                                 |
 | :-------------------- | :----------------------------------- |

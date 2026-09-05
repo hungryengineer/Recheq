@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { CheckContext } from '../../src/check-context.js';
 import { calculatePayslipConfidence, calculateForm16Confidence } from '../../src/confidence.js';
 import { checkDocumentConfidence } from '../../src/checks/document-confidence.js';
-import type { Form16Extraction, PayslipExtraction } from '@tieout/schema';
+import type { Form16Extraction, PayslipExtraction } from '@recheq/schema';
 import type { ForensicsData } from '../../src/check-context.js';
 
 function payslip(partial: Partial<PayslipExtraction>): PayslipExtraction {

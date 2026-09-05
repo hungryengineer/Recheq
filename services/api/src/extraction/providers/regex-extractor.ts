@@ -1,4 +1,4 @@
-import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { PayslipExtraction, Form16Extraction } from '@recheq/schema';
 import type {
   LlmDocumentExtractor,
   ExtractionRequest,

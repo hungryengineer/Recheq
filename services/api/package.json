@@ -1,5 +1,5 @@
 {
-  "name": "@tieout/api",
+  "name": "@recheq/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,10 +16,10 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@tieout/config": "workspace:*",
-    "@tieout/rules": "workspace:*",
-    "@tieout/schema": "workspace:*",
-    "@tieout/workflow": "workspace:*",
+    "@recheq/config": "workspace:*",
+    "@recheq/rules": "workspace:*",
+    "@recheq/schema": "workspace:*",
+    "@recheq/workflow": "workspace:*",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

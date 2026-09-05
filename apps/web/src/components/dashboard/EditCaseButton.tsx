@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { CaseEditModal } from './CaseEditModal';
-import type { CaseRecord } from '@tieout/schema';
+import type { CaseRecord } from '@recheq/schema';
 import { Edit2 } from 'lucide-react';
 
 export function EditCaseButton({ caseRecord }: { caseRecord: CaseRecord }) {

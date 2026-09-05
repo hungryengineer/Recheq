@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { EventKind } from '@tieout/schema';
+import type { EventKind } from '@recheq/schema';
 import { toCanonicalJson } from './canonical-json.js';
 
 /**

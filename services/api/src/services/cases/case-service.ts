@@ -4,11 +4,11 @@ import {
   type CaseSummary,
   type EventInput,
   type EventRecord,
-} from '@tieout/schema';
+} from '@recheq/schema';
 import crypto from 'node:crypto';
 import { publishJob } from '../../workflows/pgboss.js';
 import { validationError, notFoundError, conflictError } from '../../http/errors.js';
-import { resolveCanonicalAppUrl } from '@tieout/config';
+import { resolveCanonicalAppUrl } from '@recheq/config';
 import type { Database } from '../../db/client.js';
 
 function stripUndefined<T extends Record<string, unknown>>(
@@ -172,7 +172,7 @@ export async function updateCase(
 ): Promise<void> {
   // We lazily import CaseUpdateInput to avoid circular issues, or use it directly if imported.
   // We'll import it at the top of the file via the schema package.
-  const parsed = (await import('@tieout/schema')).CaseUpdateInput.safeParse(input);
+  const parsed = (await import('@recheq/schema')).CaseUpdateInput.safeParse(input);
   if (!parsed.success) {
     throw validationError('Invalid case update input', parsed.error.errors);
   }

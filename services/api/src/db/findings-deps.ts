@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
-import { FindingSeverity, FindingStatus, type FindingRecord } from '@tieout/schema';
+import { FindingSeverity, FindingStatus, type FindingRecord } from '@recheq/schema';
 import { findings } from './schema/findings.js';
 import type { Database } from './client.js';
 
 type FindingRow = typeof findings.$inferSelect;
 
 /**
- * Maps a findings table row to the @tieout/schema FindingRecord contract.
+ * Maps a findings table row to the @recheq/schema FindingRecord contract.
  * Drizzle returns uuid[] as arrays, timestamps as Date objects, and enum-ish
  * varchar columns as strings, so they are normalized here at the boundary.
  */

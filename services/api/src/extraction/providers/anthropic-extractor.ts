@@ -6,7 +6,7 @@ import type {
   ExtractionRequest,
   ExtractionResult,
 } from '../llm-document-extractor.js';
-import type { PayslipExtraction, Form16Extraction } from '@tieout/schema';
+import type { PayslipExtraction, Form16Extraction } from '@recheq/schema';
 import { buildPayslipPrompt } from '../prompts/payslip-v1.js';
 import { buildForm16Prompt } from '../prompts/form16-v1.js';
 

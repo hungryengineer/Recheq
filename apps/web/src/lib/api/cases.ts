@@ -1,12 +1,12 @@
-import type { CaseRecord, CaseSummary, FindingRecord } from '@tieout/schema';
-import { getCase, listCases, getFindingsByCase } from '@tieout/api/web';
+import type { CaseRecord, CaseSummary, FindingRecord } from '@recheq/schema';
+import { getCase, listCases, getFindingsByCase } from '@recheq/api/web';
 import { getCaseDeps, getDevOrgId, getDb } from './db';
-import { listDocumentKindsByCase } from '@tieout/api/web';
-import { schema } from '@tieout/api/src/db/client.js';
+import { listDocumentKindsByCase } from '@recheq/api/web';
+import { schema } from '@recheq/api/src/db/client.js';
 import { eq } from 'drizzle-orm';
 
 import { cookies } from 'next/headers';
-import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { verifyToken } from '@recheq/api/src/security/jwt.js';
 
 async function getAuthOrgId(): Promise<string> {
   const cookieStore = await cookies();

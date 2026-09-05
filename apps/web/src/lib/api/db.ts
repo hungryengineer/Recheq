@@ -1,5 +1,5 @@
-import { createDb, createCaseDeps } from '@tieout/api/web';
-import type { CaseServiceDeps } from '@tieout/api/web';
+import { createDb, createCaseDeps } from '@recheq/api/web';
+import type { CaseServiceDeps } from '@recheq/api/web';
 
 /**
  * Development identity constants. Never fall back to hardcoded UUIDs in
@@ -24,7 +24,7 @@ function requireDevId(name: string): string {
 export const getDevOrgId = () => requireDevId('DEV_ORG_ID');
 export const getDevUserId = () => requireDevId('DEV_USER_ID');
 
-const globalForDb = globalThis as unknown as { __tieoutDb?: ReturnType<typeof createDb> };
+const globalForDb = globalThis as unknown as { __recheqDb?: ReturnType<typeof createDb> };
 
 export function getDb(): ReturnType<typeof createDb> {
   const url = process.env.DATABASE_URL;
@@ -33,10 +33,10 @@ export function getDb(): ReturnType<typeof createDb> {
       'DATABASE_URL is not set. Add it to apps/web/.env.local (see .env.example) or Vercel env vars.',
     );
   }
-  if (!globalForDb.__tieoutDb) {
-    globalForDb.__tieoutDb = createDb(url);
+  if (!globalForDb.__recheqDb) {
+    globalForDb.__recheqDb = createDb(url);
   }
-  return globalForDb.__tieoutDb;
+  return globalForDb.__recheqDb;
 }
 
 export function getCaseDeps(): CaseServiceDeps {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { DocumentKind } from '@tieout/schema';
+import type { DocumentKind } from '@recheq/schema';
 import { uploadDocument } from '@/lib/api/candidate';
 
 interface DocumentUploaderProps {

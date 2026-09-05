@@ -24,7 +24,7 @@ Binding artifact: `contract/openapi.yaml`. You do not touch `services/api/**`, `
 
 | Decision           | Why                                                                                                                                                                                                                           |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@tieout/api`; `next.config.ts` lists it in `transpilePackages`. |
+| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@recheq/api`; `next.config.ts` lists it in `transpilePackages`. |
 | **No pg-boss.**    | Fire the pipeline in-process from submit, poll for status. Kills queue bootstrap, worker wiring, idempotency, a whole failure surface.                                                                                        |
 | **No deployment.** | One laptop, one tab, localhost. No Docker, no TLS, no Server Actions origin problem, no venue wifi.                                                                                                                           |
 
@@ -68,7 +68,7 @@ Full catalogue — 21 codes, 62 documented responses — in `contract/openapi.ya
 ### Environment
 
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tieout
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/recheq
 APP_BASE_URL=http://localhost:3000        # ABSENT from .env.example - add it
 DEV_USER_ID=00000000-0000-0000-0000-000000000001
 DEV_ORG_ID=00000000-0000-0000-0000-000000000002
@@ -111,7 +111,7 @@ Fastify · pg-boss · SeaweedFS · generated OpenAPI · Schemathesis · generate
 
 | Gap                                                                                             | Workaround                                                                                                                                       |
 | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm --filter @tieout/web build` fails, `WorkerError`                                          | Delete the `webpack:` block (Next 16 uses Turbopack) and the `rewrites()` block (proxies to a server that will never exist); add `turbopack: {}` |
+| `pnpm --filter @recheq/web build` fails, `WorkerError`                                          | Delete the `webpack:` block (Next 16 uses Turbopack) and the `rewrites()` block (proxies to a server that will never exist); add `turbopack: {}` |
 | `lib/api/*` is five in-memory mock files, 29 lines of "mock"/"simulate"                         | Delete `store.ts`, rewrite the rest to fetch same-origin. Keep every exported name identical so pages don't change.                              |
 | Backend won't exist for 4 hours                                                                 | Run Prism. You are never blocked.                                                                                                                |
 | Two style systems: ~25 CSS vars used 11 times vs ~200 raw palette classes (`text-gray-900` x39) | Define tokens once via `@theme`, delete every raw palette class from the six demo screens                                                        |
@@ -129,7 +129,7 @@ corepack enable && corepack prepare pnpm@10.12.4 --activate
 cp .env.example .env       # then add APP_BASE_URL
 pnpm install
 pnpm approve-builds        # approve esbuild, or vitest won't start
-pnpm --filter tieout/web dev
+pnpm --filter recheq/web dev
 ```
 
 Never be blocked - start this the moment FE-1 lands and leave it running:
@@ -175,7 +175,7 @@ Feed one at a time to your agent. Prefix every prompt:
 
 **Files:** `apps/web/next.config.ts` · `package.json` · `src/app/page.tsx` · `src/app/globals.tmp.css` (delete) · `tailwind.config.ts` (delete) · `.env.example`
 
-`pnpm --filter @tieout/web build` fails with "Error: Call retries were exceeded { type: 'WorkerError' }".
+`pnpm --filter @recheq/web build` fails with "Error: Call retries were exceeded { type: 'WorkerError' }".
 
 1. In `next.config.ts`:
 
@@ -191,7 +191,7 @@ Feed one at a time to your agent. Prefix every prompt:
 5. Add `APP_BASE_URL=http://localhost:3000` to `.env` and `.env.example`. It does not currently exist anywhere, which is why candidate links would be unopenable.
 6. `src/app/page.tsx` says "This is the standalone candidate frontend. You should access this application via your unique candidate link." Wrong - this app hosts the verifier dashboard too. Replace the whole component with `redirect('/cases')`.
 
-**Accept:** `pnpm --filter @tieout/web build` exits 0 · `curl -sI localhost:3000 | head -1` → `307` to `/cases`
+**Accept:** `pnpm --filter @recheq/web build` exits 0 · `curl -sI localhost:3000 | head -1` → `307` to `/cases`
 
 ### FE-2 · Tokens and shell — 2 h, no backend dependency
 
@@ -323,7 +323,7 @@ THREE HARD RULES:
 1. Delete `store.ts`.
 2. `client.ts`: a small fetch wrapper hitting same-origin `/api/**`, parsing the `{ error: { code, message, details, request_id } }` envelope and throwing a typed `ApiError` carrying status, code, details.
 3. Rewrite `cases.ts`, `candidate.ts`, `actions.ts` to call real routes. Keep every exported function name and signature identical so pages do not change.
-4. Validate responses with the Zod schemas from `@tieout/schema` before returning.
+4. Validate responses with the Zod schemas from `@recheq/schema` before returning.
 5. Leave `employer.ts` on mocks - the employer flow is cut. Mark it `// DEMO: not wired, employer path cut`.
 6. Update `apps/web/tests/*` to stub fetch instead of the deleted store.
 

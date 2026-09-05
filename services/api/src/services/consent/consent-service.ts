@@ -5,8 +5,8 @@ import type {
   ConsentRecord,
   EventInput,
   EventRecord,
-} from '@tieout/schema';
-import { ConsentGrantInput as ConsentGrantInputSchema } from '@tieout/schema';
+} from '@recheq/schema';
+import { ConsentGrantInput as ConsentGrantInputSchema } from '@recheq/schema';
 import { transitionCaseStatus } from '../../domain/case-status.js';
 import { validationError, notFoundError, conflictError } from '../../http/errors.js';
 

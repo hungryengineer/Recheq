@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { createCase } from '../../lib/api/actions';
 import { isCreateCaseError } from '../../lib/api/actions-types';
-import { CaseCreateInput } from '@tieout/schema';
+import { CaseCreateInput } from '@recheq/schema';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, QrCode } from 'lucide-react';
 import { useRouter } from 'next/navigation';

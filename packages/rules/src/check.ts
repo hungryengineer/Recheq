@@ -1,4 +1,4 @@
-import type { FindingInput } from '@tieout/schema';
+import type { FindingInput } from '@recheq/schema';
 import type { CheckContext } from './check-context.js';
 
 // ─── Rule Function Signature ────────────────────────────────────

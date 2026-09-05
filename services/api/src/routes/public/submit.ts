@@ -2,8 +2,8 @@ import type { RequestContext } from '../../observability/request-context.js';
 import { toErrorResponse, AppError } from '../../http/errors.js';
 import type { TokenVerifier } from './token-auth.js';
 import { resolveToken } from './token-auth.js';
-import type { CaseRecord, CaseUpdateInput } from '@tieout/schema';
-import { CaseUpdateInput as CaseUpdateInputSchema } from '@tieout/schema';
+import type { CaseRecord, CaseUpdateInput } from '@recheq/schema';
+import { CaseUpdateInput as CaseUpdateInputSchema } from '@recheq/schema';
 
 export interface SubmitRouteRequest {
   params: {

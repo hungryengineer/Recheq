@@ -8,7 +8,7 @@ import {
   type ConsentMeta,
 } from '../src/services/consent/consent-service.js';
 import { AppError } from '../src/http/errors.js';
-import type { CaseRecord, ConsentRecord } from '@tieout/schema';
+import type { CaseRecord, ConsentRecord } from '@recheq/schema';
 
 // ─── Test Helpers ───────────────────────────────────────────────
 

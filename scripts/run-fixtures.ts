@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadFixtures, compareExpected } from '@tieout/test-fixtures';
+import { loadFixtures, compareExpected } from '@recheq/test-fixtures';
 import {
   runAllChecks,
   calculateRiskScore,
   calculateVerdict,
   type ScorableFinding,
-} from '@tieout/rules';
+} from '@recheq/rules';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures');

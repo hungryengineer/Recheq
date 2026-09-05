@@ -80,9 +80,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: tieout
+          POSTGRES_USER: recheq
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: tieout_test
+          POSTGRES_DB: recheq_test
         ports:
           - 5432:5432
         options: >-
@@ -111,7 +111,7 @@ jobs:
       - name: 🃏 Run unit tests
         run: pnpm test
         env:
-          DATABASE_URL: postgres://tieout:password@localhost:5432/tieout_test
+          DATABASE_URL: postgres://recheq:password@localhost:5432/recheq_test
 
   build-artifacts:
     name: 🏗️ Stage 4 - Typecheck & Build

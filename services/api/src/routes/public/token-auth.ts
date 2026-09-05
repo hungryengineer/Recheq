@@ -1,4 +1,4 @@
-import type { TokenPurpose } from '@tieout/schema';
+import type { TokenPurpose } from '@recheq/schema';
 import { AppError } from '../../http/errors.js';
 import {
   TokenExpiredError,

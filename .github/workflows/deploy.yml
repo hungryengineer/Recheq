@@ -83,7 +83,7 @@ jobs:
             const j = JSON.parse(fs.readFileSync(p, 'utf8'));
             j.settings.rootDirectory = 'apps/web';
             j.settings.buildCommand =
-              'pnpm --filter @tieout/web... --workspace-concurrency=1 build';
+              'pnpm --filter @recheq/web... --workspace-concurrency=1 build';
             fs.writeFileSync(p, JSON.stringify(j));
             console.log('settings:', JSON.stringify(j.settings));
           "

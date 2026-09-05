@@ -1,4 +1,4 @@
-import type { FindingInput } from '@tieout/schema';
+import type { FindingInput } from '@recheq/schema';
 import type { ExpectedResult } from './fixture-loader.js';
 
 export interface ComparisonResult {

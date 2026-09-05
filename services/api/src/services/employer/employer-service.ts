@@ -1,4 +1,4 @@
-import type { EventInput, CaseRecord } from '@tieout/schema';
+import type { EventInput, CaseRecord } from '@recheq/schema';
 import { AppError } from '../../http/errors.js';
 import { generateToken } from '../../tokens/generate-token.js';
 import { publishJob } from '../../workflows/pgboss.js';

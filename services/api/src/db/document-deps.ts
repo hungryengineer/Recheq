@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { DocumentKind, DocumentStatus, type DocumentRecord } from '@tieout/schema';
+import { DocumentKind, DocumentStatus, type DocumentRecord } from '@recheq/schema';
 import type { DocumentServiceDeps } from '../services/documents/document-service.js';
 import type { DocumentStorage } from '../storage/document-storage.js';
 import type { Database } from './client.js';

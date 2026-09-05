@@ -10,7 +10,7 @@ import {
   TokenExpiredError,
   InvalidTokenPurposeError,
 } from '../tokens/verify-token.js';
-import type { TokenPurpose } from '@tieout/schema';
+import type { TokenPurpose } from '@recheq/schema';
 import { AppError, forbiddenError, unauthorizedError } from '../http/errors.js';
 import type { TokenRecord } from '../tokens/verify-token.js';
 import type { ZodSchema } from 'zod';

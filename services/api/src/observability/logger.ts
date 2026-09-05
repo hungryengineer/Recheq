@@ -3,7 +3,7 @@ import {
   type CreateLogRecordInput,
   type LogFields,
   type LogRecord,
-} from '@tieout/config/src/logging.js';
+} from '@recheq/config/src/logging.js';
 import { getDurationMs, type RequestContext } from './request-context.js';
 
 export type LogSink = (record: LogRecord) => void;

@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   devIndicators: false,
-  transpilePackages: ['@tieout/schema', '@tieout/api', '@tieout/rules'],
+  transpilePackages: ['@recheq/schema', '@recheq/api', '@recheq/rules'],
   turbopack: {},
   serverExternalPackages: ['postgres', 'drizzle-orm', 'pdfjs-dist'],
   // Pin the tracing root to the monorepo root only on Vercel: when `vercel build` runs in

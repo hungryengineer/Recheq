@@ -1,4 +1,4 @@
-import type { EventInput, EventRecord, CaseStatus } from '@tieout/schema';
+import type { EventInput, EventRecord, CaseStatus } from '@recheq/schema';
 import { notFoundError } from '../../http/errors.js';
 import { transitionCaseStatus } from '../../domain/case-status.js';
 

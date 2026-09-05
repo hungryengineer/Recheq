@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from 'next/server';
-import { createRequestContext } from '@tieout/api/src/observability/request-context.js';
-import { toErrorResponse } from '@tieout/api/src/http/errors.js';
+import { createRequestContext } from '@recheq/api/src/observability/request-context.js';
+import { toErrorResponse } from '@recheq/api/src/http/errors.js';
 import { buildDeps } from './deps';
 
-import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
+import type { CaseProcessingDeps } from '@recheq/api/src/workflows/case-processing.js';
 
 export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
   return async function (request: Request, context: any) {
@@ -49,7 +49,7 @@ export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<
       }
 
       if (token) {
-        const { verifyToken } = await import('@tieout/api/src/security/jwt.js');
+        const { verifyToken } = await import('@recheq/api/src/security/jwt.js');
         const payload = await verifyToken(token);
         if (payload) {
           userId = payload.userId;

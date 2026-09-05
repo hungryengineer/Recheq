@@ -4,9 +4,9 @@ import {
   createDocumentDeps,
   createTokenVerifier,
   createDocumentStorageFromEnv,
-} from '@tieout/api/web';
-import type { ConsentServiceDeps } from '@tieout/api/web';
-import type { DocumentServiceDeps } from '@tieout/api/web';
+} from '@recheq/api/web';
+import type { ConsentServiceDeps } from '@recheq/api/web';
+import type { DocumentServiceDeps } from '@recheq/api/web';
 import { getDb } from './db';
 
 export function createRequestContext() {

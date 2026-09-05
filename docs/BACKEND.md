@@ -24,7 +24,7 @@ Identical in `BACKEND.md`, `FRONTEND.md`, `PLATFORM.md`. If you change anything 
 
 | Decision           | Why                                                                                                                                                                                                                           |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@tieout/api`; `next.config.ts` lists it in `transpilePackages`. |
+| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@recheq/api`; `next.config.ts` lists it in `transpilePackages`. |
 | **No pg-boss.**    | Fire the pipeline in-process from submit, poll for status. Kills queue bootstrap, worker wiring, idempotency, a whole failure surface.                                                                                        |
 | **No deployment.** | One laptop, one tab, localhost. No Docker, no TLS, no Server Actions origin problem, no venue wifi.                                                                                                                           |
 
@@ -68,7 +68,7 @@ Full catalogue — 21 codes, 62 documented responses — in `contract/openapi.ya
 ### Environment
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tieout
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/recheq
 APP_BASE_URL=http://localhost:3000        # ABSENT from .env.example - add it
 DEV_USER_ID=00000000-0000-0000-0000-000000000001
 DEV_ORG_ID=00000000-0000-0000-0000-000000000002
@@ -141,13 +141,13 @@ pnpm approve-builds        # approve esbuild, or vitest won't start
 docker compose up -d       # postgres, minio, mailpit
 
 # migrations do NOT run automatically
-psql "postgresql://postgres:postgres@localhost:5432/tieout" -f db/migrations/0001_initial_schema.sql
+psql "postgresql://postgres:postgres@localhost:5432/recheq" -f db/migrations/0001_initial_schema.sql
 
 # the bucket is NOT created automatically
 docker run --rm --network host minio/mc:latest sh -c \
   "mc alias set local http://localhost:9000 minioadmin minioadmin && mc mb --ignore-existing local/documents"
 
-pnpm --filter @tieout/web dev
+pnpm --filter @recheq/web dev
 ```
 
 **Health:** `pg_isready -h localhost -p 5432 -U postgres` · `psql "$DATABASE_URL" -c "\dt"` → 12 tables

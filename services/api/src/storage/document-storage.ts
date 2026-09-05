@@ -203,7 +203,7 @@ export function createDocumentStorageFromEnv(
     region: env.S3_REGION ?? 'us-east-1',
     accessKeyId: requireEnv(env, 'S3_ACCESS_KEY_ID'),
     secretAccessKey: requireEnv(env, 'S3_SECRET_ACCESS_KEY'),
-    bucket: env.S3_BUCKET ?? env.MINIO_BUCKET ?? 'tieout-local',
+    bucket: env.S3_BUCKET ?? env.MINIO_BUCKET ?? 'recheq-local',
     forcePathStyle: raw !== 'false',
   });
 }

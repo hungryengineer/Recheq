@@ -3,26 +3,26 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: tieout-postgres
+    container_name: recheq-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tieout
+      POSTGRES_DB: recheq
     ports:
       - '127.0.0.1:5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d tieout']
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d recheq']
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - tieout
+      - recheq
 
   minio:
     image: minio/minio:latest
-    container_name: tieout-minio
+    container_name: recheq-minio
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -38,11 +38,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - tieout
+      - recheq
 
   mailpit:
     image: axllent/mailpit:latest
-    container_name: tieout-mailpit
+    container_name: recheq-mailpit
     ports:
       - '127.0.0.1:1025:1025'
       - '127.0.0.1:8025:8025'
@@ -52,12 +52,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - tieout
+      - recheq
 
 volumes:
   postgres_data:
   minio_data:
 
 networks:
-  tieout:
+  recheq:
     driver: bridge

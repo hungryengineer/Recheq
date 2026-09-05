@@ -16,11 +16,11 @@ describe('storage health', () => {
     };
     const client = createS3Client(testConfig, transport);
 
-    const result = await ensureStorageBucket('tieout-local', client);
+    const result = await ensureStorageBucket('recheq-local', client);
 
     expect(result).toMatchObject({
       ok: true,
-      bucket: 'tieout-local',
+      bucket: 'recheq-local',
       created: true,
     });
     expect(requests).toHaveLength(2);
@@ -37,11 +37,11 @@ describe('storage health', () => {
     };
     const client = createS3Client(testConfig, transport);
 
-    const result = await ensureStorageBucket('tieout-local', client);
+    const result = await ensureStorageBucket('recheq-local', client);
 
     expect(result).toMatchObject({
       ok: true,
-      bucket: 'tieout-local',
+      bucket: 'recheq-local',
       created: false,
     });
     expect(requests).toHaveLength(1);
@@ -56,7 +56,7 @@ describe('storage health', () => {
     };
     const client = createS3Client(testConfig, transport);
 
-    await client.headBucket('tieout-local');
+    await client.headBucket('recheq-local');
 
     const authorization = new Headers(requests[0]?.headers).get('authorization');
     expect(authorization).toBeDefined();
@@ -100,7 +100,7 @@ describe('storage health', () => {
     };
     const client = createS3Client({ ...testConfig, region: 'us-west-004' }, transport);
 
-    await client.createBucket('tieout-documents');
+    await client.createBucket('recheq-documents');
 
     const headers = new Headers(requests[0]?.headers);
     const body = Buffer.from(requests[0]?.body as Uint8Array);
@@ -122,7 +122,7 @@ describe('storage health', () => {
     };
     const client = createS3Client(testConfig, transport);
 
-    await client.createBucket('tieout-local');
+    await client.createBucket('recheq-local');
 
     expect(requests[0]?.body).toBeUndefined();
     expect(new Headers(requests[0]?.headers).get('content-type')).toBeNull();

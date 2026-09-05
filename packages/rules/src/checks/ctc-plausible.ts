@@ -1,4 +1,4 @@
-import type { FindingInput } from '@tieout/schema';
+import type { FindingInput } from '@recheq/schema';
 import type { RuleFunction } from '../check.js';
 import { CTC_PLAUSIBILITY_TOLERANCE } from '../constants.js';
 

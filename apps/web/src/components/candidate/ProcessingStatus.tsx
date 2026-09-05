@@ -1,6 +1,6 @@
 'use client';
 
-import type { CaseStatus } from '@tieout/schema';
+import type { CaseStatus } from '@recheq/schema';
 
 export function ProcessingStatus({ status }: { status: CaseStatus }) {
   if (status === 'withdrawn') {

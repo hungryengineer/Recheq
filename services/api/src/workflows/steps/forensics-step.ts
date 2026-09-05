@@ -1,4 +1,4 @@
-import type { VerificationStep, StepResult } from '@tieout/workflow';
+import type { VerificationStep, StepResult } from '@recheq/workflow';
 import type { CaseStepContext } from '../case-processing.js';
 
 export class ForensicsStep implements VerificationStep<

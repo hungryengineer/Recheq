@@ -6,13 +6,13 @@ import {
   PasswordUpdateInputSchema,
   OrganizationUpdateInputSchema,
   InviteMemberInputSchema,
-} from '@tieout/schema';
+} from '@recheq/schema';
 import type { ActionError } from './actions-types';
 import { getDb } from '@/lib/server/db';
-import { users } from '@tieout/api/src/db/schema/users.js';
-import { organizations } from '@tieout/api/src/db/schema/organizations.js';
+import { users } from '@recheq/api/src/db/schema/users.js';
+import { organizations } from '@recheq/api/src/db/schema/organizations.js';
 import { eq } from 'drizzle-orm';
-import { verifyToken } from '@tieout/api/src/security/jwt.js';
+import { verifyToken } from '@recheq/api/src/security/jwt.js';
 import { revalidatePath } from 'next/cache';
 
 export type ApiKey = {

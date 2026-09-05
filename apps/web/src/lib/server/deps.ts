@@ -1,5 +1,5 @@
-import type { CaseProcessingDeps } from '@tieout/api/src/workflows/case-processing.js';
-import type { TokenVerifier } from '@tieout/api/src/routes/public/token-auth.js';
+import type { CaseProcessingDeps } from '@recheq/api/src/workflows/case-processing.js';
+import type { TokenVerifier } from '@recheq/api/src/routes/public/token-auth.js';
 
 export type WebAppDeps = CaseProcessingDeps & { tokenVerifier: TokenVerifier };
 
@@ -13,12 +13,12 @@ const globalForDeps = globalThis as {
 
 import { repository } from './repository';
 import { db } from './db';
-import { AuditService } from '@tieout/api/src/audit/audit-service.js';
-import { DbAuditRepository } from '@tieout/api/src/audit/db-audit-repository.js';
-import { FixtureEpfoProvider } from '@tieout/api/src/epfo/fixture-epfo-provider.js';
-import { createProductionExtractor } from '@tieout/api/src/extraction/extractor-factory.js';
+import { AuditService } from '@recheq/api/src/audit/audit-service.js';
+import { DbAuditRepository } from '@recheq/api/src/audit/db-audit-repository.js';
+import { FixtureEpfoProvider } from '@recheq/api/src/epfo/fixture-epfo-provider.js';
+import { createProductionExtractor } from '@recheq/api/src/extraction/extractor-factory.js';
 
-import { createTokenVerifier } from '@tieout/api/src/db/token-deps.js';
+import { createTokenVerifier } from '@recheq/api/src/db/token-deps.js';
 
 export function buildDeps(): WebAppDeps {
   if (!globalForDeps.__deps) {

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type PgBoss from 'pg-boss';
 import nodemailer from 'nodemailer';
-import { resolveCanonicalAppUrl } from '@tieout/config';
+import { resolveCanonicalAppUrl } from '@recheq/config';
 
 const EmailDeliveryPayload = z.object({
   to_email: z.string().email(),

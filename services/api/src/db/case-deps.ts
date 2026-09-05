@@ -1,5 +1,5 @@
 import { and, desc, eq } from 'drizzle-orm';
-import { CaseStatus, Verdict, type CaseSummary } from '@tieout/schema';
+import { CaseStatus, Verdict, type CaseSummary } from '@recheq/schema';
 import { cases } from './schema/cases.js';
 import { tokens } from './schema/tokens.js';
 import { toCaseRecord } from './case-queries.js';
@@ -10,7 +10,7 @@ export type TransactionHandle = Parameters<Parameters<Database['transaction']>[0
 
 type CaseRow = typeof cases.$inferSelect;
 
-/** Maps a DB case row to the @tieout/schema CaseSummary contract. */
+/** Maps a DB case row to the @recheq/schema CaseSummary contract. */
 function toCaseSummary(row: CaseRow): CaseSummary {
   return {
     id: row.id,
@@ -31,7 +31,7 @@ import { DbAuditRepository } from '../audit/db-audit-repository.js';
 /**
  * Production adapter that backs the case service with the real database.
  * Drizzle numeric columns come back as strings and timestamps as Date objects,
- * so rows are mapped to the @tieout/schema contracts here at the boundary.
+ * so rows are mapped to the @recheq/schema contracts here at the boundary.
  */
 export function createCaseDeps(db: Database): CaseServiceDeps {
   return {

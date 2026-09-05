@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { transition, canTransition, validEventsFor } from '../src/status-machine.js';
 import type { TransitionEvent } from '../src/status-machine.js';
-import type { CaseStatus } from '@tieout/schema';
+import type { CaseStatus } from '@recheq/schema';
 
 describe('status-machine: transition()', () => {
   // ─── Happy path transitions ───────────────────────────────────

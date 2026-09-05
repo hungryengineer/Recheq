@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { grantConsentHandler, toErrorResponse } from '@tieout/api/web';
+import { grantConsentHandler, toErrorResponse } from '@recheq/api/web';
 import { getConsentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {

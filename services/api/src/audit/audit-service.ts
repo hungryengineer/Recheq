@@ -1,4 +1,4 @@
-import type { EventRecord, EventInput } from '@tieout/schema';
+import type { EventRecord, EventInput } from '@recheq/schema';
 import { calculateEventHash } from './hash-chain.js';
 import crypto from 'node:crypto';
 

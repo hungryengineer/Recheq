@@ -2,8 +2,8 @@ import type { RequestContext } from '../../observability/request-context.js';
 import { toErrorResponse, AppError } from '../../http/errors.js';
 import type { TokenVerifier } from './token-auth.js';
 import { resolveToken } from './token-auth.js';
-import type { CaseRecord, DocumentRecord } from '@tieout/schema';
-import type { EpfoHistory } from '@tieout/rules';
+import type { CaseRecord, DocumentRecord } from '@recheq/schema';
+import type { EpfoHistory } from '@recheq/rules';
 import { projectPublicSteps, type ExtractionLike } from '../../workflows/step-projection.js';
 
 export interface StatusRouteRequest {

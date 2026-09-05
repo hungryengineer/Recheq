@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { TokenPurpose } from '@tieout/schema';
+import { TokenPurpose } from '@recheq/schema';
 import type { TokenRecord } from '../tokens/verify-token.js';
 import type { ITokenRepository } from '../tokens/token-service.js';
 import { TokenService } from '../tokens/token-service.js';

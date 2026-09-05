@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { uploadDocumentHandler, toErrorResponse } from '@tieout/api/web';
+import { uploadDocumentHandler, toErrorResponse } from '@recheq/api/web';
 import { getDocumentDeps, getTokenVerifier, createRequestContext } from '@/lib/api/public';
 
 /** Must stay in sync with the service-layer MAX_UPLOAD_BYTES (10 MB). */

@@ -1,5 +1,5 @@
 import { eq, desc } from 'drizzle-orm';
-import type { EventRecord } from '@tieout/schema';
+import type { EventRecord } from '@recheq/schema';
 import { events } from '../db/schema/events.js';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { IAuditRepository } from './audit-service.js';

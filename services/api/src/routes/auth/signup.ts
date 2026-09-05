@@ -1,4 +1,4 @@
-import { SignupInputSchema, type LoginResponse } from '@tieout/schema';
+import { SignupInputSchema, type LoginResponse } from '@recheq/schema';
 import { eq } from 'drizzle-orm';
 import { AppError } from '../../http/errors.js';
 import type { Database } from '../../db/client.js';

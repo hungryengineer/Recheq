@@ -1,4 +1,4 @@
-import { createDb, type Database } from '@tieout/api/src/db/client.js';
+import { createDb, type Database } from '@recheq/api/src/db/client.js';
 
 declare global {
   var __db: Database | undefined;

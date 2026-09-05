@@ -8,10 +8,10 @@ interface CheckResult {
 }
 
 const databaseUrl = new URL(
-  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/tieout',
+  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/recheq',
 );
 const s3Endpoint = process.env.S3_ENDPOINT ?? 'http://localhost:9000';
-const s3Bucket = process.env.S3_BUCKET ?? process.env.MINIO_BUCKET ?? 'tieout-local';
+const s3Bucket = process.env.S3_BUCKET ?? process.env.MINIO_BUCKET ?? 'recheq-local';
 const s3Region = process.env.S3_REGION ?? 'us-east-1';
 const s3AccessKeyId = process.env.S3_ACCESS_KEY_ID ?? 'minioadmin';
 const s3SecretAccessKey = process.env.S3_SECRET_ACCESS_KEY ?? 'minioadmin';

@@ -1,4 +1,4 @@
-import type { TokenPurpose } from '@tieout/schema';
+import type { TokenPurpose } from '@recheq/schema';
 import { generateToken } from './generate-token.js';
 import type { TokenRecord } from './verify-token.js';
 import { verifyToken } from './verify-token.js';

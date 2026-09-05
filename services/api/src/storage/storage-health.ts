@@ -87,7 +87,7 @@ export async function ensureStorageBucket(
 }
 
 export function getStorageBucketName(env: NodeJS.ProcessEnv = process.env): string {
-  return env.S3_BUCKET ?? env.MINIO_BUCKET ?? 'tieout-local';
+  return env.S3_BUCKET ?? env.MINIO_BUCKET ?? 'recheq-local';
 }
 
 function getErrorMessage(error: unknown): string {

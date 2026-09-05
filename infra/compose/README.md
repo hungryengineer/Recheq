@@ -36,7 +36,7 @@ docker compose down -v
 
 | Service        | URL                                                                      |
 | -------------- | ------------------------------------------------------------------------ |
-| PostgreSQL     | localhost:5432 (psql postgres://postgres:postgres@localhost:5432/tieout) |
+| PostgreSQL     | localhost:5432 (psql postgres://postgres:postgres@localhost:5432/recheq) |
 | MinIO Console  | http://localhost:9001 (user: minioadmin / pass: minioadmin)              |
 | Mailpit Web UI | http://localhost:8025                                                    |
 
@@ -45,7 +45,7 @@ docker compose down -v
 See `.env.example` for required variables.
 
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tieout
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/recheq
 S3_ENDPOINT=http://localhost:9000
 S3_ACCESS_KEY_ID=minioadmin
 S3_SECRET_ACCESS_KEY=minioadmin

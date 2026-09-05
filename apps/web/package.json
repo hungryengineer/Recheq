@@ -1,5 +1,5 @@
 {
-  "name": "@tieout/web",
+  "name": "@recheq/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,8 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@tieout/api": "workspace:*",
-    "@tieout/schema": "workspace:*",
+    "@recheq/api": "workspace:*",
+    "@recheq/schema": "workspace:*",
     "lucide-react": "^1.31.0",
     "next": "16.3.1",
     "next-themes": "^0.4.6",

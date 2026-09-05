@@ -1,4 +1,4 @@
-import type { CaseStatus, DocumentKind } from '@tieout/schema';
+import type { CaseStatus, DocumentKind } from '@recheq/schema';
 import { apiClient } from './client';
 
 export interface PublicCaseContext {

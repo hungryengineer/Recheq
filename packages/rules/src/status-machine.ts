@@ -1,4 +1,4 @@
-import type { CaseStatus } from '@tieout/schema';
+import type { CaseStatus } from '@recheq/schema';
 
 // ─── Transition Events ─────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import type { EventRecord } from '@tieout/schema';
+import type { EventRecord } from '@recheq/schema';
 import { calculateEventHash } from './hash-chain.js';
 
 export class ChainVerificationError extends Error {

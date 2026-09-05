@@ -1,4 +1,4 @@
-import type { Verdict, FindingSeverity, FindingStatus } from '@tieout/schema';
+import type { Verdict, FindingSeverity, FindingStatus } from '@recheq/schema';
 
 /**
  * Minimal finding shape needed for verdict calculation.

@@ -36,7 +36,7 @@ import { employerRequests } from '../services/api/src/db/schema/employer-request
 import { AuditService } from '../services/api/src/audit/audit-service.js';
 import { DbAuditRepository } from '../services/api/src/audit/db-audit-repository.js';
 import { loadEnvFile } from './lib/load-env.js';
-import type { EventInput } from '@tieout/schema';
+import type { EventInput } from '@recheq/schema';
 
 // Seed the identity/credentials the dev app authenticates as, which live in the
 // web app's env file. The repo-root .env.local may carry unrelated placeholders
@@ -336,7 +336,7 @@ try {
   console.log('🌱 Seeding demo org + user...');
   await db
     .insert(organizations)
-    .values({ id: DEV_ORG_ID, name: 'Tieout Demo Org', slug: 'tieout-demo' })
+    .values({ id: DEV_ORG_ID, name: 'Recheq Demo Org', slug: 'recheq-demo' })
     .onConflictDoNothing()
     .execute();
 
@@ -348,14 +348,14 @@ try {
   const demoRows = await db
     .select({ id: users.id, email: users.email })
     .from(users)
-    .where(or(eq(users.email, 'demo@tieout.local'), eq(users.id, DEV_USER_ID)));
+    .where(or(eq(users.email, 'demo@recheq.local'), eq(users.id, DEV_USER_ID)));
 
   const canonical = demoRows.find((r) => r.id === DEV_USER_ID);
-  const byEmail = demoRows.find((r) => r.email === 'demo@tieout.local');
+  const byEmail = demoRows.find((r) => r.email === 'demo@recheq.local');
 
   if (canonical && byEmail && canonical.id !== byEmail.id) {
     throw new Error(
-      `users has both id=${DEV_USER_ID} and email='demo@tieout.local' on different rows; reconcile manually (e.g. pnpm reset:demo).`,
+      `users has both id=${DEV_USER_ID} and email='demo@recheq.local' on different rows; reconcile manually (e.g. pnpm reset:demo).`,
     );
   }
 
@@ -372,7 +372,7 @@ try {
         `Demo user ${byEmail.id} is referenced by existing cases; refusing to repoint users.id to ${DEV_USER_ID}. Run pnpm reset:demo first.`,
       );
     }
-    await db.update(users).set({ id: DEV_USER_ID }).where(eq(users.email, 'demo@tieout.local'));
+    await db.update(users).set({ id: DEV_USER_ID }).where(eq(users.email, 'demo@recheq.local'));
   }
 
   await db
@@ -380,7 +380,7 @@ try {
     .values({
       id: DEV_USER_ID,
       org_id: DEV_ORG_ID,
-      email: 'demo@tieout.local',
+      email: 'demo@recheq.local',
       name: 'Tieout Demo User',
       role: 'verifier',
     })
@@ -388,7 +388,7 @@ try {
     // demo expects, instead of silently keeping a stale role.
     .onConflictDoUpdate({
       target: users.id,
-      set: { org_id: DEV_ORG_ID, email: 'demo@tieout.local', role: 'verifier' },
+      set: { org_id: DEV_ORG_ID, email: 'demo@recheq.local', role: 'verifier' },
     })
     .execute();
 

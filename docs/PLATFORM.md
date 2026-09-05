@@ -29,7 +29,7 @@ Your lane has **zero dependency on the other two**. That means you are never blo
 
 | Decision           | Why                                                                                                                                                                                                                           |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@tieout/api`; `next.config.ts` lists it in `transpilePackages`. |
+| **No Fastify.**    | Next route handlers call the existing handlers via a 25-line adapter. Handlers are already `(req, deps) => {status, body}`. `apps/web/package.json` declares `@recheq/api`; `next.config.ts` lists it in `transpilePackages`. |
 | **No pg-boss.**    | Fire the pipeline in-process from submit, poll for status. Kills queue bootstrap, worker wiring, idempotency, a whole failure surface.                                                                                        |
 | **No deployment.** | One laptop, one tab, localhost. No Docker, no TLS, no Server Actions origin problem, no venue wifi.                                                                                                                           |
 
@@ -62,7 +62,7 @@ Full catalogue - 21 codes, 62 documented responses - in `contract/openapi.yaml`.
 ### Environment
 
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tieout
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/recheq
 APP_BASE_URL=http://localhost:3000        # ABSENT from .env.example - add it
 DEV_USER_ID=00000000-0000-0000-0000-000000000001
 DEV_ORG_ID=00000000-0000-0000-0000-000000000002
@@ -133,7 +133,7 @@ pnpm install
 pnpm approve-builds        # approve esbuild, or vitest won't start
 docker compose up -d       # postgres, minio, mailpit
 
-psql "postgresql://postgres:postgres@localhost:5432/tieout" -f db/migrations/0001_initial_schema.sql
+psql "postgresql://postgres:postgres@localhost:5432/recheq" -f db/migrations/0001_initial_schema.sql
 
 docker run --rm --network host minio/mc:latest sh -c \
   "mc alias set local http://localhost:9000 minioadmin minioadmin && mc mb --ignore-existing local/documents"
@@ -214,7 +214,7 @@ The fixture EPFO provider is scaffolded but has no data matching the demo.
 
 Normalise everything to `EmploymentHistorySchema` in `packages/schema`.
 
-**Accept:** `pnpm --filter @tieout/api test -- epfo` passes; running the rules engine over `doctored-01` + `arun-doctored` fires both `pf-implies-basic` and `pf-matches-epfo`.
+**Accept:** `pnpm --filter @recheq/api test -- epfo` passes; running the rules engine over `doctored-01` + `arun-doctored` fires both `pf-implies-basic` and `pf-matches-epfo`.
 
 ### OPS-3 · Gemini provider with fixture fallback - 3 h
 
@@ -234,7 +234,7 @@ Providers today are anthropic, ollama, openai-compatible. Add Gemini plus a demo
 
 Use a Flash-tier model, not Pro. Roughly 5x cheaper, fast enough, and today you will run hundreds of test extractions.
 
-**Accept:** `pnpm --filter @tieout/api test -- extraction` passes. Critically: extracting `doctored-01/payslip.pdf` returns `basic=52000` and `pf_employee=3600` - the model read the doctored numbers correctly. It is not supposed to notice they contradict. That is the rules engine's job, and that split is the pitch.
+**Accept:** `pnpm --filter @recheq/api test -- extraction` passes. Critically: extracting `doctored-01/payslip.pdf` returns `basic=52000` and `pf_employee=3600` - the model read the doctored numbers correctly. It is not supposed to notice they contradict. That is the rules engine's job, and that split is the pitch.
 
 ### OPS-4 · Expected fixtures and the gate - 1 h
 
@@ -310,7 +310,7 @@ Eight slides:
 
 You verify these, because you're the only one with the full picture:
 
-- [ ] `pnpm --filter @tieout/web build` exits 0
+- [ ] `pnpm --filter @recheq/web build` exits 0
 - [ ] `pnpm typecheck` clean, `pnpm test` 347 passing
 - [ ] `pnpm fixtures` reports N/N and exits non-zero when a fixture is broken
 - [ ] `grep -r "mockCases\|mockState\|Placeholder for actual\|CHK-" .` returns nothing

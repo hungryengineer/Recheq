@@ -5,7 +5,7 @@ import {
 } from '../src/services/documents/document-service.js';
 import { sniffMimeType, isAllowedMimeType } from '../src/services/documents/mime-sniffer.js';
 import { AppError } from '../src/http/errors.js';
-import type { CaseRecord, DocumentRecord } from '@tieout/schema';
+import type { CaseRecord, DocumentRecord } from '@recheq/schema';
 
 // ─── Test Helpers ───────────────────────────────────────────────
 

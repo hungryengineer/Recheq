@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { processCase } from '@tieout/api/src/workflows/case-processing.js';
+import { processCase } from '@recheq/api/src/workflows/case-processing.js';
 import { buildDeps } from './deps';
 import { repository } from './repository';
-import { createRequestContext } from '@tieout/api/src/observability/request-context.js';
+import { createRequestContext } from '@recheq/api/src/observability/request-context.js';
 
 export async function startProcessing(caseId: string) {
   // Update status to processing synchronously to acknowledge the request
