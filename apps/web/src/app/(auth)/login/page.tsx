@@ -88,8 +88,12 @@ function LoginContent() {
 
         <div className="relative z-10 max-w-xl">
           {/* Logo */}
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-12">
-            <img src="/logo-icon.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
+          <div className="mb-12">
+            <img
+              src="/logo-icon-light.png"
+              alt="Recheq Logo"
+              className="w-16 h-16 object-contain scale-[1.4] origin-left"
+            />
           </div>
 
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
@@ -99,7 +103,7 @@ function LoginContent() {
             Leave the guesswork behind.
           </p>
           <p className="text-gray-400 text-lg max-w-md leading-relaxed">
-            Recheq helps you manage and verify your documents with ease and confidence.
+            Sign in to automate background checks and uncover the truth in seconds.
           </p>
         </div>
 
