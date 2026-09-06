@@ -357,9 +357,9 @@ export default function CandidateUploadPage({ params }: { params: Promise<{ toke
       <div className="w-full max-w-6xl animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div>
-              <img src="/logo-icon-light.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
+              <img src="/logo-icon-light.png" alt="Recheq Logo" className="w-12 h-12 object-contain scale-[1.4]" />
             </div>
             <span className="font-semibold text-xl tracking-tight">Recheq</span>
           </div>
