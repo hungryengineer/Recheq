@@ -49,7 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex items-center space-x-8">
               <Link href="/cases" className="flex items-center gap-2">
-                <img src="/logo-icon-light.png" alt="Recheq Logo" className="w-6 h-6 object-contain" />
+                <img src="/logo-icon-light.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
                 <span className="text-lg font-semibold tracking-tight text-[var(--color-fg)]">
                   Recheq
                 </span>
