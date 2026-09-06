@@ -11,8 +11,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Walk up from this module until a pnpm workspace marker is found. Required
  * because @recheq/api is consumed via its exports map (./dist/src/*), so a
  * fixed number of `..` segments resolves differently from src and from dist.
+ *
+ * Returns null when no marker exists up the chain (e.g. a serverless bundle
+ * where the repo files are not on disk) instead of throwing, so importing
+ * this module never fails and downstream API routes keep loading.
  */
-function findRepoRoot(startDir: string): string {
+export function findRepoRoot(startDir: string): string | null {
   let dir = startDir;
   for (let i = 0; i < 12; i++) {
     if (existsSync(path.join(dir, 'pnpm-workspace.yaml'))) return dir;
@@ -20,11 +24,25 @@ function findRepoRoot(startDir: string): string {
     if (parent === dir) break;
     dir = parent;
   }
-  throw new Error(`Could not locate repo root from ${startDir}`);
+  return null;
 }
 
-const FIXTURES_DIR =
-  process.env.EPFO_FIXTURES_DIR ?? path.join(findRepoRoot(__dirname), 'fixtures/epfo');
+let _fixturesDir: string | null | undefined;
+function getFixturesDir(): string | null {
+  if (_fixturesDir !== undefined) return _fixturesDir;
+  if (process.env.EPFO_FIXTURES_DIR) {
+    _fixturesDir = process.env.EPFO_FIXTURES_DIR;
+    return _fixturesDir;
+  }
+  const root = findRepoRoot(__dirname);
+  _fixturesDir = root ? path.join(root, 'fixtures/epfo') : null;
+  if (!_fixturesDir) {
+    console.warn(
+      '[epfo] Fixture directory unavailable (EPFO_FIXTURES_DIR unset and repo root not found); fixture lookups will resolve to null.',
+    );
+  }
+  return _fixturesDir;
+}
 
 /** UAN → fixture filename mapping */
 const UAN_MAP: Record<string, string> = {
@@ -37,8 +55,10 @@ const UAN_MAP: Record<string, string> = {
 export class FixtureEpfoProvider implements EpfoProvider {
   readonly sourceId = 'epfo:fixture';
 
-  private async loadFixture(filename: string): Promise<EpfoHistory> {
-    const fixturePath = path.join(FIXTURES_DIR, filename);
+  private async loadFixture(filename: string): Promise<EpfoHistory | null> {
+    const fixturesDir = getFixturesDir();
+    if (!fixturesDir) return null;
+    const fixturePath = path.join(fixturesDir, filename);
     const content = await fs.readFile(fixturePath, 'utf-8');
     const parsed = EpfoHistorySchema.safeParse(JSON.parse(content));
     if (!parsed.success) {

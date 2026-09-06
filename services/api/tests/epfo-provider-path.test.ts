@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 // A simple test to ensure the path resolution logic in the fixture provider actually finds the fixtures directory
 // even when executed from within the tests directory.
-import { FixtureEpfoProvider } from '../src/epfo/fixture-epfo-provider.js';
+import { FixtureEpfoProvider, findRepoRoot } from '../src/epfo/fixture-epfo-provider.js';
 
 describe('Fixture EPFO Provider Path Resolution', () => {
   it('should successfully instantiate without throwing ENOENT on load', () => {
@@ -21,5 +21,13 @@ describe('Fixture EPFO Provider Path Resolution', () => {
       expect(history.uan).toBe('100000000001');
       expect(history.periods.length).toBeGreaterThan(0);
     }
+  });
+
+  it('should return null instead of throwing when no workspace root exists above a directory', () => {
+    // A serverless bundle has no pnpm-workspace.yaml on disk. findRepoRoot must
+    // not throw at module load, otherwise every adapter-backed API route 500s
+    // with an empty body in production.
+    expect(findRepoRoot('/')).toBeNull();
+    expect(findRepoRoot('/tmp/definitely-not-a-repo')).toBeNull();
   });
 });
