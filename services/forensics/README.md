@@ -2,7 +2,7 @@
 
 ## Overview
 
-The forensics service provides client-side PDF inspection and anomaly detection for the Tieout verification system. It extracts metadata, analyzes font patterns, and flags monetary text anomalies—all while ensuring no raw PDF content is logged.
+The forensics service provides client-side PDF inspection and anomaly detection for the Recheq verification system. It extracts metadata, analyzes font patterns, and flags monetary text anomalies—all while ensuring no raw PDF content is logged.
 
 **Design principle**: Graceful degradation. If PDF inspection fails (corrupt file, read error), the system marks the record as `not_assessed` and continues. Forensics is optional evidence, not a blocker.
 

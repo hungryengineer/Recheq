@@ -26,7 +26,7 @@ async function run() {
     body: JSON.stringify({
       candidate_name: 'E2E Test User',
       candidate_email: 'e2e@recheq.dev',
-      employer_name: 'Tieout Corp',
+      employer_name: 'Recheq Corp',
       title: 'Software Engineer',
       claimed_ctc: 2500000,
       employment_start: '2023-01-01',

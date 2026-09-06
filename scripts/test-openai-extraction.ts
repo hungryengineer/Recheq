@@ -90,7 +90,7 @@ console.log('(Simulated test - no real document content)\n');
 
 // Create a test prompt
 const testPrompt = `Extract payslip information from the following document. Return JSON.
-Document: [Test payslip from Tieout verification system]
+Document: [Test payslip from Recheq verification system]
 Required fields:
 - employee_name
 - employer_name

@@ -1,5 +1,5 @@
 -- BE-04: Initial database schema migration
--- Tieout — employment verification aggregate tables
+-- Recheq — employment verification aggregate tables
 --
 -- This migration creates all 11 required tables with proper
 -- foreign keys, unique constraints, and indexes.

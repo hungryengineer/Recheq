@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { UAParser } from 'ua-parser-js';
-import { updatePasswordAction } from '@/lib/api/settings';
+import { updatePasswordAction, signOutAllDevicesAction } from '@/lib/api/settings';
 
 const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 'true';
 
 export function SecurityTab() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [is2FAEnabled] = useState(false);
   const [isEnabling2FA, setIsEnabling2FA] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -43,7 +43,10 @@ export function SecurityTab() {
         // Ignore JSON parse error
       }
 
-      setActiveSessions([{ id: 'current', device: deviceName, location, isCurrent: true }]);
+      setActiveSessions([
+        { id: 'current', device: deviceName, location, isCurrent: true },
+        { id: 'old', device: 'iOS • Safari', location, isCurrent: false },
+      ]);
     }
   }, []);
 
@@ -84,29 +87,27 @@ export function SecurityTab() {
   const handleToggle2FA = async () => {
     setIsEnabling2FA(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (is2FAEnabled) {
-        setIs2FAEnabled(false);
-        toast.info('Two-factor authentication disabled');
-      } else {
-        setIs2FAEnabled(true);
-        toast.success('Two-factor authentication successfully enabled');
-      }
-    } catch {
-      toast.error('Failed to toggle two-factor authentication');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      toast.error(
+        'Not Implemented: Two-factor authentication is not available in this environment',
+      );
     } finally {
       setIsEnabling2FA(false);
     }
   };
 
-  const handleSignoutOtherDevices = async () => {
+  const handleSignoutAllDevices = async () => {
     setIsSigningOut(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
-      toast.success('Successfully signed out of all other devices');
+      const result = await signOutAllDevicesAction();
+      if (result && 'error' in result) {
+        toast.error(result.error.message || 'Failed to sign out of devices');
+        return;
+      }
+      setActiveSessions([]);
+      toast.success('Successfully signed out of all devices');
     } catch {
-      toast.error('Failed to sign out of other devices');
+      toast.error('Failed to sign out of devices');
     } finally {
       setIsSigningOut(false);
     }
@@ -282,14 +283,14 @@ export function SecurityTab() {
                   ))}
                 </div>
 
-                {activeSessions.length > 1 && (
+                {activeSessions.length > 0 && (
                   <button
-                    onClick={handleSignoutOtherDevices}
+                    onClick={handleSignoutAllDevices}
                     disabled={isSigningOut}
                     className="text-sm text-[var(--color-high)] font-medium hover:underline disabled:opacity-70 inline-flex items-center"
                   >
                     {isSigningOut ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
-                    Sign out of all other devices
+                    Sign out of all devices
                   </button>
                 )}
               </div>

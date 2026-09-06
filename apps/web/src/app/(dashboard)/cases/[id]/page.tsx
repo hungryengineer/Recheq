@@ -80,6 +80,9 @@ export default async function CaseDetailsPage({ params }: PageProps) {
 
   const highCount = findings.filter((f) => f.severity === 'high' && f.status === 'open').length;
   const mediumCount = findings.filter((f) => f.severity === 'medium' && f.status === 'open').length;
+  const lowCount = findings.filter((f) => f.severity === 'low' && f.status === 'open').length;
+  const notAssessedFindings = findings.filter((f) => f.status === 'not_assessed');
+  const assessedFindings = findings.filter((f) => f.status !== 'not_assessed');
 
   return (
     <div className="animate-fade-in pb-12">
@@ -124,7 +127,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
                 {caseRecord.risk_score === 100 &&
                 findings.filter((f) => f.status === 'open').length === 0
                   ? 'Unverified Default'
-                  : `(40 × ${highCount}) + (15 × ${mediumCount}) = ${caseRecord.risk_score}`}
+                  : `Math.min(100, (40 × ${highCount}) + (15 × ${mediumCount}) + (5 × ${lowCount})) = ${caseRecord.risk_score}`}
               </span>
             )}
           </div>
@@ -181,13 +184,26 @@ export default async function CaseDetailsPage({ params }: PageProps) {
           Discrepancy ledger
         </h2>
 
-        {findings.length === 0 ? (
+        {assessedFindings.length === 0 ? (
           <div className="text-sm text-[var(--color-fg-muted)] py-4">No findings.</div>
         ) : (
           <div className="space-y-4 mb-6">
-            {findings.map((f, i) => (
+            {assessedFindings.map((f, i) => (
               <FindingCard key={i} finding={f} caseId={id} />
             ))}
+          </div>
+        )}
+
+        {notAssessedFindings.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-md font-semibold text-[var(--color-fg)] mb-4 border-b border-[var(--color-border)] pb-2">
+              We don't know (Not Assessed)
+            </h3>
+            <div className="space-y-4 mb-6">
+              {notAssessedFindings.map((f, i) => (
+                <FindingCard key={i} finding={f} caseId={id} />
+              ))}
+            </div>
           </div>
         )}
       </div>

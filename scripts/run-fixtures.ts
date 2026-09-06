@@ -17,7 +17,7 @@ const FIXTURES_DIR = path.resolve(__dirname, '../fixtures');
  * fixtures are found.
  */
 async function run() {
-  console.log('🔍 Running Tieout Fixture Validations...');
+  console.log('🔍 Running Recheq Fixture Validations...');
 
   const tests = await loadFixtures(FIXTURES_DIR);
   if (tests.length === 0) {

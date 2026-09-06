@@ -26,7 +26,7 @@ export const GET = toPublicHandler(async (req: { raw: Request; params: { token: 
     return {
       status: 200,
       body: {
-        orgName: 'Tieout',
+        orgName: 'Recheq',
         employerName: view.employer_name,
         candidateName: view.candidate_name,
         title: view.title,

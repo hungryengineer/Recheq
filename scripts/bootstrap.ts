@@ -160,7 +160,7 @@ async function printServiceUrls(): Promise<void> {
 
 async function main(): Promise<void> {
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║              Tieout Bootstrap                             ║');
+  console.log('║              Recheq Bootstrap                             ║');
   console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
   try {

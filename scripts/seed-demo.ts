@@ -70,6 +70,12 @@ const FORGED_PAYSLIP_EXT_ID = '20000000-0000-0000-0000-000000000033';
 const CLEAN_EPFO_RECORD_ID = '20000000-0000-0000-0000-000000000041';
 const FORGED_EPFO_RECORD_ID = '20000000-0000-0000-0000-000000000042';
 
+const DUAL_EMP_CASE_ID = '20000000-0000-0000-0000-000000000003';
+const DUAL_EMP_CONSENT_ID = '20000000-0000-0000-0000-000000000013';
+const DUAL_EMP_PAYSLIP_DOC_ID = '20000000-0000-0000-0000-000000000024';
+const DUAL_EMP_PAYSLIP_EXT_ID = '20000000-0000-0000-0000-000000000034';
+const DUAL_EMP_EPFO_RECORD_ID = '20000000-0000-0000-0000-000000000043';
+
 const FINDING_IDS = {
   cleanForensics: '20000000-0000-0000-0000-000000000051',
   forgedPfImpliesBasic: '20000000-0000-0000-0000-000000000052',
@@ -77,6 +83,7 @@ const FINDING_IDS = {
   forgedForm16NotAssessed: '20000000-0000-0000-0000-000000000054',
   forgedIdentityNotAssessed: '20000000-0000-0000-0000-000000000055',
   forgedForensicsNotAssessed: '20000000-0000-0000-0000-000000000056',
+  dualEmpMoonlighting: '20000000-0000-0000-0000-000000000057',
 } as const;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -105,6 +112,7 @@ const CLEAN_FORM16 = readJson(path.join(FIXTURES, 'form16-clean-01.json'));
 const FORGED_PAYSLIP = readJson(path.join(FIXTURES, 'payslip-arun-doctored.json'));
 const EPFO_CLEAN = readJson(path.join(EPFO_FIXTURES, 'arun-clean.json'));
 const EPFO_DOCTORED = readJson(path.join(EPFO_FIXTURES, 'arun-doctored.json'));
+const EPFO_DUAL = readJson(path.join(EPFO_FIXTURES, 'dual-employment.json'));
 
 /**
  * Computes a content fingerprint for a demo document PDF. When the file is
@@ -292,7 +300,7 @@ async function seedCase(opts: {
  * them idempotently.
  */
 async function resetDemo() {
-  const demoCaseIds = [CLEAN_CASE_ID, FORGED_CASE_ID];
+  const demoCaseIds = [CLEAN_CASE_ID, FORGED_CASE_ID, DUAL_EMP_CASE_ID];
 
   await db.transaction(async (tx) => {
     for (const caseId of demoCaseIds) {
@@ -381,7 +389,7 @@ try {
       id: DEV_USER_ID,
       org_id: DEV_ORG_ID,
       email: 'demo@recheq.local',
-      name: 'Tieout Demo User',
+      name: 'Recheq Demo User',
       role: 'verifier',
     })
     // Upsert so an existing demo user is promoted to the verifier role the
@@ -552,6 +560,58 @@ try {
       { kind: 'rules_executed', payload: { finding_count: 5 } },
       { kind: 'findings_persisted', payload: { count: 5 } },
       { kind: 'verdict_calculated', payload: { verdict: 'needs_review', risk_score: 80 } },
+    ],
+  });
+
+  console.log('📁 Seeding DUAL EMPLOYMENT case...');
+  await seedCase({
+    caseId: DUAL_EMP_CASE_ID,
+    consentId: DUAL_EMP_CONSENT_ID,
+    title: 'Senior Software Engineer — Moonlighting Detected',
+    verdict: 'needs_review',
+    riskScore: 40,
+    uan: '100123456799',
+    payslipDoc: {
+      relPath: 'fixtures/documents/clean-01/payslip.pdf',
+      filename: 'payslip.pdf',
+      docId: DUAL_EMP_PAYSLIP_DOC_ID,
+      extractionId: DUAL_EMP_PAYSLIP_EXT_ID,
+      extracted: CLEAN_PAYSLIP,
+    },
+    epfo: { recordId: DUAL_EMP_EPFO_RECORD_ID, history: EPFO_DUAL },
+    findingRows: [
+      {
+        id: FINDING_IDS.dualEmpMoonlighting,
+        case_id: DUAL_EMP_CASE_ID,
+        rule_id: 'dual-employment',
+        severity: 'high',
+        status: 'open',
+        title: 'Overlapping Employment Detected (Moonlighting)',
+        explanation:
+          'Candidate has concurrent EPFO contributions from Acme Technologies Pvt Ltd and Rival Systems Pvt Ltd during Oct-Dec 2025.',
+        expected: '1 active employer',
+        observed: '2 concurrent employers',
+        source_document_ids: [],
+      },
+    ],
+    eventInputs: [
+      {
+        kind: 'case_created',
+        payload: { title: 'Senior Software Engineer — Moonlighting Detected' },
+      },
+      { kind: 'consent_granted', payload: {} },
+      {
+        kind: 'document_uploaded',
+        payload: { document_id: DUAL_EMP_PAYSLIP_DOC_ID, kind: 'payslip' },
+      },
+      {
+        kind: 'extraction_completed',
+        payload: { document_id: DUAL_EMP_PAYSLIP_DOC_ID, schema_version: 'payslip-v1' },
+      },
+      { kind: 'epfo_lookup_completed', payload: { record_id: DUAL_EMP_EPFO_RECORD_ID } },
+      { kind: 'rules_executed', payload: { finding_count: 1 } },
+      { kind: 'findings_persisted', payload: { count: 1 } },
+      { kind: 'verdict_calculated', payload: { verdict: 'needs_review', risk_score: 40 } },
     ],
   });
 
