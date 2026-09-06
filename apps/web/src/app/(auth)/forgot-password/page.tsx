@@ -40,8 +40,8 @@ export default function ForgotPasswordPage() {
         <div className="relative z-10 max-w-xl">
           {/* Logo */}
           <Link href="/" className="inline-block mb-12 hover:opacity-90 transition-opacity">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <img src="/logo-icon.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
+            <div>
+              <img src="/logo-icon.png" alt="Recheq Logo" className="w-16 h-16 object-contain" />
             </div>
           </Link>
 
@@ -152,8 +152,8 @@ export default function ForgotPasswordPage() {
 
         <div className="w-full mb-8 relative z-10 lg:hidden">
           <Link href="/" className="inline-block">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-200">
-              <img src="/logo-icon.png" alt="Recheq Logo" className="w-6 h-6 object-contain" />
+            <div>
+              <img src="/logo-icon.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
             </div>
           </Link>
         </div>
