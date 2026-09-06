@@ -9,6 +9,8 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
   readonly timeoutMs = 45000;
   readonly dependsOn = [];
 
+  // Note: dataSource is a static DAG declaration, not a runtime provenance claim.
+  // The actual runtime provenance is determined dynamically from deps.epfoProvider.sourceId.
   readonly dataSource = {
     source: 'epfo:signzy',
     licence: 'consented',
@@ -22,6 +24,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
   async run(ctx: CaseStepContext): Promise<StepResult<{ uan: string }>> {
     const { caseId, deps } = ctx;
     const startedAt = new Date();
+    const source = deps.epfoProvider.sourceId;
 
     const caseRecord = await deps.db.getCaseById(caseId);
     if (!caseRecord) {
@@ -29,7 +32,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
         state: 'failed',
         artifact: null,
         reason: 'Case not found',
-        provenance: { source: 'epfo:signzy', model: null, licence: 'none' },
+        provenance: { source, model: null, licence: 'none' },
         startedAt,
         completedAt: new Date(),
       };
@@ -40,7 +43,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
         state: 'not_assessed',
         artifact: null,
         reason: 'No UAN provided',
-        provenance: { source: 'epfo:signzy', model: null, licence: 'none' },
+        provenance: { source, model: null, licence: 'none' },
         startedAt,
         completedAt: new Date(),
       };
@@ -52,7 +55,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
         state: 'not_assessed',
         artifact: null,
         reason: 'No consent provided',
-        provenance: { source: 'epfo:signzy', model: null, licence: 'none' },
+        provenance: { source, model: null, licence: 'none' },
         startedAt,
         completedAt: new Date(),
       };
@@ -66,7 +69,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
           state: 'succeeded',
           artifact: { uan: caseRecord.uan },
           reason: null,
-          provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
+          provenance: { source, model: null, licence: 'consented' },
           startedAt,
           completedAt: new Date(),
         };
@@ -82,7 +85,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
         state: 'not_assessed',
         artifact: null,
         reason: 'Employment history could not be verified right now',
-        provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
+        provenance: { source, model: null, licence: 'consented' },
         startedAt,
         completedAt: new Date(),
       };
@@ -93,7 +96,7 @@ export class EpfoHistoryStep implements VerificationStep<CaseStepContext, { uan:
         state: 'failed',
         artifact: null,
         reason: 'Failed to sync EPFO history',
-        provenance: { source: 'epfo:signzy', model: null, licence: 'consented' },
+        provenance: { source, model: null, licence: 'consented' },
         startedAt,
         completedAt: new Date(),
       };

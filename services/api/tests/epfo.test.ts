@@ -15,6 +15,7 @@ describe('EPFO Service with Dependencies', () => {
     };
 
     const epfoProviderMock: EpfoProvider = {
+      sourceId: 'mock:epfo',
       fetchEmploymentHistory: vi.fn().mockResolvedValue({ jobs: [] }),
     };
 
@@ -47,6 +48,7 @@ describe('EPFO Service with Dependencies', () => {
     };
 
     const epfoProviderMock: EpfoProvider = {
+      sourceId: 'mock:epfo',
       fetchEmploymentHistory: vi.fn().mockResolvedValue(null),
     };
 
@@ -77,6 +79,7 @@ describe('EPFO Service with Dependencies', () => {
     };
 
     const epfoProviderMock: EpfoProvider = {
+      sourceId: 'mock:epfo',
       fetchEmploymentHistory: vi.fn().mockRejectedValue(new Error('Network timeout')),
     };
 

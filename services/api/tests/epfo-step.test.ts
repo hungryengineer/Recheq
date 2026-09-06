@@ -63,6 +63,7 @@ function buildDeps(overrides: {
   };
 
   const epfoProvider: EpfoProvider = {
+    sourceId: 'mock:epfo',
     fetchEmploymentHistory: vi.fn(() => {
       if (overrides.history === undefined) return Promise.resolve(SAMPLE_HISTORY);
       if (overrides.history instanceof Error) return Promise.reject(overrides.history);
@@ -95,7 +96,7 @@ describe('EpfoHistoryStep — declared-source availability (R1.16)', () => {
     expect(result.artifact).toBeNull();
     // candidate-safe reason: no internal provider/error text leaks
     expect(result.reason).toBe('Employment history could not be verified right now');
-    expect(result.provenance.source).toBe('epfo:signzy');
+    expect(result.provenance.source).toBe('mock:epfo');
   });
 
   it('classifies provider exceptions as source unavailability per BE-11, not step failure', async () => {

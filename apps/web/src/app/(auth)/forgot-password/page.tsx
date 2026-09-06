@@ -41,10 +41,7 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <Link href="/" className="inline-block mb-12 hover:opacity-90 transition-opacity">
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <div className="text-blue-600 font-extrabold text-2xl flex flex-col items-center">
-                <span className="leading-none tracking-tighter">Re</span>
-                <span className="leading-none text-blue-400 -mt-1 tracking-tighter">cheq</span>
-              </div>
+              <img src="/logo-icon.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
             </div>
           </Link>
 
@@ -52,8 +49,7 @@ export default function ForgotPasswordPage() {
             Account <span className="text-blue-500">Recovery</span>
           </h1>
           <p className="text-2xl text-gray-300 font-medium tracking-wide flex items-center gap-3 mb-6">
-            Secure <span className="text-blue-500">•</span> Simple{' '}
-            <span className="text-blue-500">•</span> Smart
+            Leave the guesswork behind.
           </p>
           <p className="text-gray-400 text-lg max-w-md leading-relaxed">
             Get back access to your account securely to continue verifying your documents.
@@ -157,10 +153,7 @@ export default function ForgotPasswordPage() {
         <div className="w-full mb-8 relative z-10 lg:hidden">
           <Link href="/" className="inline-block">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-200">
-              <div className="text-blue-600 font-extrabold text-xs flex flex-col items-center">
-                <span className="leading-none tracking-tighter">Re</span>
-                <span className="leading-none text-blue-400 -mt-0.5 tracking-tighter">cheq</span>
-              </div>
+              <img src="/logo-icon.png" alt="Recheq Logo" className="w-6 h-6 object-contain" />
             </div>
           </Link>
         </div>

@@ -35,7 +35,7 @@ export interface EpfoPeriod {
   establishmentId: string;
   startDate: string;
   endDate: string | null;
-  contributions: EpfoContribution[];
+  contributions?: EpfoContribution[] | undefined;
 }
 
 export interface EpfoHistory {

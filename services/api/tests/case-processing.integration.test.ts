@@ -118,6 +118,7 @@ describe('Case Processing Orchestration', () => {
         appendEvent: vi.fn().mockResolvedValue({}),
       } as unknown as CaseProcessingDeps['audit'],
       epfoProvider: {
+        sourceId: 'mock:epfo',
         fetchEmploymentHistory: vi.fn().mockResolvedValue({}),
       } as unknown as CaseProcessingDeps['epfoProvider'],
       extractor: {
