@@ -63,10 +63,19 @@ export function createDocumentDeps(db: Database, storage: DocumentStorage): Docu
           // Postgres unique-violation code: 23505
           // Catches the uq_documents_case_sha256 constraint race where a
           // concurrent upload committed between our dedup check and this insert.
-          // After 'code' in err narrowing, TypeScript knows err has a `code`
-          // property — read it directly without an explicit type assertion.
-          const isUniqueViolation =
+          // The Postgres error may be wrapped by Drizzle, so check both err.code
+          // and err.cause.code to handle both cases.
+          const directCode =
             typeof err === 'object' && err !== null && 'code' in err && err.code === '23505';
+          const wrappedCode =
+            typeof err === 'object' &&
+            err !== null &&
+            'cause' in err &&
+            typeof err.cause === 'object' &&
+            err.cause !== null &&
+            'code' in err.cause &&
+            err.cause.code === '23505';
+          const isUniqueViolation = directCode || wrappedCode;
 
           if (isUniqueViolation) {
             const existing = await db
