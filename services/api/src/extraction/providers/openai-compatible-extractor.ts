@@ -17,6 +17,12 @@ interface OpenAiCompatibleConfig {
   temperature: number;
   /** Whether to use vision models for image extraction */
   useVision: boolean;
+  /** Per-request timeout in ms (Vercel serverless can kill a hung fetch). */
+  timeoutMs: number;
+  /** How many times to retry a 429 rate-limit response before giving up. */
+  maxRateLimitRetries: number;
+  /** Base backoff in ms; doubled per retry when no Retry-After header is sent. */
+  rateLimitBaseBackoffMs: number;
 }
 
 const DEFAULT_CONFIG: OpenAiCompatibleConfig = {
@@ -26,6 +32,9 @@ const DEFAULT_CONFIG: OpenAiCompatibleConfig = {
   maxTokens: 4096,
   temperature: 0.1,
   useVision: true,
+  timeoutMs: 60_000,
+  maxRateLimitRetries: 3,
+  rateLimitBaseBackoffMs: 250,
 };
 
 /**
@@ -85,22 +94,53 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
 
     try {
       const messages = this.createMessages(request, documentType);
-
-      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: this.createHeaders(),
-        body: JSON.stringify({
-          model: this.config.model,
-          max_tokens: this.config.maxTokens,
-          temperature: this.config.temperature,
-          messages,
-          response_format: { type: 'json_object' }, // Force JSON mode when supported
-        }),
+      const body = JSON.stringify({
+        model: this.config.model,
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        messages,
+        response_format: { type: 'json_object' }, // Force JSON mode when supported
       });
+      const url = `${this.config.baseUrl}/chat/completions`;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      // Rate-limit resilience: on HTTP 429 (e.g. Groq's on-demand TPM tier)
+      // back off and retry instead of immediately failing to the regex
+      // fallback. Respect the provider's Retry-After header when present.
+      let response: Response | null = null;
+      let rateLimitError: string | null = null;
+      for (let attempt = 0; attempt <= this.config.maxRateLimitRetries; attempt++) {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: this.createHeaders(),
+          body,
+          signal: AbortSignal.timeout(this.config.timeoutMs),
+        });
+
+        if (response.status !== 429) break;
+
+        // Drain the body before retrying so the connection can be reused.
+        const text = await response.text();
+        rateLimitError = `rate limited (HTTP 429): ${text}`;
+        const retryAfter = this.retryAfterSeconds(response);
+        const backoffMs =
+          retryAfter !== null
+            ? Math.min(retryAfter * 1000, 10_000)
+            : this.config.rateLimitBaseBackoffMs * Math.pow(2, attempt);
+        console.warn(
+          `[OpenAiCompatibleExtractor] 429 rate limited (attempt ${attempt + 1}/` +
+            `${this.config.maxRateLimitRetries + 1}); retrying in ${backoffMs}ms`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      }
+
+      if (!response || !response.ok) {
+        if (response && response.status === 429 && rateLimitError) {
+          throw new Error(
+            `OpenAI API error: 429 ${rateLimitError} (exhausted ${this.config.maxRateLimitRetries} retries)`,
+          );
+        }
+        const errorText = response ? await response.text() : '(no response)';
+        throw new Error(`OpenAI API error: ${response?.status ?? 'unknown'} ${errorText}`);
       }
 
       const data = (await response.json()) as {
@@ -144,6 +184,18 @@ export class OpenAiCompatibleExtractor implements LlmDocumentExtractor {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.config.apiKey}`,
     };
+  }
+
+  /**
+   * Read the provider's Retry-After (seconds) header, if present and valid.
+   * Returns null when absent or unparsable so the caller falls back to its
+   * own exponential backoff.
+   */
+  private retryAfterSeconds(response: Response): number | null {
+    const header = response.headers?.get?.('retry-after');
+    if (!header) return null;
+    const seconds = Number(header);
+    return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
   }
 
   private createMessages(

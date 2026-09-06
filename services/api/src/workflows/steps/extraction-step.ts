@@ -12,6 +12,23 @@ import { sanitizeExtractedData, sanitizeErrorMessage } from '../../extraction/pa
 
 import type { CaseStepContext } from '../case-processing.js';
 
+// ─── PDF text extraction ─────────────────────────────────────────
+// pdf-parse is NOT concurrency-safe: invoking it concurrently (the step
+// processes documents in chunks with Promise.all) intermittently throws
+// "FormatError: bad XRef entry" even on valid PDFs. Serialise every parse
+// through a module-level mutex so only one pdfParse call runs at a time.
+let pdfParseTail: Promise<void> = Promise.resolve();
+
+function serializedPdfToText(content: unknown): Promise<{ text: string }> {
+  const run = pdfParseTail.then(async () => pdfParse(content));
+  // Ensure a failed parse doesn't wedge the queue for subsequent documents.
+  pdfParseTail = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 export class ExtractionStep implements VerificationStep<
   CaseStepContext,
   {
@@ -102,7 +119,7 @@ export class ExtractionStep implements VerificationStep<
             if (isImage) {
               finalContent = docContent.content.toString('base64');
             } else if (docContent.mimeType === 'application/pdf') {
-              const parsed = await pdfParse(docContent.content);
+              const parsed = await serializedPdfToText(docContent.content);
               finalContent = parsed.text;
               finalMime = 'text/plain';
             } else {
