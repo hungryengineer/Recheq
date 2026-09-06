@@ -1,12 +1,13 @@
 export const runtime = 'nodejs';
 
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { loginHandler } from '@recheq/api/src/routes/auth/login.js';
 import { toErrorResponse } from '@recheq/api/src/http/errors.js';
 import { getDb } from '@/lib/server/db';
 
 export async function POST(request: Request) {
-  const requestId = crypto.randomUUID();
+  const requestId = randomUUID();
   try {
     const body = await request.json().catch(() => ({}));
     const ip =

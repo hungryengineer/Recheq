@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { projectCaseDetail } from '@/lib/server/projections';
 import { validate } from 'uuid';
@@ -6,7 +7,7 @@ import { updateCaseHandler } from '@recheq/api/src/routes/cases/update.js';
 import { deleteCaseHandler } from '@recheq/api/src/routes/cases/delete.js';
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
-  const requestId = crypto.randomUUID();
+  const requestId = randomUUID();
   try {
     // 1. Validate UUID
     const { id } = await context.params;

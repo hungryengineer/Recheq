@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { createRequestContext } from '@recheq/api/src/observability/request-context.js';
 import { toErrorResponse } from '@recheq/api/src/http/errors.js';
@@ -14,7 +15,7 @@ type HandlerResult = { status: number; body: unknown };
 
 export function toHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
   return async function (request: Request, context: any) {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
     try {
       let body: unknown = {};
 
@@ -116,7 +117,7 @@ export function toApiKeyHandler<TReq = unknown>(
   fn: (req: TReq, deps: WebAppDeps) => Promise<HandlerResult>,
 ) {
   return async function (request: Request, context: any) {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
     try {
       let body: unknown = {};
 
@@ -225,7 +226,7 @@ export function toApiKeyHandler<TReq = unknown>(
 
 export function toPublicHandler<TReq = unknown>(fn: (req: TReq, deps: any) => Promise<unknown>) {
   return async function (request: Request, context: any) {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
 
     // Durable rate limiting for public token endpoints (upload, submit, UAN,
     // consent, status, ...). Backed by Postgres so the limit holds across

@@ -1,4 +1,7 @@
-// Use global crypto.randomUUID() which is standard in Edge and Node runtimes
+// Use node:crypto randomUUID (explicit import) so this never depends on a
+// global `crypto` being injected by the runtime — the global is not guaranteed
+// in every Node/worker context and failing here broke signup/login.
+import { randomUUID } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
 
 let _secretKey: Uint8Array | null = null;
@@ -41,7 +44,7 @@ export interface JwtClaims extends JwtPayload {
 }
 
 export async function signToken(payload: JwtPayload): Promise<string> {
-  const jti = crypto.randomUUID();
+  const jti = randomUUID();
   return new SignJWT({ ...payload, jti })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
