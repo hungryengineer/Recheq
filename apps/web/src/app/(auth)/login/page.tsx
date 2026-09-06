@@ -89,7 +89,7 @@ function LoginContent() {
         <div className="relative z-10 max-w-xl">
           {/* Logo */}
           <div className="mb-12">
-            <img src="/logo-icon.png" alt="Recheq Logo" className="w-16 h-16 object-contain" />
+            <img src="/logo-icon.png" alt="Recheq Logo" className="w-16 h-16 object-contain invert hue-rotate-180 brightness-200 mix-blend-screen" />
           </div>
 
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
