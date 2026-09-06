@@ -121,7 +121,7 @@ describe('RCQ-20108 — step contract types', () => {
   });
 
   it('declares provenance sources in a closed register (R1.15/R1.16)', () => {
-    expect([...PROVENANCE_REGISTER].sort()).toEqual(['derived', 'epfo:signzy', 'mca:data.gov.in']);
+    expect([...PROVENANCE_REGISTER].sort()).toEqual(['derived', 'epfo:fixture', 'epfo:signzy', 'mca:data.gov.in']);
   });
 
   it('keeps DataSourceDeclaration aligned with the register vocabulary', () => {

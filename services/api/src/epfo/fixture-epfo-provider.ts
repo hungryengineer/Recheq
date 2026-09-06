@@ -3,8 +3,28 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EpfoHistorySchema, type EpfoProvider, type EpfoHistory } from './epfo-provider.js';
 
+import { existsSync } from 'node:fs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURES_DIR = path.resolve(__dirname, '../../../../fixtures/epfo');
+
+/**
+ * Walk up from this module until a pnpm workspace marker is found. Required
+ * because @recheq/api is consumed via its exports map (./dist/src/*), so a
+ * fixed number of `..` segments resolves differently from src and from dist.
+ */
+function findRepoRoot(startDir: string): string {
+  let dir = startDir;
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(path.join(dir, 'pnpm-workspace.yaml'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new Error(`Could not locate repo root from ${startDir}`);
+}
+
+const FIXTURES_DIR =
+  process.env.EPFO_FIXTURES_DIR ?? path.join(findRepoRoot(__dirname), 'fixtures/epfo');
 
 /** UAN → fixture filename mapping */
 const UAN_MAP: Record<string, string> = {
@@ -15,6 +35,8 @@ const UAN_MAP: Record<string, string> = {
 };
 
 export class FixtureEpfoProvider implements EpfoProvider {
+  readonly sourceId = 'epfo:fixture';
+
   private async loadFixture(filename: string): Promise<EpfoHistory> {
     const fixturePath = path.join(FIXTURES_DIR, filename);
     const content = await fs.readFile(fixturePath, 'utf-8');
@@ -29,6 +51,15 @@ export class FixtureEpfoProvider implements EpfoProvider {
     const filename = UAN_MAP[uan];
     if (filename) {
       return this.loadFixture(filename);
+    }
+
+    // An unknown UAN has no fixture backing it. Returning fabricated data here
+    // would let synthetic records count as an independent evidence origin in
+    // evidence-service, producing a confident verdict from invented facts.
+    // Returning null makes syncEpfoHistory record a failure, which the workflow
+    // step maps to not_assessed.
+    if (process.env.DEMO_MODE !== 'true') {
+      return null;
     }
 
     // Deterministic synthetic history for any unknown UAN.
