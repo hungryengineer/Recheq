@@ -14,8 +14,12 @@ function getStorage() {
   return _storage;
 }
 export const repository = {
-  createCase: async (input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>) => {
-    const [result] = await db
+  createCase: async (
+    input: Omit<CaseRecord, 'id' | 'created_at' | 'updated_at'>,
+    tx?: TransactionHandle,
+  ) => {
+    const trx = tx ? (tx as any) : db;
+    const [result] = await trx
       .insert(schema.cases)
       .values({ ...input, claimed_ctc: String(input.claimed_ctc) } as any)
       .returning();
@@ -37,8 +41,9 @@ export const repository = {
       created_at: c.created_at.toISOString(),
     }));
   },
-  getCaseByIdAndOrg: async (caseId: string, orgId: string) => {
-    const [result] = await db
+  getCaseByIdAndOrg: async (caseId: string, orgId: string, tx?: TransactionHandle) => {
+    const trx = tx ? (tx as any) : db;
+    const [result] = await trx
       .select()
       .from(schema.cases)
       .where(and(eq(schema.cases.id, caseId), eq(schema.cases.org_id, orgId)));
