@@ -10,7 +10,7 @@ const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 't
 
 export function SecurityTab() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [is2FAEnabled] = useState(false);
   const [isEnabling2FA, setIsEnabling2FA] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
