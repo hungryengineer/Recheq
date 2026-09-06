@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { UAParser } from 'ua-parser-js';
-import { updatePasswordAction, signOutOtherDevicesAction } from '@/lib/api/settings';
+import { updatePasswordAction, signOutAllDevicesAction } from '@/lib/api/settings';
 
 const ENABLE_MOCK_FEATURES = process.env.NEXT_PUBLIC_ENABLE_MOCK_FEATURES === 'true';
 
@@ -96,18 +96,18 @@ export function SecurityTab() {
     }
   };
 
-  const handleSignoutOtherDevices = async () => {
+  const handleSignoutAllDevices = async () => {
     setIsSigningOut(true);
     try {
-      const result = await signOutOtherDevicesAction();
+      const result = await signOutAllDevicesAction();
       if (result && 'error' in result) {
-        toast.error(result.error.message || 'Failed to sign out of other devices');
+        toast.error(result.error.message || 'Failed to sign out of devices');
         return;
       }
-      setActiveSessions((prev) => prev.filter((session) => session.isCurrent));
+      setActiveSessions([]);
       toast.success('Successfully signed out of all devices');
     } catch {
-      toast.error('Failed to sign out of other devices');
+      toast.error('Failed to sign out of devices');
     } finally {
       setIsSigningOut(false);
     }
@@ -283,14 +283,14 @@ export function SecurityTab() {
                   ))}
                 </div>
 
-                {activeSessions.length > 1 && (
+                {activeSessions.length > 0 && (
                   <button
-                    onClick={handleSignoutOtherDevices}
+                    onClick={handleSignoutAllDevices}
                     disabled={isSigningOut}
                     className="text-sm text-[var(--color-high)] font-medium hover:underline disabled:opacity-70 inline-flex items-center"
                   >
                     {isSigningOut ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
-                    Sign out of all other devices
+                    Sign out of all devices
                   </button>
                 )}
               </div>

@@ -127,7 +127,7 @@ export default async function CaseDetailsPage({ params }: PageProps) {
                 {caseRecord.risk_score === 100 &&
                 findings.filter((f) => f.status === 'open').length === 0
                   ? 'Unverified Default'
-                  : `(40 × ${highCount}) + (15 × ${mediumCount}) + (5 × ${lowCount}) = ${caseRecord.risk_score}`}
+                  : `Math.min(100, (40 × ${highCount}) + (15 × ${mediumCount}) + (5 × ${lowCount})) = ${caseRecord.risk_score}`}
               </span>
             )}
           </div>
