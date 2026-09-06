@@ -1,5 +1,12 @@
 // ─── Form 16 Extraction Prompt v1 ───────────────────────────────
 // Versioned prompt for Form 16 (Part A + Part B) extraction.
+//
+// NOTE (2026-09-06): Added explicit PAN/TAN disambiguation so the model stops
+// swapping employee_pan with employer_pan (they are both 10-char PANs and were
+// observed to be transposed). The emitted schema_version remains "form16-v1".
+// The prompt<->schema contract is enforced by
+// services/api/tests/extraction-prompt-contract.test.ts.
+//
 // NEVER modify this file after deployment — create form16-v2.ts instead.
 
 export const FORM16_PROMPT_VERSION = 'form16-v1' as const;
@@ -25,6 +32,19 @@ ADDITIONAL RULES:
 7. Return ONLY valid JSON — no markdown, no explanations, no code fences.
 8. Missing or illegible fields must be null; NEVER use 0, "", or a placeholder.
 
+PAN/TAN DISAMBIGUATION (critical — do not swap these):
+9. "employee_pan" is the Permanent Account Number of the INDIVIDUAL whose name is
+   in "employee_name" (usually printed next to the employee's name/address in
+   Part A). It is a 10-char PAN (e.g. ABCDE1234F).
+10. "employer_pan" is the PAN of the EMPLOYER / deductor whose name is in
+    "employer_name". This is a 10-char PAN.
+11. "employer_tan" is the employer's Tax Deduction Account Number (10 chars,
+    format: 4 letters + 5 digits + 1 letter). It is NOT a PAN.
+12. If the document shows only one PAN, decide owner by what it is printed next to:
+    next to the employee's name/address → employee_pan; next to the deductor /
+    employer section → employer_pan. Never invent or copy the same PAN into both
+    unless both are explicitly printed.
+
 Form 16 has two parts — Part A (TDS summary) and Part B (salary breakdown).
 Extract fields from whichever part(s) are present; use null for parts that are absent.
 ` as const;
@@ -39,10 +59,10 @@ Do NOT compute any arithmetic.
 
 {
   "employee_name": string | null,
-  "employee_pan": string | null,
+  "employee_pan": string | null,   // PAN of the person in employee_name
   "employer_name": string | null,
-  "employer_tan": string | null,
-  "employer_pan": string | null,
+  "employer_tan": string | null,   // employer's TAN (NOT a PAN)
+  "employer_pan": string | null,   // PAN of the deductor in employer_name
   "financial_year": string | null,
   "assessment_year": string | null,
   "total_tax_deducted": number | null,

@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['.git/', 'coverage/', '**/dist/', 'node_modules/', '**/.next/'],
+    ignores: ['.git/', 'coverage/', '**/dist/', 'node_modules/', '**/.next/', 'scratch/'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

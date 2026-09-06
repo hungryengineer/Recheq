@@ -129,3 +129,9 @@ local_reference/
 .vercel
 .env*
 !.env.example
+
+# Personal development scratch scripts
+scratch/
+
+# Runtime process IDs
+*.pid

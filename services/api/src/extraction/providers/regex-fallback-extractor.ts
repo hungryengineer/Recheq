@@ -96,9 +96,38 @@ export class RegexFallbackExtractor implements LlmDocumentExtractor {
       };
     }
 
+    // The fallback must not present an EMPTY extraction as a clean success:
+    // recording a doc as "extracted" with no real fields would silently feed a
+    // bogus confidence score and hide that the LLM path failed. If the regex
+    // path found no meaningful data, surface a failure so the pipeline marks
+    // the document failed (and confidence is honestly 0 / a finding fires).
+    if (isEmptyExtraction(fallbackResult.data)) {
+      return {
+        ...result,
+        error: `${result.error ?? 'primary failed'} (regex fallback returned no extractable fields)`,
+      };
+    }
+
     return {
       ...fallbackResult,
       modelId: fallbackModelId,
     };
   }
+}
+
+/**
+ * True when a fallback "success" actually contains no meaningful extracted
+ * data, i.e. the extraction should be treated as a failure rather than a
+ * clean-but-empty success.
+ */
+function isEmptyExtraction(data: unknown): boolean {
+  if (data === null || typeof data !== 'object') return true;
+  const rec = data as Record<string, unknown>;
+  // Payslip: net + gross + employer are the minimum a real slip carries.
+  const payslipEmpty =
+    rec.net_salary == null && rec.gross_salary == null && rec.employer_name == null;
+  // Form 16: employee identity + PAN + employer are the minimum a real form carries.
+  const form16Empty =
+    rec.employee_pan == null && rec.employee_name == null && rec.employer_name == null;
+  return payslipEmpty && form16Empty;
 }

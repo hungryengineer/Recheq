@@ -1,5 +1,14 @@
 // ─── Payslip Extraction Prompt v1 ───────────────────────────────
 // Versioned prompt for payslip extraction.
+//
+// NOTE (2026-09-06): The JSON shape was corrected to include the
+// schema-required "pan" key. The payslip Zod schema (packages/schema/src/payslip.ts)
+// REQUIRES "pan" (nullable); without it the emitted JSON always failed schema
+// validation and every payslip silently fell back to regex. The emitted
+// schema_version remains "payslip-v1" to match the frozen extraction schema.
+// The prompt<->schema contract is now enforced by
+// services/api/tests/extraction-prompt-contract.test.ts.
+//
 // NEVER modify this file after deployment — create payslip-v2.ts instead.
 
 export const PAYSLIP_PROMPT_VERSION = 'payslip-v1' as const;
@@ -57,6 +66,7 @@ Do NOT compute any arithmetic.
   "net_salary": number | null,
   "uan": string | null,
   "pf_account_number": string | null,
+  "pan": string | null,
   "extraction_notes": string | null,
   "schema_version": "payslip-v1"
 }
