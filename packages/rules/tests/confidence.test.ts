@@ -158,7 +158,9 @@ describe('Good vs bad document confidence (LLM end-to-end goal)', () => {
     expect(score).toBeGreaterThanOrEqual(90);
 
     const findings = checkDocumentConfidence(ctx);
-    expect(findings.filter((f) => f.rule_id === 'document-confidence' && f.status === 'open')).toHaveLength(0);
+    expect(
+      findings.filter((f) => f.rule_id === 'document-confidence' && f.status === 'open'),
+    ).toHaveLength(0);
   });
 
   it('BAD/doctored payslip -> low confidence (<90) and a HIGH confidence finding fires', () => {
@@ -171,7 +173,12 @@ describe('Good vs bad document confidence (LLM end-to-end goal)', () => {
           creator: 'x',
           creation_date: null,
           modification_date: null,
-          font_runs: { total_characters: 100, unique_fonts: 2, dominant_font: 'f1', anomalous_characters: 12 },
+          font_runs: {
+            total_characters: 100,
+            unique_fonts: 2,
+            dominant_font: 'f1',
+            anomalous_characters: 12,
+          },
           monetary_anomalies: { flagged_regions: 1, highest_confidence_anomaly: 0.9 },
         },
       ],
@@ -181,7 +188,9 @@ describe('Good vs bad document confidence (LLM end-to-end goal)', () => {
     expect(score).toBeLessThan(90);
 
     const findings = checkDocumentConfidence(ctx);
-    const finding = findings.find((f) => f.rule_id === 'document-confidence' && f.status === 'open');
+    const finding = findings.find(
+      (f) => f.rule_id === 'document-confidence' && f.status === 'open',
+    );
     expect(finding).toBeDefined();
     expect(finding?.severity).toBe('high');
   });
@@ -214,7 +223,9 @@ describe('Good vs bad document confidence (LLM end-to-end goal)', () => {
 
     expect(calculateForm16Confidence(ctx).score).toBe(100);
     const findings = checkDocumentConfidence(ctx);
-    expect(findings.filter((f) => f.rule_id === 'document-confidence' && f.status === 'open')).toHaveLength(0);
+    expect(
+      findings.filter((f) => f.rule_id === 'document-confidence' && f.status === 'open'),
+    ).toHaveLength(0);
   });
 
   it('BAD form16 with forensics anomaly -> low confidence and a confidence finding fires', () => {
@@ -242,7 +253,12 @@ describe('Good vs bad document confidence (LLM end-to-end goal)', () => {
       },
       forensics: [
         {
-          font_runs: { total_characters: 100, unique_fonts: 3, dominant_font: 'f2', anomalous_characters: 8 },
+          font_runs: {
+            total_characters: 100,
+            unique_fonts: 3,
+            dominant_font: 'f2',
+            anomalous_characters: 8,
+          },
           monetary_anomalies: null,
         },
       ],
@@ -251,6 +267,8 @@ describe('Good vs bad document confidence (LLM end-to-end goal)', () => {
     const { score } = calculateForm16Confidence(ctx);
     expect(score).toBeLessThan(90);
     const findings = checkDocumentConfidence(ctx);
-    expect(findings.some((f) => f.rule_id === 'document-confidence' && f.status === 'open')).toBe(true);
+    expect(findings.some((f) => f.rule_id === 'document-confidence' && f.status === 'open')).toBe(
+      true,
+    );
   });
 });

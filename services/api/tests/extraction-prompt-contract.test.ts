@@ -61,11 +61,7 @@ describe('Prompt <-> Schema contract', () => {
 });
 
 // ─── 2. OpenAI-compatible provider: 429 rate-limit retry ────────
-function jsonResponse(
-  status: number,
-  body: unknown,
-  headers?: Record<string, string>,
-): Response {
+function jsonResponse(status: number, body: unknown, headers?: Record<string, string>): Response {
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -134,9 +130,9 @@ describe('OpenAiCompatibleExtractor — 429 retry', () => {
   });
 
   it('fails after exhausting all 429 retries instead of masking as success', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse(429, { error: { message: 'tokens per minute' } }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(429, { error: { message: 'tokens per minute' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     const extractor = createOpenAiCompatibleExtractor({

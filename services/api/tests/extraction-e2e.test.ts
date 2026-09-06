@@ -22,7 +22,7 @@ describeIfGemini('End-to-End LLM Extraction with Gemini', () => {
 
   it('extracts a clean payslip with correct field values', async () => {
     const extractor = withSchemaRetry(createGeminiExtractorFromEnv());
-    
+
     const pdfPath = join(fixturesRoot, 'clean-01/payslip.pdf');
     const pdfBuffer = readFileSync(pdfPath);
     const pdfBase64 = pdfBuffer.toString('base64');
@@ -65,7 +65,7 @@ describeIfGemini('End-to-End LLM Extraction with Gemini', () => {
 
     // Verify model_id is recorded
     expect(result.modelId).toContain('gemini');
-    
+
     // Log for visibility
     console.log('✓ Clean payslip extraction succeeded:', {
       employee: result.data.employee_name,
@@ -80,7 +80,7 @@ describeIfGemini('End-to-End LLM Extraction with Gemini', () => {
 
   it('extracts a doctored payslip and reads the printed (doctored) numbers', async () => {
     const extractor = withSchemaRetry(createGeminiExtractorFromEnv());
-    
+
     const pdfPath = join(fixturesRoot, 'doctored-01/payslip.pdf');
     const pdfBuffer = readFileSync(pdfPath);
     const pdfBase64 = pdfBuffer.toString('base64');
@@ -134,7 +134,7 @@ describeIfGemini('End-to-End LLM Extraction with Gemini', () => {
 
   it('extracts a Form 16 with correct fields', async () => {
     const extractor = withSchemaRetry(createGeminiExtractorFromEnv());
-    
+
     const pdfPath = join(fixturesRoot, 'clean-01/form16.pdf');
     const pdfBuffer = readFileSync(pdfPath);
     const pdfBase64 = pdfBuffer.toString('base64');
@@ -188,7 +188,7 @@ describeIfGemini('End-to-End LLM Extraction with Gemini', () => {
 
   it('handles extraction failure gracefully when model returns invalid JSON', async () => {
     const extractor = createGeminiExtractorFromEnv();
-    
+
     // Send garbage that will likely cause extraction to fail
     const request: ExtractionRequest = {
       documentId: 'test-invalid',
@@ -203,13 +203,13 @@ describeIfGemini('End-to-End LLM Extraction with Gemini', () => {
     // It might succeed with all nulls, or fail — either is acceptable.
     // The key is it doesn't crash.
     expect(['success', 'failure']).toContain(result.status);
-    
+
     if (result.status === 'success') {
       // If it succeeded, most fields should be null
-      const nullCount = Object.values(result.data).filter(v => v === null).length;
+      const nullCount = Object.values(result.data).filter((v) => v === null).length;
       expect(nullCount).toBeGreaterThan(5);
     }
-    
+
     console.log('✓ Invalid input handled gracefully:', {
       status: result.status,
       modelId: result.modelId,
@@ -225,7 +225,7 @@ describeIfGemini('Gemini Extractor with Fixture Fallback', () => {
 
     try {
       const extractor = createGeminiExtractorFromEnv();
-      
+
       // Send invalid input that will cause Gemini to fail
       const request: ExtractionRequest = {
         documentId: 'test-fallback',
