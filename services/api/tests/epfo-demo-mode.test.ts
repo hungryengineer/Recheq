@@ -3,7 +3,7 @@ import { FixtureEpfoProvider } from '../src/epfo/fixture-epfo-provider.js';
 
 describe('Fixture EPFO Provider DEMO_MODE', () => {
   const provider = new FixtureEpfoProvider();
-  
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });

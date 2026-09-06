@@ -48,11 +48,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex items-center space-x-8">
-              <Link
-                href="/cases"
-                className="text-lg font-semibold tracking-tight text-[var(--color-fg)]"
-              >
-                Recheq
+              <Link href="/cases" className="flex items-center gap-2">
+                <img src="/logo-icon.png" alt="Recheq Logo" className="w-6 h-6 object-contain" />
+                <span className="text-lg font-semibold tracking-tight text-[var(--color-fg)]">
+                  Recheq
+                </span>
               </Link>
               <nav className="flex space-x-6 text-sm">
                 <Link

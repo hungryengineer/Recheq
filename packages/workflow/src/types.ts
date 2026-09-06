@@ -1,4 +1,9 @@
-export const PROVENANCE_REGISTER = new Set(['epfo:signzy', 'epfo:fixture', 'mca:data.gov.in', 'derived']);
+export const PROVENANCE_REGISTER = new Set([
+  'epfo:signzy',
+  'epfo:fixture',
+  'mca:data.gov.in',
+  'derived',
+]);
 
 /**
  * Lifecycle states a verification step can report (RCQ-20108).

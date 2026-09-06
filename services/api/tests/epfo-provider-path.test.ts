@@ -6,7 +6,7 @@ import { FixtureEpfoProvider } from '../src/epfo/fixture-epfo-provider.js';
 
 describe('Fixture EPFO Provider Path Resolution', () => {
   it('should successfully instantiate without throwing ENOENT on load', () => {
-    // The module is already imported above. If the findRepoRoot logic fails, it will throw an Error 
+    // The module is already imported above. If the findRepoRoot logic fails, it will throw an Error
     // at module load time (which would fail this suite).
     const provider = new FixtureEpfoProvider();
     expect(provider).toBeInstanceOf(FixtureEpfoProvider);

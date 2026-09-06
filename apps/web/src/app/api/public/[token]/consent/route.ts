@@ -18,14 +18,15 @@ export const POST = toPublicHandler(
           ip: (request.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() ?? null,
           userAgent: request.headers.get('user-agent'),
         },
-      {
-        ...getConsentDeps(),
-        tokenVerifier: getTokenVerifier(),
-      },
-    );
+        {
+          ...getConsentDeps(),
+          tokenVerifier: getTokenVerifier(),
+        },
+      );
 
-    return result;
-  } catch (error) {
-    return toErrorResponse(error);
-  }
-});
+      return result;
+    } catch (error) {
+      return toErrorResponse(error);
+    }
+  },
+);
