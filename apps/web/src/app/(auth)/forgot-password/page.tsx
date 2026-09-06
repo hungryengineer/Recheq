@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <Link href="/" className="inline-block mb-12 hover:opacity-90 transition-opacity">
             <div>
-              <img src="/logo-icon.png" alt="Recheq Logo" className="w-16 h-16 object-contain invert hue-rotate-180 brightness-200 mix-blend-screen" />
+              <img src="/logo-icon-light.png" alt="Recheq Logo" className="w-16 h-16 object-contain" />
             </div>
           </Link>
 
