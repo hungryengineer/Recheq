@@ -5,7 +5,6 @@ import { buildForm16Prompt } from '../src/extraction/prompts/form16-v1.js';
 import { createOpenAiCompatibleExtractor } from '../src/extraction/providers/openai-compatible-extractor.js';
 import type {
   LlmDocumentExtractor,
-  ExtractionRequest,
   ExtractionResult,
 } from '../src/extraction/llm-document-extractor.js';
 import type { PayslipExtraction as PayslipPayload } from '@recheq/schema';
