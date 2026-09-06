@@ -95,8 +95,8 @@ export default function CandidateStatusPage({ params }: { params: Promise<{ toke
       <div className="w-full max-w-2xl animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-            <img src="/logo-icon.png" alt="Recheq Logo" className="w-6 h-6 object-contain" />
+          <div>
+            <img src="/logo-icon.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
           </div>
           <span className="font-semibold text-xl tracking-tight">Recheq</span>
         </div>

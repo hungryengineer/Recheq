@@ -49,8 +49,8 @@ export default function SignupPage() {
 
         <div className="relative z-10 max-w-xl">
           {/* Logo */}
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-12">
-            <img src="/logo-icon.png" alt="Recheq Logo" className="w-10 h-10 object-contain" />
+          <div className="mb-12">
+            <img src="/logo-icon.png" alt="Recheq Logo" className="w-16 h-16 object-contain" />
           </div>
 
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
@@ -60,8 +60,7 @@ export default function SignupPage() {
             Leave the guesswork behind.
           </p>
           <p className="text-gray-400 text-lg max-w-md leading-relaxed">
-            Create an account to start verifying candidates instantly with enterprise-grade
-            accuracy.
+            Create an account to automate background checks and get verified results in seconds.
           </p>
         </div>
 
